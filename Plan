@@ -1,4 +1,5 @@
 * Purpose: Bring people together from when they're separated, not just in touch.
+* ICS4U FINAL PROJECT??
 
 Front End Framework: React (Ethan's Lead)
 - User + Friend System 
@@ -19,6 +20,8 @@ Back End Framework: Django (Paul's Lead)
 - Activity Recommendation + Rating System
 - User Address and User Travel System (Algorithms)
 - Hyperlink Add Features
+- Analytics Dashboard
+- Contacts
 
 Database: MySql (Ethan's Lead)
 
@@ -50,3 +53,56 @@ Legal:
 
 Future Collaborator Candidates:
 - Branavan
+
+
+Plan: Finish by the end of August
+- How often schedule meetings: 
+  - Face to face meetings: 10-4
+    - June 18
+    - July 9
+    - July 23 - Finish First Version
+    - August 6
+    - August 20
+    - September 3
+    - September 10 - Finish Second Version
+ - How often virtual meetings:
+  - When we're stuck, maybe twice a week?
+
+Design:
+- Pages:
+  - Log in/ Sign up
+  - Profile
+  - Text (Busy) - Individual, Group Chat Rooms
+  - Send Hang Request (Busy)
+    - Software should recommend best times - user can override manually
+    - Pick a location(s) backup locations
+    - Send notification to recipients
+    - Accept/Decline 
+    - Create actual event on Google Calendar (Calendar for the app)
+    - *Configure as vote or dictatorship
+    - *Location recommendations + user interests?
+- Features:
+  - Invite Friends
+
+*Follow layout of other apps for now
+
+Deadlines:
+- Research Tools
+- Set up the Django Backend + Basic Model
+- Connect a Database
+- Allow User Authentication + Hyperlinks
+- Work on Texting Service
+- Work on Texting Service
+- Complete Texting Service
+- Find way to send Custom Widgets
+- Finish Custom Widgets
+- Connect Google Calendar API, Also add manual override
+- Create UI, connect UI to backend + Not logged in page
+- Finish UI, Finish Backend, Upload Application, Find UI Designer
+- Finish Testing with Friends and Family
+- Design UI, Debugging, Testing with Friends and Family
+- Rework UI, Debugging, Testing with Friends and Family
+- Add Activity Recommendations + Travel Consideration
+- More Testing, Legal Advice (Maybe ask Ms. Edwards/Parents)
+- Present to Ms. Edwards (Use ICS students to test?)
+- Analyze Data
