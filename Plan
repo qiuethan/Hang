@@ -1,0 +1,52 @@
+* Purpose: Bring people together from when they're separated, not just in touch.
+
+Front End Framework: React (Ethan's Lead)
+- User + Friend System 
+- Messaging
+- User Calendar
+- Busy/Not Busy
+- Hang Request
+- Activity Recommendation + Rating System
+- User Address and User Travel System (Forms)
+- Hyperlink Add Features
+
+Back End Framework: Django (Paul's Lead)
+- User + Friend System 
+- Messaging
+- User Calendar
+- Busy/Not Busy
+- Hang Request
+- Activity Recommendation + Rating System
+- User Address and User Travel System (Algorithms)
+- Hyperlink Add Features
+
+Database: MySql (Ethan's Lead)
+
+Hosting Service (Servers): (Paul's Lead) Heroku --> AWS
+
+
+Security:
+- What encryption?
+
+Financial: 
+- Where to get funds: 
+  - Our own money
+  - Get parents to invest
+- How to monetize?
+  - Collect user data?
+  - Premium?
+  - Sponsorships?
+  - Advertisements?
+
+How to introduce product:
+- Advertisements?
+- Social Media?
+- Spread the word? (Parents, Friends)
+- Sales Pitches (Shark Tank moment)
+  
+
+Legal:
+- When to hire lawyer?
+
+Future Collaborator Candidates:
+- Branavan
