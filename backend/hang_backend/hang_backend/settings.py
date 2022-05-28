@@ -40,11 +40,15 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
 
-    # Django-allauth apps
+    'rest_framework',
+    'rest_framework.authtoken',
+    'dj_rest_auth',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    'allauth.socialaccount.providers.google',  # for Google OAuth 2.0
+    'dj_rest_auth.registration',
+    'allauth.socialaccount.providers.google',
+
     'hang_backend_app'
 ]
 
@@ -159,3 +163,6 @@ SOCIALACCOUNT_PROVIDERS = {
         }
     }
 }
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+ACCOUNT_EMAIL_VERIFICATION = 'optional'
