@@ -32,7 +32,7 @@ const Auth = (props) => {
     }
 
     const switchMode = () => {
-        setForm(initialState);
+        setInputs(initialState);
         setIsSignup((prevIsSignup) => !prevIsSignup);
     }
 
