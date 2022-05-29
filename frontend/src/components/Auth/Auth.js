@@ -6,9 +6,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from 'react-router-dom';
 import { GoogleLogin } from 'react-google-login';
 
-import { login } from "../../actions/login.js";
+import { login, signup } from "../../actions/login.js";
 
-const initialState = {email: "", password: ""};
+const initialState = {username: "", email: "", password: "", password1: "", password2: ""};
 
 const Auth = (props) => {
 
@@ -28,7 +28,12 @@ const Auth = (props) => {
     const handleSubmit = (event) => {
         event.preventDefault();
 
-        dispatch(login(inputs, history));
+        if(isSignup){
+            dispatch(signup(inputs, history));
+        }
+        else{
+            dispatch(login(inputs, history));
+        }
     }
 
     const switchMode = () => {
@@ -52,37 +57,74 @@ const Auth = (props) => {
     const googleError = () => alert('Google login was unsuccessful. Try again later');
 
     return(
-        <form onSubmit={handleSubmit} class = "signin-form">
+        <div>
+            <form onSubmit={handleSubmit} class = "signin-form">
+            {
+                isSignup && (
+                    <label>
+                        Username:
+                        <input 
+                            type="text" 
+                            name="username" 
+                            value={inputs.username || ""} 
+                            onChange={handleChange} />
+                    </label>
+                )
+            }
             <label>
                 Email:
                 <input
                     type="text"
                     name="email"
-                    placeholder="Email"
                     value={inputs.email || ""}
                     onChange = {handleChange}
                 />
             </label>
-            <label>
-                Password:
-                <input
-                    type="password"
-                    name="password"
-                    placeholder="Password"
-                    value={inputs.password || ""}
-                    onChange = {handleChange}
-                />
-            </label>
-            <button type="submit">Login</button>
-            <GoogleLogin 
-                clientId="791387321453-ieduv1tkctrh201givjd67kal9uc70ql.apps.googleusercontent.com"
-                buttonText="Login with Google"
-                onSuccess={googleSuccess}
-                onFailure={googleError}
-                isSignedIn={true}
-                cookiePolicy={'single_host_origin'}
-            />
-        </form>
+            {
+                !isSignup && (
+                    <label>
+                        Password:
+                        <input
+                            type="password"
+                            name="password"
+                            value={inputs.password || ""}
+                            onChange = {handleChange}
+                        />
+                    </label>
+                )
+            }
+            {
+                isSignup && (
+                    <label>
+                        Password:
+                        <input 
+                            type="password" 
+                            name="password1" 
+                            value={inputs.password1 || ""} 
+                            onChange = {handleChange} 
+                        />
+                    </label>
+                )
+            }
+            {
+                isSignup && (
+                    <label>
+                        Confirm Password:
+                        <input 
+                            type="password" 
+                            name="password2" 
+                            value={inputs.password2 || ""} 
+                            onChange = {handleChange} 
+                        />
+                    </label>
+                )
+            }
+            <button type="submit">{isSignup ? 'Sign Up' : "Login"}</button>
+            </form>
+            <button onClick={switchMode}>
+                {isSignup ? 'Already have an account? Log in!' : "Don't have an account? Sign Up!"}
+            </button>
+        </div>
     );
 
 }

@@ -11,4 +11,4 @@ API.interceptors.request.use((req) => {
 });
 
 export const login = (inputs) => API.post('/dj-rest-auth/login/', inputs);
-export const signin = (inputs) => true;
+export const signin = (inputs) => API.post('/dj-rest-auth/registration/', inputs);

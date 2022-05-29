@@ -15,6 +15,7 @@ export const login = (inputs, router) => async (dispatch) => {
 
 export const signup = (inputs, router) => async (dispatch) => {
     try{
+        console.log(inputs);
         const { data } = await api.signin(inputs);
         dispatch({type: LOGIN, data})
 
