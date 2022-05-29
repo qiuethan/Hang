@@ -24,7 +24,12 @@ const Home = () => {
     return(
         <div>
             <h1>Welcome to Hang!</h1>
-            <button onClick={logout}>Logout</button>
+            {
+                !(user == null) && 
+                <>
+                    <button onClick={logout}>Logout</button>
+                </>
+            }
         </div>
     );
 };
