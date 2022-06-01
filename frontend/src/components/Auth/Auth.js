@@ -8,7 +8,7 @@ import { GoogleLogin } from 'react-google-login';
 
 import { login, signup } from "../../actions/login.js";
 
-const initialState = {username: "", email: "", password: "", password1: "", password2: ""};
+const initialState = {username: "", email: "", password: ""};
 
 const Auth = (props) => {
 
@@ -17,6 +17,7 @@ const Auth = (props) => {
 
     const [inputs, setInputs] = useState(initialState);
     const [isSignup, setIsSignup] = useState(false);
+    const [confirm, setConfirm] = useState({confirmPassword: ""})
 
 
     const handleChange = (event) => {
@@ -29,11 +30,22 @@ const Auth = (props) => {
         event.preventDefault();
 
         if(isSignup){
-            dispatch(signup(inputs, history));
+            if(inputs.password == confirm.confirmPassword){  
+                dispatch(signup(inputs, history));
+            }
+            else{
+                console.log("Passwords don't match.")
+            }
         }
         else{
             dispatch(login(inputs, history));
         }
+    }
+
+    const confirmHandleChange = (event) => {
+        const name = event.target.name;
+        const value = event.target.value;
+        setConfirm(values => ({...values, [name] : value}));
     }
 
     const switchMode = () => {
@@ -80,45 +92,28 @@ const Auth = (props) => {
                     onChange = {handleChange}
                 />
             </label>
-            {
-                !isSignup && (
-                    <label>
-                        Password:
-                        <input
-                            type="password"
-                            name="password"
-                            value={inputs.password || ""}
-                            onChange = {handleChange}
-                        />
-                    </label>
-                )
-            }
-            {
-                isSignup && (
-                    <label>
-                        Password:
-                        <input 
-                            type="password" 
-                            name="password1" 
-                            value={inputs.password1 || ""} 
-                            onChange = {handleChange} 
-                        />
-                    </label>
-                )
-            }
+            <label>
+                Password:
+                <input
+                    type="password"
+                    name="password"
+                    value={inputs.password || ""}
+                    onChange = {handleChange}
+                />
+            </label>
             {
                 isSignup && (
                     <label>
                         Confirm Password:
                         <input 
                             type="password" 
-                            name="password2" 
-                            value={inputs.password2 || ""} 
-                            onChange = {handleChange} 
-                        />
+                            name="confirmPassword" 
+                            value={confirm.confirmPassword || ""} 
+                            onChange={confirmHandleChange} />
                     </label>
                 )
             }
+
             <button type="submit">{isSignup ? 'Sign Up' : "Login"}</button>
             </form>
             <button onClick={switchMode}>

@@ -19,7 +19,5 @@ from django.urls import include, path
 urlpatterns = [
     path('backend/', include('hang_backend_app.urls')),
     path('admin/', admin.site.urls),
-    path('dj-rest-auth/', include('dj_rest_auth.urls')),
-    path('dj-rest-auth/registration/', include('dj_rest_auth.registration.urls')),
-    path('dj-rest-auth/google/', include('google_auth.urls')),
+    path('', include('accounts.urls')),
 ]
