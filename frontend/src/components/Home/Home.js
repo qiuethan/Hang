@@ -15,7 +15,7 @@ const Home = () => {
     console.log(localStorage.getItem('profile'))
 
     const logOut = () => {
-        dispatch(logout())
+        dispatch(logout(user.token))
 
         history('/auth');
 

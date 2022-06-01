@@ -25,9 +25,9 @@ export const signup = (inputs, router) => async (dispatch) => {
     }
 }
 
-export const logout = () => async(dispatch) => {
+export const logout = (token) => async(dispatch) => {
     try{
-        const res = await api.logout();
+        const res = await api.logout(token);
         dispatch({type: LOGOUT});
     }
     catch (error){
