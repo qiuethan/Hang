@@ -12,3 +12,4 @@ API.interceptors.request.use((req) => {
 
 export const login = (inputs) => API.post('/api/auth/login', inputs);
 export const signin = (inputs) => API.post('/api/auth/register', inputs);
+export const logout = () => API.post('/api/auth/logout');

@@ -3,6 +3,7 @@ import * as actionTypes from "../../constants/actionTypes";
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { logout } from "../../actions/login";
 
 const Home = () => {
 
@@ -13,8 +14,8 @@ const Home = () => {
 
     console.log(localStorage.getItem('profile'))
 
-    const logout = () => {
-        dispatch({type: actionTypes.LOGOUT})
+    const logOut = () => {
+        dispatch(logout())
 
         history('/auth');
 
@@ -27,7 +28,7 @@ const Home = () => {
             {
                 !(user == null) && 
                 <>
-                    <button onClick={logout}>Logout</button>
+                    <button onClick={logOut}>Logout</button>
                 </>
             }
         </div>

@@ -1,5 +1,5 @@
 import * as api from '../api/index.js'
-import { LOGIN } from '../constants/actionTypes'
+import { LOGIN, LOGOUT } from '../constants/actionTypes'
 
 export const login = (inputs, router) => async (dispatch) => {
     try{
@@ -15,11 +15,20 @@ export const login = (inputs, router) => async (dispatch) => {
 
 export const signup = (inputs, router) => async (dispatch) => {
     try{
-        console.log(inputs);
         const { data } = await api.signin(inputs);
         dispatch({type: LOGIN, data})
 
         router('/')
+    }
+    catch (error){
+        console.log(error);
+    }
+}
+
+export const logout = () => async(dispatch) => {
+    try{
+        const res = await api.logout();
+        dispatch({type: LOGOUT});
     }
     catch (error){
         console.log(error);
