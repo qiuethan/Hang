@@ -47,11 +47,12 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
 
-    'hang_backend_app',
     'accounts',
     'knox',
 
     'corsheaders',
+    'channels',
+    'chat',
 ]
 
 REST_FRAMEWORK = {
@@ -92,6 +93,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'hang_backend.wsgi.application'
+ASGI_APPLICATION = "hang_backend.asgi.application"
 
 
 # Database
@@ -179,3 +181,9 @@ SOCIALACCOUNT_PROVIDERS = {
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 ACCOUNT_EMAIL_VERIFICATION = 'optional'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}

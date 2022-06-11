@@ -2,3 +2,6 @@ django
 django-rest-framework
 dj-rest-auth[with_social]
 django-cors-headers
+django-rest-knox
+boto3
+channels
