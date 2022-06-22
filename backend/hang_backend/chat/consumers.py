@@ -1,8 +1,6 @@
 # chat/consumers.py
 import time
-from django.utils import timezone
 import json
-from datetime import datetime
 
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
