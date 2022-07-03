@@ -1,38 +1,104 @@
 import time
 import json
+import string
+import random
 from datetime import datetime
+from urllib.robotparser import RequestRate
 
 from django.utils import timezone
 from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpResponseForbidden, HttpResponseNotFound, HttpResponseServerError, JsonResponse
+from django.contrib.auth.models import User
+
+from rest_framework import generics, permissions
+from rest_framework.response import Response
+from knox.models import AuthToken
+
+from httplib2 import Http
 
 from chat.models import MessageChannel, Message
 
 # Create your views here.
 
 
-def load_past_messages(request):
-    if request.method != 'POST':
-        return HttpResponseBadRequest()
-    chat_room = request.POST['room']
-    before = request.POST['before']
-    try:
-        m = MessageChannel.objects.get(id=chat_room)
-    except MessageChannel.DoesNotExist:
-        m = MessageChannel(id=chat_room)
-        m.save()
-    except MessageChannel.MultipleObjectsReturned:
-        pass
+class LoadMessage(generics.CreateAPIView):
+    permission_classes = [
+        permissions.IsAuthenticated,
+    ]
 
-    req_time = timezone.make_aware(datetime.fromtimestamp(before))
+    def get(self, request):
+        chat_room = request.GET['room']
+        before = int(request.GET['before'])
+        try:
+            m = MessageChannel.objects.get(id=chat_room)
+        except MessageChannel.DoesNotExist:
+            return HttpResponseNotFound()
+        except MessageChannel.MultipleObjectsReturned:
+            return HttpResponseServerError()
 
-    messages = m.message_set.all().filter(
-        created_at__lte=str(req_time)).order_by('-created_at')
+        if request.user.is_anonymous or not m.users.filter(id=request.user.id).exists():
+            return HttpResponseForbidden()
 
-    msg_list = []
+        req_time = timezone.make_aware(datetime.fromtimestamp(before))
 
-    for e in messages[:min(20, len(messages))]:
-        msg_list.append({'message': e.content, 'time': int(
-            time.mktime(e.created_at.timetuple()))})
+        messages = m.message_set.all().filter(
+            created_at__lte=str(req_time)).order_by('-created_at')
 
-    return HttpResponse(json.dumps(msg_list))
+        msg_list = []
+
+        for e in messages[:min(20, len(messages))]:
+            msg_list.append({'message': e.content, 'time': int(
+                time.mktime(e.created_at.timetuple()))})
+        return HttpResponse(json.dumps(msg_list))
+
+
+class CreateDM(generics.CreateAPIView):
+    permission_classes = [
+        permissions.IsAuthenticated,
+    ]
+
+    def post(self, request, *args, **kwargs):
+        to = request.POST.get('to', None)
+
+        to_u = User.objects.get(email=to)
+
+        try:
+            dm = request.user.messagechannel_set.all().filter(channel_type=0).get(users=to_u)
+
+            cid = dm.id
+        except MessageChannel.DoesNotExist:
+            def generate_random_string(): return ''.join(
+                [random.choice(string.ascii_letters) for _ in range(10)])
+            ss = generate_random_string()
+            while MessageChannel.objects.filter(id=ss).exists():
+                ss = generate_random_string()
+
+            m = MessageChannel(id=ss, channel_type=0)
+            m.save()
+
+            m.users.add(request.user)
+            m.users.add(to_u)
+
+            cid = ss
+        except MessageChannel.MultipleObjectsReturned:
+            pass
+        return HttpResponse(cid)
+
+# def open_dm(request):
+#     if request.method != 'POST':
+#         return HttpResponseBadRequest()
+#     print(request.user.is_authenticated)
+#     print(request.user)
+#     to = request.POST.get('to', None)
+#     generate_random_string = lambda: ''.join([random.choice(string.ascii_letters) for _ in range(10)])
+#     print(request.user)
+#     return HttpResponse(str(request.user.username))
+
+    # while
+    # try:
+    #     m = MessageChannel.objects.get(id=room_name)
+    # except MessageChannel.DoesNotExist:
+    #     m = MessageChannel(id=room_name)
+    #     m.save()
+    # except MessageChannel.MultipleObjectsReturned:
+    #     pass

@@ -14,10 +14,13 @@ class ChatConsumer(WebsocketConsumer):
         try:
             self.m = MessageChannel.objects.get(id=self.room_name)
         except MessageChannel.DoesNotExist:
-            self.m = MessageChannel(id=self.room_name)
-            self.m.save()
+            self.close(404)
         except MessageChannel.MultipleObjectsReturned:
-            pass
+            self.close(500)
+
+        if self.scope['user'].is_anonymous or not self.m.users.filter(id=self.scope['user'].id).exists():
+            self.close(403)
+        #print(self.m.users.all() == self.request.user)
 
         # Join room group
         async_to_sync(self.channel_layer.group_add)(
@@ -38,7 +41,7 @@ class ChatConsumer(WebsocketConsumer):
     def receive(self, text_data):
         text_data_json = json.loads(text_data)
 
-        #if text_data_json['type'] == 'send':
+        # if text_data_json['type'] == 'send':
         message = text_data_json['message']
         msg_obj = Message(content=message, message_channel=self.m)
         msg_obj.save()
@@ -59,21 +62,21 @@ class ChatConsumer(WebsocketConsumer):
 
         #     messages = self.m.message_set.all().filter(
         #         created_at__lte=str(req_time)).order_by('-created_at')
-            
+
         #     msg_list = []
 
         #     for e in messages[:min(20, len(messages))]:
         #         msg_list.append({'message': e.content, 'time': int(
         #             time.mktime(e.created_at.timetuple()))})
-                
+
         #     print(msg_list)
-            
 
     # Receive message from room group
 
     def chat_message(self, event):
         # Send message to WebSocket
         self.send(text_data=json.dumps({
+            'user': self.scope['user'].username,
             'message': event['message'],
             'time': event['time'],
         }))

@@ -3,7 +3,7 @@ from .api import LoginAPI, RegisterAPI, UserAPI
 from knox import views as knox_views
 
 urlpatterns = [
-    path('auth', include('knox.urls')),
+    #path('auth', include('knox.urls')),
     path('auth/register', RegisterAPI.as_view()),
     path('auth/login', LoginAPI.as_view()),
     path('auth/user', UserAPI.as_view()),
