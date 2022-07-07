@@ -6,7 +6,7 @@ const Chat = () => {
 
     return(
         // <Chatlist/>
-        <Chatroom/>
+        <Chatroom currentRoom={"ZVZiumzkul"}/>
     );
 }
 

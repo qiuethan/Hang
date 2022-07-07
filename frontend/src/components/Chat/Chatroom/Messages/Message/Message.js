@@ -6,6 +6,8 @@ const Message = ({ message }) => {
     const dispatch = useDispatch();
     const user = JSON.parse(localStorage.getItem('profile'));
 
+    console.log(message.time);
+
     return(
         //Message
         <div>
@@ -13,7 +15,7 @@ const Message = ({ message }) => {
                 {message.message}
             </div>
             <div>
-                {moment(message.sentAt).fromNow()}
+                {new Date(message.time*1000).toLocaleDateString()}
             </div>
         </div>
     )

@@ -1,5 +1,5 @@
 # chat/consumers.py
-import time
+import time, calendar
 import json
 
 from asgiref.sync import async_to_sync
@@ -45,7 +45,7 @@ class ChatConsumer(WebsocketConsumer):
         message = text_data_json['message']
         msg_obj = Message(content=message, message_channel=self.m)
         msg_obj.save()
-        msg_time = int(time.mktime(msg_obj.created_at.timetuple()))
+        msg_time = int(calendar.timegm(msg_obj.created_at.timetuple()))
         # Send message to room group
         async_to_sync(self.channel_layer.group_send)(
             self.room_name,
