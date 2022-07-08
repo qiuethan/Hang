@@ -15,3 +15,8 @@ class Message(models.Model):
     content = models.CharField(max_length=2000)
     message_channel = models.ForeignKey(
         MessageChannel, on_delete=models.CASCADE)
+
+# add get channel list
+# message id, editing, deleting
+# group chats
+# friend requests 
