@@ -43,40 +43,16 @@ class ChatConsumer(WebsocketConsumer):
             if text_data_json['type'] == 'send':
                 channel = text_data_json['channel']
                 message = text_data_json['message']
-                try:
-                    message_channel = MessageChannel.objects.get(id=channel)
-                    if not message_channel.users.filter(username=self.user.username).exists():
-                        raise MessageChannel.DoesNotExist()
-                except MessageChannel.DoesNotExist:
-                    async_to_sync(self.channel_layer.group_send)(
-                        self.channel_name,
-                        {
-                            'type': 'status',
-                            'message': 'message channel does not exist',
-                        }
-                    )
-                    return
-                except MessageChannel.MultipleObjectsReturned:
-                    async_to_sync(self.channel_layer.group_send)(
-                        self.channel_name,
-                        {
-                            'type': 'status',
-                            'message': 'internal server error',
-                        }
-                    )
+
+                message_channel = self.get_message_channel(channel)
+                if message_channel is None:
                     return
 
                 msg_obj = Message(user=self.user, content=message, message_channel=message_channel)
                 msg_obj.save()
                 msg_time = int(calendar.timegm(msg_obj.created_at.timetuple()))
 
-                async_to_sync(self.channel_layer.group_send)(
-                    self.channel_name,
-                    {
-                        'type': 'status',
-                        'message': 'success',
-                    }
-                )
+                self.success()
 
                 for e in message_channel.users.all():
                     async_to_sync(self.channel_layer.group_send)(
@@ -92,27 +68,9 @@ class ChatConsumer(WebsocketConsumer):
             elif text_data_json['type'] == 'load':
                 channel = text_data_json['channel']
                 before = text_data_json['before']
-                try:
-                    message_channel = MessageChannel.objects.get(id=channel)
-                    if not message_channel.users.filter(username=self.user.username).exists():
-                        raise MessageChannel.DoesNotExist()
-                except MessageChannel.DoesNotExist:
-                    async_to_sync(self.channel_layer.group_send)(
-                        self.channel_name,
-                        {
-                            'type': 'status',
-                            'message': 'message channel does not exist',
-                        }
-                    )
-                    return
-                except MessageChannel.MultipleObjectsReturned:
-                    async_to_sync(self.channel_layer.group_send)(
-                        self.channel_name,
-                        {
-                            'type': 'status',
-                            'message': 'internal server error',
-                        }
-                    )
+
+                message_channel = self.get_message_channel(channel)
+                if message_channel is None:
                     return
 
                 messages = message_channel.message_set.all().filter(
@@ -124,7 +82,8 @@ class ChatConsumer(WebsocketConsumer):
                         'id': e.id,
                         'user': e.user.username,
                         'message': e.content,
-                        'time': int(time.mktime(e.created_at.timetuple()))
+                        'created_at': int(time.mktime(e.created_at.timetuple())),
+                        'updated_at': int(time.mktime(e.updated_at.timetuple()))
                     }
                     )
 
@@ -135,14 +94,110 @@ class ChatConsumer(WebsocketConsumer):
                         'messages': msg_list,
                     }
                 )
+
+                self.success()
+            elif text_data_json['type'] == 'edit':
+                message_id = text_data_json['message_id']
+                new_message = text_data_json['new_message']
+
+                message = self.get_message(message_id)
+                if message is None:
+                    return
+
+                message_channel_id = message.message_channel_id
+
+                if message.user.id != self.user.id:
+                    self.error('cannot modify another user\'s message')
+                message.content = new_message
+                message.save()
+
+                message_channel = self.get_message_channel(message_channel_id)
+                if message_channel is None:
+                    return
+
+                self.success()
+
+                for e in message_channel.users.all():
+                    async_to_sync(self.channel_layer.group_send)(
+                        e.username,
+                        {
+                            'type': 'edit_message',
+                            'message_id': message_id,
+                            'new_message': new_message,
+                            'time': int(time.mktime(message.updated_at.timetuple()))
+                        }
+                    )
+            elif text_data_json['type'] == 'delete':
+                message_id = text_data_json['message_id']
+
+                message = self.get_message(message_id)
+                if message is None:
+                    return
+
+                message_channel_id = message.message_channel_id
+
+                if message.user.id != self.user.id:
+                    self.error('cannot modify another user\'s message')
+                    return
+                message.delete()
+
+                message_channel = self.get_message_channel(message_channel_id)
+                if message_channel is None:
+                    return
+
+                self.success()
+
+                for e in message_channel.users.all():
+                    async_to_sync(self.channel_layer.group_send)(
+                        e.username,
+                        {
+                            'type': 'delete_message',
+                            'message_id': message_id,
+                        }
+                    )
+
         except (JSONDecodeError, KeyError):
-            async_to_sync(self.channel_layer.group_send)(
-                self.channel_name,
-                {
-                    'type': 'status',
-                    'message': 'invalid json',
-                }
-            )
+            self.error('invalid json')
+
+    def get_message_channel(self, channel_id):
+        try:
+            message_channel = MessageChannel.objects.get(id=channel_id)
+            if not message_channel.users.filter(username=self.user.username).exists():
+                raise MessageChannel.DoesNotExist()
+            return message_channel
+        except MessageChannel.DoesNotExist:
+            self.error('message channel does not exist')
+        except MessageChannel.MultipleObjectsReturned:
+            self.error('internal server error')
+        return None
+
+    def get_message(self, message_id):
+        try:
+            message = Message.objects.get(id=message_id)
+            if message.user.id != self.user.id:
+                raise Message.DoesNotExist()
+            return message
+        except Message.DoesNotExist:
+            self.error('message does not exist')
+        return None
+
+    def success(self):
+        async_to_sync(self.channel_layer.send)(
+            self.channel_name,
+            {
+                'type': 'status',
+                'message': 'success',
+            }
+        )
+
+    def error(self, message):
+        async_to_sync(self.channel_layer.send)(
+            self.channel_name,
+            {
+                'type': 'status',
+                'message': message,
+            }
+        )
 
     def status(self, event):
         self.send(text_data=json.dumps({
@@ -164,4 +219,18 @@ class ChatConsumer(WebsocketConsumer):
         self.send(text_data=json.dumps({
             'type': 'load_message',
             'messages': event['messages'],
+        }))
+
+    def edit_message(self, event):
+        self.send(text_data=json.dumps({
+            'type': 'edit_message',
+            'message_id': event['message_id'],
+            'new_message': event['new_message'],
+            'time': event['time'],
+        }))
+
+    def delete_message(self, event):
+        self.send(text_data=json.dumps({
+            'type': 'delete_message',
+            'message_id': event['message_id'],
         }))
