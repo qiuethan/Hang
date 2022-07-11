@@ -6,8 +6,6 @@ const Message = ({ message }) => {
     const dispatch = useDispatch();
     const user = JSON.parse(localStorage.getItem('profile'));
 
-    console.log(message.time);
-
     return(
         //Message
         <div>
