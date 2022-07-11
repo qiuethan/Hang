@@ -1,22 +1,15 @@
-import time
 import json
-import string
 import random
+import string
+import time
 from datetime import datetime
-from urllib.robotparser import RequestRate
 
-from django.utils import timezone
-from django.shortcuts import render
-from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpResponseForbidden, HttpResponseNotFound, HttpResponseServerError, JsonResponse
+from .models import MessageChannel
 from django.contrib.auth.models import User
-
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound, HttpResponseServerError
+from django.utils import timezone
 from rest_framework import generics, permissions
-from rest_framework.response import Response
-from knox.models import AuthToken
 
-from httplib2 import Http
-
-from chat.models import MessageChannel, Message
 
 # Create your views here.
 
@@ -47,8 +40,13 @@ class LoadMessage(generics.CreateAPIView):
         msg_list = []
 
         for e in messages[:min(20, len(messages))]:
-            msg_list.append({'message': e.content, 'time': int(
-                time.mktime(e.created_at.timetuple()))})
+            msg_list.append({
+                'id': e.id,
+                'user': e.user.username,
+                'message': e.content,
+                'time': int(time.mktime(e.created_at.timetuple()))
+            }
+            )
         return HttpResponse(json.dumps(msg_list))
 
 
@@ -67,8 +65,10 @@ class CreateDM(generics.CreateAPIView):
 
             cid = dm.id
         except MessageChannel.DoesNotExist:
-            def generate_random_string(): return ''.join(
-                [random.choice(string.ascii_letters) for _ in range(10)])
+            def generate_random_string():
+                return ''.join(
+                    [random.choice(string.ascii_letters) for _ in range(10)])
+
             ss = generate_random_string()
             while MessageChannel.objects.filter(id=ss).exists():
                 ss = generate_random_string()
@@ -84,6 +84,26 @@ class CreateDM(generics.CreateAPIView):
             pass
         return HttpResponse(cid)
 
+
+class ListMessageChannels(generics.CreateAPIView):
+    permission_classes = [
+        permissions.IsAuthenticated,
+    ]
+
+    def get(self, request):
+        message_channels = request.user.messagechannel_set.all()
+        ret = []
+        for mc in message_channels:
+            ret.append({
+                "id": mc.id,
+                "users": [u.username for u in mc.users.all()],
+                "channel_type": mc.channel_type
+            })
+        return HttpResponse(json.dumps(ret))
+        # print({{"id": mc.id, "users": mc.users, "channel_type": mc.channel_type} for mc in message_channels})
+
+        return HttpResponse(0)
+
 # def open_dm(request):
 #     if request.method != 'POST':
 #         return HttpResponseBadRequest()
@@ -94,11 +114,11 @@ class CreateDM(generics.CreateAPIView):
 #     print(request.user)
 #     return HttpResponse(str(request.user.username))
 
-    # while
-    # try:
-    #     m = MessageChannel.objects.get(id=room_name)
-    # except MessageChannel.DoesNotExist:
-    #     m = MessageChannel(id=room_name)
-    #     m.save()
-    # except MessageChannel.MultipleObjectsReturned:
-    #     pass
+# while
+# try:
+#     m = MessageChannel.objects.get(id=room_name)
+# except MessageChannel.DoesNotExist:
+#     m = MessageChannel(id=room_name)
+#     m.save()
+# except MessageChannel.MultipleObjectsReturned:
+#     pass
