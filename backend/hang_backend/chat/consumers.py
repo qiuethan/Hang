@@ -1,30 +1,28 @@
 # chat/consumers.py
-import time, calendar
+import calendar
 import json
+import time
+from json import JSONDecodeError
 
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
-from chat.models import MessageChannel, Message
+from django.contrib.auth.models import User
+
+from .models import Message, MessageChannel
 
 
 class ChatConsumer(WebsocketConsumer):
     def connect(self):
-        self.room_name = self.scope['url_route']['kwargs']['room_name']
+        username = self.scope['url_route']['kwargs']['room_name']
 
-        try:
-            self.m = MessageChannel.objects.get(id=self.room_name)
-        except MessageChannel.DoesNotExist:
-            self.close(404)
-        except MessageChannel.MultipleObjectsReturned:
-            self.close(500)
-
-        if self.scope['user'].is_anonymous or not self.m.users.filter(id=self.scope['user'].id).exists():
+        if self.scope['user'].is_anonymous or username != self.scope['user'].username:
             self.close(403)
-        #print(self.m.users.all() == self.request.user)
+
+        self.user = User.objects.get(username=username)
 
         # Join room group
         async_to_sync(self.channel_layer.group_add)(
-            self.room_name,
+            self.user.username,
             self.channel_name
         )
 
@@ -33,50 +31,137 @@ class ChatConsumer(WebsocketConsumer):
     def disconnect(self, close_code):
         # Leave room group
         async_to_sync(self.channel_layer.group_discard)(
-            self.room_name,
+            self.user.username,
             self.channel_name
         )
 
     # Receive message from WebSocket
-    def receive(self, text_data):
-        text_data_json = json.loads(text_data)
+    def receive(self, text_data=None, bytes_data=None):
+        try:
+            text_data_json = json.loads(text_data)
 
-        # if text_data_json['type'] == 'send':
-        message = text_data_json['message']
-        msg_obj = Message(content=message, message_channel=self.m)
-        msg_obj.save()
-        msg_time = int(calendar.timegm(msg_obj.created_at.timetuple()))
-        # Send message to room group
-        async_to_sync(self.channel_layer.group_send)(
-            self.room_name,
-            {
-                'type': 'chat_message',
-                'message': message,
-                'time': msg_time,
-            }
-        )
-        # elif text_data_json['type'] == 'load':
-        #     before = text_data_json['before']
+            if text_data_json['type'] == 'send':
+                channel = text_data_json['channel']
+                message = text_data_json['message']
+                try:
+                    message_channel = MessageChannel.objects.get(id=channel)
+                    if not message_channel.users.filter(username=self.user.username).exists():
+                        raise MessageChannel.DoesNotExist()
+                except MessageChannel.DoesNotExist:
+                    async_to_sync(self.channel_layer.group_send)(
+                        self.channel_name,
+                        {
+                            'type': 'status',
+                            'message': 'message channel does not exist',
+                        }
+                    )
+                    return
+                except MessageChannel.MultipleObjectsReturned:
+                    async_to_sync(self.channel_layer.group_send)(
+                        self.channel_name,
+                        {
+                            'type': 'status',
+                            'message': 'internal server error',
+                        }
+                    )
+                    return
 
-        #     req_time = timezone.make_aware(datetime.fromtimestamp(int(before)))
+                msg_obj = Message(user=self.user, content=message, message_channel=message_channel)
+                msg_obj.save()
+                msg_time = int(calendar.timegm(msg_obj.created_at.timetuple()))
 
-        #     messages = self.m.message_set.all().filter(
-        #         created_at__lte=str(req_time)).order_by('-created_at')
+                async_to_sync(self.channel_layer.group_send)(
+                    self.channel_name,
+                    {
+                        'type': 'status',
+                        'message': 'success',
+                    }
+                )
 
-        #     msg_list = []
+                for e in message_channel.users.all():
+                    async_to_sync(self.channel_layer.group_send)(
+                        e.username,
+                        {
+                            'type': 'receive_message',
+                            'channel': channel,
+                            'user': self.user.username,
+                            'message': message,
+                            'time': msg_time,
+                        }
+                    )
+            elif text_data_json['type'] == 'load':
+                channel = text_data_json['channel']
+                before = text_data_json['before']
+                try:
+                    message_channel = MessageChannel.objects.get(id=channel)
+                    if not message_channel.users.filter(username=self.user.username).exists():
+                        raise MessageChannel.DoesNotExist()
+                except MessageChannel.DoesNotExist:
+                    async_to_sync(self.channel_layer.group_send)(
+                        self.channel_name,
+                        {
+                            'type': 'status',
+                            'message': 'message channel does not exist',
+                        }
+                    )
+                    return
+                except MessageChannel.MultipleObjectsReturned:
+                    async_to_sync(self.channel_layer.group_send)(
+                        self.channel_name,
+                        {
+                            'type': 'status',
+                            'message': 'internal server error',
+                        }
+                    )
+                    return
 
-        #     for e in messages[:min(20, len(messages))]:
-        #         msg_list.append({'message': e.content, 'time': int(
-        #             time.mktime(e.created_at.timetuple()))})
+                messages = message_channel.message_set.all().filter(
+                    id__lte=before).order_by('-id')
 
-        #     print(msg_list)
+                msg_list = []
+                for e in messages[:min(20, len(messages))]:
+                    msg_list.append({
+                        'id': e.id,
+                        'user': e.user.username,
+                        'message': e.content,
+                        'time': int(time.mktime(e.created_at.timetuple()))
+                    }
+                    )
 
-    # Receive message from room group
+                async_to_sync(self.channel_layer.send)(
+                    self.channel_name,
+                    {
+                        'type': 'load_message',
+                        'messages': msg_list,
+                    }
+                )
+        except (JSONDecodeError, KeyError):
+            async_to_sync(self.channel_layer.group_send)(
+                self.channel_name,
+                {
+                    'type': 'status',
+                    'message': 'invalid json',
+                }
+            )
 
-    def chat_message(self, event):
+    def status(self, event):
+        self.send(text_data=json.dumps({
+            'type': 'status',
+            'message': event['message'],
+        }))
+
+    def receive_message(self, event):
         # Send message to WebSocket
         self.send(text_data=json.dumps({
-            'user': self.scope['user'].username,
+            'type': 'receive_message',
+            'channel': event['channel'],
+            'user': event['user'],
             'message': event['message'],
             'time': event['time'],
+        }))
+
+    def load_message(self, event):
+        self.send(text_data=json.dumps({
+            'type': 'load_message',
+            'messages': event['messages'],
         }))

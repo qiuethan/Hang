@@ -1,53 +1,12 @@
 import json
 import random
 import string
-import time
-from datetime import datetime
 
-from .models import MessageChannel
 from django.contrib.auth.models import User
-from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound, HttpResponseServerError
-from django.utils import timezone
+from django.http import HttpResponse
 from rest_framework import generics, permissions
 
-
-# Create your views here.
-
-
-class LoadMessage(generics.CreateAPIView):
-    permission_classes = [
-        permissions.IsAuthenticated,
-    ]
-
-    def get(self, request):
-        chat_room = request.GET['room']
-        before = int(request.GET['before'])
-        try:
-            m = MessageChannel.objects.get(id=chat_room)
-        except MessageChannel.DoesNotExist:
-            return HttpResponseNotFound()
-        except MessageChannel.MultipleObjectsReturned:
-            return HttpResponseServerError()
-
-        if request.user.is_anonymous or not m.users.filter(id=request.user.id).exists():
-            return HttpResponseForbidden()
-
-        req_time = timezone.make_aware(datetime.fromtimestamp(before))
-
-        messages = m.message_set.all().filter(
-            created_at__lte=str(req_time)).order_by('-created_at')
-
-        msg_list = []
-
-        for e in messages[:min(20, len(messages))]:
-            msg_list.append({
-                'id': e.id,
-                'user': e.user.username,
-                'message': e.content,
-                'time': int(time.mktime(e.created_at.timetuple()))
-            }
-            )
-        return HttpResponse(json.dumps(msg_list))
+from .models import MessageChannel
 
 
 class CreateDM(generics.CreateAPIView):
@@ -85,12 +44,12 @@ class CreateDM(generics.CreateAPIView):
         return HttpResponse(cid)
 
 
-class ListMessageChannels(generics.CreateAPIView):
+class ListMessageChannels(generics.ListAPIView):
     permission_classes = [
         permissions.IsAuthenticated,
     ]
 
-    def get(self, request):
+    def get(self, request, **kwargs):
         message_channels = request.user.messagechannel_set.all()
         ret = []
         for mc in message_channels:
@@ -101,8 +60,6 @@ class ListMessageChannels(generics.CreateAPIView):
             })
         return HttpResponse(json.dumps(ret))
         # print({{"id": mc.id, "users": mc.users, "channel_type": mc.channel_type} for mc in message_channels})
-
-        return HttpResponse(0)
 
 # def open_dm(request):
 #     if request.method != 'POST':
