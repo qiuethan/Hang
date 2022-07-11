@@ -5,5 +5,6 @@ from . import views
 
 urlpatterns = [
     path('load/', views.LoadMessage.as_view(), name='LoadMessage'),
-    path('open_dm/', views.CreateDM.as_view(), name='open_dm'),
+    path('create_dm/', views.CreateDM.as_view(), name='CreateDM'),
+    path('list_channels/', views.ListMessageChannels.as_view(), name='ListMessageChannels'),
 ]
