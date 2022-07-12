@@ -1,8 +1,8 @@
-import { LOADMESSAGES  } from "../constants/actionTypes";
+import { LOADROOMS } from "../constants/actionTypes";
 
 export default (messages = [], action) => {
     switch (action.type){
-        case LOADMESSAGES:
+        case LOADROOMS:
             return action.payload;
         default: 
             return messages;
