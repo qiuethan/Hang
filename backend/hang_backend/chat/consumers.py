@@ -67,7 +67,7 @@ class ChatConsumer(WebsocketConsumer):
                     )
             elif text_data_json['type'] == 'load':
                 channel = text_data_json['channel']
-                before = text_data_json['before']
+                before = text_data_json.get('before', Message.objects.latest('id').id + 1000000000)
 
                 message_channel = self.get_message_channel(channel)
                 if message_channel is None:
