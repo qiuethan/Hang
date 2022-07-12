@@ -18,6 +18,7 @@ const Messages = ({ client, currentRoom, clientOpened }) => {
     }, [currentRoom, clientOpened]);
 
     client.onmessage = (message) => {
+        console.log(message);
         const messageObject = JSON.parse(message.data);
         if(messageObject.type === "status"){
             if(messageObject.message != "success"){
@@ -27,7 +28,9 @@ const Messages = ({ client, currentRoom, clientOpened }) => {
         if(messageObject.type === "load_message"){
             setMessages([...messages, ...messageObject.messages])
         }
-        
+        if(messageObject.type === "receive_message"){
+            setMessages([messageObject.message, ...messages])
+        }
     }
 
     console.log(messages);
