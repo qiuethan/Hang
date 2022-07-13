@@ -1,23 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { loadmessages } from '../../../actions/chat';
-import { w3cwebsocket as W3CWebSocket } from "websocket";
 
+import Form from './Form/Form';
 import Messages from './Messages/Messages';
 
-const Chatroom = ({ currentRoom }) => {
-    const dispatch = useDispatch();
-    
-    const [client, setClient] = useState();
+const Chatroom = ({ client, currentRoom }) => {
 
-    useEffect(() => {
-        setClient(new W3CWebSocket(`ws://localhost:8000/ws/chat/${currentRoom}/`));
-    }, [currentRoom]);
-
-    console.log(client);
+    const [clientOpened, setClientOpen] = useState(false);
 
     client.onopen = () => {
         console.log("Client Connected");
+        setClientOpen(true);
     }
 
     client.onmessage = (message) => {
@@ -25,8 +19,10 @@ const Chatroom = ({ currentRoom }) => {
     }
 
     return(
-        <Messages/>
-        //<Form/>
+        <div>
+            <Messages client={client} currentRoom={currentRoom} clientOpened={clientOpened}/>
+            <Form client={client}/>
+        </div>
     );
 }
 

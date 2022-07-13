@@ -1,16 +1,42 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 
 import Message from './Message/Message';
 
-const Messages = () => {
-    const messages = useSelector((state) => state.chat);
+const Messages = ({ client, currentRoom, clientOpened }) => {
+    
+    const [messages, setMessages] = useState([]);
+
+    useEffect(() => {
+        if(clientOpened){
+            client.send(JSON.stringify({
+                type: "load",
+                channel: currentRoom
+            }));
+        }
+        console.log(currentRoom);
+    }, [currentRoom, clientOpened]);
+
+    client.onmessage = (message) => {
+        const messageObject = JSON.parse(message.data);
+        if(messageObject.type === "status"){
+            if(messageObject.message != "success"){
+                console.log(message);
+            }
+        }
+        if(messageObject.type === "load_message"){
+            setMessages([...messages, ...messageObject.messages])
+        }
+        
+    }
+
+    console.log(messages);
 
     return(
-        (messages.length === 0) ?  <div/>: <div>
-            {messages.map((message) => 
-                <Message message = {message} />
-            )}
+        messages.length === 0 ? <div/> : <div>
+            {messages.map((message) => (
+                <Message message={message}/>
+            ))}
         </div>
     );
 }

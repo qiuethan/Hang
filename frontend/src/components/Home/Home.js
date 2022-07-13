@@ -11,7 +11,8 @@ const Home = () => {
     const history = useNavigate();
 
     const [user, setUser] = useState(JSON.parse(localStorage.getItem('profile')));
-    
+
+    console.log(JSON.parse(localStorage.getItem('profile')).user.username);
     console.log(localStorage.getItem('profile'));
 
     const logOut = () => {

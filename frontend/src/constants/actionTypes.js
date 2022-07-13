@@ -1,4 +1,4 @@
-export const LOGIN = 'LOGIN'
-export const LOGOUT = 'LOGOUT'
+export const LOGIN = 'LOGIN';
+export const LOGOUT = 'LOGOUT';
 
-export const LOADMESSAGES = 'LOADMESSAGES'
+export const LOADROOMS = 'LOADROOMS';
