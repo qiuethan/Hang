@@ -59,23 +59,3 @@ class ListMessageChannels(generics.ListAPIView):
                 "channel_type": mc.channel_type
             })
         return HttpResponse(json.dumps(ret))
-        # print({{"id": mc.id, "users": mc.users, "channel_type": mc.channel_type} for mc in message_channels})
-
-# def open_dm(request):
-#     if request.method != 'POST':
-#         return HttpResponseBadRequest()
-#     print(request.user.is_authenticated)
-#     print(request.user)
-#     to = request.POST.get('to', None)
-#     generate_random_string = lambda: ''.join([random.choice(string.ascii_letters) for _ in range(10)])
-#     print(request.user)
-#     return HttpResponse(str(request.user.username))
-
-# while
-# try:
-#     m = MessageChannel.objects.get(id=room_name)
-# except MessageChannel.DoesNotExist:
-#     m = MessageChannel(id=room_name)
-#     m.save()
-# except MessageChannel.MultipleObjectsReturned:
-#     pass

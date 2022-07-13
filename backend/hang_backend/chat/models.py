@@ -11,7 +11,6 @@ class MessageChannel(models.Model):
 
 
 class Message(models.Model):
-    id = models.IntegerField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -19,7 +18,6 @@ class Message(models.Model):
     message_channel = models.ForeignKey(
         MessageChannel, on_delete=models.CASCADE)
 
-# add get channel list
-# message id, editing, deleting
+# Email verif
 # group chats
 # friend requests
