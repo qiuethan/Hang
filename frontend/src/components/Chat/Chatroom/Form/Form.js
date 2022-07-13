@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const Form = ({ client }) => {
+const Form = ({ client, currentRoom }) => {
 
     const [message, setMessage] = useState("");
 
@@ -8,6 +8,8 @@ const Form = ({ client }) => {
         event.preventDefault();
 
         client.send(JSON.stringify({
+            type: "send",
+            channel: currentRoom,
             message: message
         }));
 

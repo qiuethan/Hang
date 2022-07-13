@@ -21,7 +21,7 @@ const Chatroom = ({ client, currentRoom }) => {
     return(
         <div>
             <Messages client={client} currentRoom={currentRoom} clientOpened={clientOpened}/>
-            <Form client={client}/>
+            <Form client={client} currentRoom={currentRoom}/>
         </div>
     );
 }

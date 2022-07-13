@@ -7,10 +7,10 @@ const Message = ({ message }) => {
         //Message
         <div>
             <div>
-                {message.message}
+                {message.content}
             </div>
             <div>
-                {new Date(message.created_at*1000).toLocaleDateString()}
+                {new Date(message.created_at).toLocaleDateString()}
             </div>
         </div>
     )

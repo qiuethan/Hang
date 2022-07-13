@@ -87,6 +87,7 @@ Design:
     - Create actual event on Google Calendar (Calendar for the app)
     - *Configure as vote or dictatorship
     - *Location recommendations + user interests?
+    - Can see previous hangs as well as photos
 - Features:
   - Invite Friends
 

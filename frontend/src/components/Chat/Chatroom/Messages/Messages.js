@@ -29,7 +29,12 @@ const Messages = ({ client, currentRoom, clientOpened }) => {
             setMessages([...messages, ...messageObject.messages])
         }
         if(messageObject.type === "receive_message"){
-            setMessages([messageObject.message, ...messages])
+            if(messageObject.message.message_channel.id === currentRoom){  
+                setMessages([messageObject.message, ...messages])
+            }
+            else{
+                
+            }
         }
     }
 
