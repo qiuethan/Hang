@@ -1,14 +1,12 @@
 # chat/consumers.py
-import calendar
 import json
-import time
-from json import JSONDecodeError
 
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
 from django.contrib.auth.models import User
 
 from .models import Message, MessageChannel
+from .serializers import MessageSerializer
 
 
 class ChatConsumer(WebsocketConsumer):
@@ -50,8 +48,6 @@ class ChatConsumer(WebsocketConsumer):
 
                 msg_obj = Message(user=self.user, content=message, message_channel=message_channel)
                 msg_obj.save()
-                msg_time = int(calendar.timegm(msg_obj.created_at.timetuple()))
-
                 self.success()
 
                 for e in message_channel.users.all():
@@ -59,10 +55,7 @@ class ChatConsumer(WebsocketConsumer):
                         e.username,
                         {
                             'type': 'receive_message',
-                            'channel': channel,
-                            'user': self.user.username,
-                            'message': message,
-                            'time': msg_time,
+                            'message': MessageSerializer(msg_obj).data,
                         }
                     )
             elif text_data_json['type'] == 'load':
@@ -78,14 +71,7 @@ class ChatConsumer(WebsocketConsumer):
 
                 msg_list = []
                 for e in messages[:min(20, len(messages))]:
-                    msg_list.append({
-                        'id': e.id,
-                        'user': e.user.username,
-                        'message': e.content,
-                        'created_at': int(time.mktime(e.created_at.timetuple())),
-                        'updated_at': int(time.mktime(e.updated_at.timetuple()))
-                    }
-                    )
+                    msg_list.append(MessageSerializer(e).data)
 
                 async_to_sync(self.channel_layer.send)(
                     self.channel_name,
@@ -122,9 +108,7 @@ class ChatConsumer(WebsocketConsumer):
                         e.username,
                         {
                             'type': 'edit_message',
-                            'message_id': message_id,
-                            'new_message': new_message,
-                            'time': int(time.mktime(message.updated_at.timetuple()))
+                            'message': MessageSerializer(message).data
                         }
                     )
             elif text_data_json['type'] == 'delete':
@@ -152,11 +136,11 @@ class ChatConsumer(WebsocketConsumer):
                         e.username,
                         {
                             'type': 'delete_message',
-                            'message_id': message_id,
+                            'id': message_id,
                         }
                     )
 
-        except (JSONDecodeError, KeyError):
+        except (json.JSONDecodeError, KeyError):
             self.error('invalid json')
 
     def get_message_channel(self, channel_id):
@@ -209,10 +193,7 @@ class ChatConsumer(WebsocketConsumer):
         # Send message to WebSocket
         self.send(text_data=json.dumps({
             'type': 'receive_message',
-            'channel': event['channel'],
-            'user': event['user'],
             'message': event['message'],
-            'time': event['time'],
         }))
 
     def load_message(self, event):
@@ -224,13 +205,11 @@ class ChatConsumer(WebsocketConsumer):
     def edit_message(self, event):
         self.send(text_data=json.dumps({
             'type': 'edit_message',
-            'message_id': event['message_id'],
-            'new_message': event['new_message'],
-            'time': event['time'],
+            'message': event['message'],
         }))
 
     def delete_message(self, event):
         self.send(text_data=json.dumps({
             'type': 'delete_message',
-            'message_id': event['message_id'],
+            'id': event['id'],
         }))
