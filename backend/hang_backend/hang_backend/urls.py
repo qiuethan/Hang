@@ -22,5 +22,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('chat/', include('chat.urls')),
     path('csrf/', views.csrf, name='csrf'),
-    path('', include('accounts.urls')),
+    path('auth/', include('accounts.urls')),
 ]
