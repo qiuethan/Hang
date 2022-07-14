@@ -90,6 +90,7 @@ Design:
     - Can see previous hangs as well as photos
 - Features:
   - Invite Friends
+  - Email Verification: Must create a stop account button on the email in case it's not theirs
 
 *Follow layout of other apps for now
 
