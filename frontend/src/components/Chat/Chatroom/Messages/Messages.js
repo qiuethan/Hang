@@ -21,7 +21,7 @@ const Messages = ({ client, currentRoom, clientOpened }) => {
         console.log(message);
         const messageObject = JSON.parse(message.data);
         if(messageObject.type === "status"){
-            if(messageObject.message != "success"){
+            if(messageObject.message !== "success"){
                 console.log(message);
             }
         }
