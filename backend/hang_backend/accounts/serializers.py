@@ -21,17 +21,20 @@ class RegisterSerializer(serializers.ModelSerializer):
     email = serializers.EmailField()
     password = serializers.CharField()
 
-    validators = [
-        UniqueTogetherValidator(
-            queryset=User.objects.all(),
-            fields=['email']
-        ),
-    ]
-
     class Meta:
         model = User
         fields = ('id', 'username', 'email', 'password')
         extra_kwargs = {'password': {'write_only': True}}
+
+    def validate_username(self, data):
+        if User.objects.filter(username=data).exists():
+            raise serializers.ValidationError("The username must be unique.")
+        return data
+
+    def validate_email(self, data):
+        if User.objects.filter(email=data).exists():
+            raise serializers.ValidationError("The email must be unique.")
+        return data
 
     def validate_password(self, data):
         validate_password(password=data, user=User)
@@ -52,9 +55,9 @@ class LoginSerializer(serializers.Serializer):
         user = authenticate(**data)
         if user and user.is_active:
             if not user.settings.is_verified:
-                raise serializers.ValidationError("User is not verified")
+                raise serializers.ValidationError("User is not verified.")
             return user
-        raise serializers.ValidationError("Incorrect Credentials")
+        raise serializers.ValidationError("Incorrect Credentials.")
 
 
 class SendEmailSerializer(serializers.Serializer):
@@ -65,9 +68,9 @@ class SendEmailSerializer(serializers.Serializer):
         user = authenticate(**data)
         if user and user.is_active:
             if user.settings.is_verified:
-                raise serializers.ValidationError("User is already verified")
+                raise serializers.ValidationError("User is already verified.")
             return user
-        raise serializers.ValidationError("Incorrect Credentials")
+        raise serializers.ValidationError("Incorrect Credentials.")
 
 
 class VerifyEmailSerializer(serializers.Serializer):
@@ -75,10 +78,10 @@ class VerifyEmailSerializer(serializers.Serializer):
 
     def validate(self, data):
         if not EmailAuthToken.objects.filter(id=data['token']).exists():
-            raise serializers.ValidationError("Token does not exist")
+            raise serializers.ValidationError("Token does not exist.")
         token = EmailAuthToken.objects.get(id=data['token'])
         if token.user.settings.is_verified:
-            raise serializers.ValidationError("User is already verified")
+            raise serializers.ValidationError("User is already verified.")
         if datetime.now(timezone.utc) - token.created_at > timedelta(days=1):
-            raise serializers.ValidationError("Token expired")
+            raise serializers.ValidationError("Token expired.")
         return token.user

@@ -6,7 +6,7 @@ from channels.generic.websocket import WebsocketConsumer
 from django.contrib.auth.models import User
 
 from .models import Message, MessageChannel
-from .serializers import MessageSerializer
+from .serializers import MessageSerializer, SendMessageSerializer
 
 
 class ChatConsumer(WebsocketConsumer):
@@ -37,25 +37,27 @@ class ChatConsumer(WebsocketConsumer):
     def receive(self, text_data=None, bytes_data=None):
         try:
             text_data_json = json.loads(text_data)
+            text_data_json['user'] = {'username': self.user.username}
 
             if text_data_json['type'] == 'send':
-                channel = text_data_json['channel']
-                message = text_data_json['message']
+                serializer = SendMessageSerializer(data=text_data_json)
+                serializer.is_valid()
 
-                message_channel = self.get_message_channel(channel)
-                if message_channel is None:
+                if not serializer.is_valid():
+                    self.error(json.loads(json.dumps(serializer.errors)))
                     return
 
-                msg_obj = Message(user=self.user, content=message, message_channel=message_channel)
-                msg_obj.save()
+
+                message = serializer.save()
+
                 self.success()
 
-                for e in message_channel.users.all():
+                for e in message.message_channel.users.all():
                     async_to_sync(self.channel_layer.group_send)(
                         e.username,
                         {
                             'type': 'receive_message',
-                            'message': MessageSerializer(msg_obj).data,
+                            'message': MessageSerializer(message).data,
                         }
                     )
             elif text_data_json['type'] == 'load':

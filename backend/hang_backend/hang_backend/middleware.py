@@ -1,17 +1,16 @@
+from knox.auth import TokenAuthentication
 from channels.auth import AuthMiddlewareStack
 from channels.db import database_sync_to_async
 from django.contrib.auth.models import AnonymousUser
 from rest_framework import exceptions
 
-from rest_framework.authtoken.models import Token
-import knox
 
 @database_sync_to_async
 def get_user(headers):
     try:
         token_name, token_key = headers[b'authorization'].decode().split()
         if token_name == 'Token':
-            auth = knox.auth.TokenAuthentication().authenticate_credentials(
+            auth = TokenAuthentication().authenticate_credentials(
                 token_key.encode('utf-8'))
             return auth[0]
     except exceptions.AuthenticationFailed:
@@ -48,5 +47,5 @@ class TokenAuthMiddlewareInstance:
         return await inner(receive, send)
 
 
-def TokenAuthMiddlewareStack(inner): return TokenAuthMiddleware(
-    AuthMiddlewareStack(inner))
+def TokenAuthMiddlewareStack(inner):
+    return TokenAuthMiddleware(AuthMiddlewareStack(inner))

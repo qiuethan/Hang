@@ -3,24 +3,27 @@ import random
 import string
 
 from django.contrib.auth.models import User
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from rest_framework import generics, permissions
 
 from .models import MessageChannel
+from .serializers import CreateDMSerializer
 
 
-class CreateDM(generics.CreateAPIView):
+class CreateDMView(generics.CreateAPIView):
     permission_classes = [
         permissions.IsAuthenticated,
     ]
+    serializer_class = CreateDMSerializer
 
     def post(self, request, *args, **kwargs):
-        to = request.POST.get('to', None)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        to_u = User.objects.get(email=to)
+        user = serializer.validated_data
 
         try:
-            dm = request.user.messagechannel_set.all().filter(channel_type=0).get(users=to_u)
+            dm = request.user.messagechannel_set.all().filter(channel_type=0).get(users=user)
 
             cid = dm.id
         except MessageChannel.DoesNotExist:
@@ -36,15 +39,15 @@ class CreateDM(generics.CreateAPIView):
             m.save()
 
             m.users.add(request.user)
-            m.users.add(to_u)
+            m.users.add(user)
 
             cid = ss
         except MessageChannel.MultipleObjectsReturned:
-            pass
+            return JsonResponse({"email": ["Cannot create a DM with yourself."]})
         return HttpResponse(cid)
 
 
-class ListMessageChannels(generics.ListAPIView):
+class ListMessageChannelsView(generics.ListAPIView):
     permission_classes = [
         permissions.IsAuthenticated,
     ]
