@@ -10,6 +10,7 @@ export const login = (inputs, router) => async (dispatch) => {
     }
     catch(error){
         console.log(error);
+        return(error);
     }
 }
 
@@ -21,6 +22,15 @@ export const signup = (inputs, router) => async (dispatch) => {
         router('/')
     }
     catch (error){
+        console.log(error);
+    }
+}
+
+export const sendemail = (inputs) => async (dispatch) => {
+    try{
+        const { data } = await api.sendemail(inputs);
+    }
+    catch(error){
         console.log(error);
     }
 }
