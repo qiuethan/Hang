@@ -7,7 +7,7 @@ from django.db import models
 class MessageChannel(models.Model):
     id = models.CharField(max_length=10, primary_key=True)
     users = models.ManyToManyField(User)
-    channel_type = models.IntegerField()  # 0: dm
+    channel_type = models.CharField(max_length=2, choices=(("DM", "Direct Message"), ("GC", "Group Chat")))
 
 
 class Message(models.Model):

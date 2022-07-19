@@ -1,8 +1,9 @@
 # chat/consumers.py
 import json
 
-from asgiref.sync import async_to_sync
-from channels.generic.websocket import WebsocketConsumer
+from asgiref.sync import sync_to_async, async_to_sync
+from channels.db import database_sync_to_async
+from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import User
 
 from .models import Message, MessageChannel
@@ -10,77 +11,74 @@ from .serializers import MessageSerializer, SendMessageSerializer, LoadMessageSe
     DeleteMessageSerializer
 
 
-class ChatConsumer(WebsocketConsumer):
-    def connect(self):
+class ChatConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
         username = self.scope['url_route']['kwargs']['room_name']
 
         if self.scope['user'].is_anonymous or username != self.scope['user'].username:
-            self.close(403)
+            await self.close(403)
 
-        self.user = User.objects.get(username=username)
+        self.user = await database_sync_to_async(User.objects.get)(username=username)
 
-        async_to_sync(self.channel_layer.group_add)(
+        await self.channel_layer.group_add(
             self.user.username,
             self.channel_name
         )
 
-        self.accept()
+        await self.accept()
 
-    def disconnect(self, close_code):
-        async_to_sync(self.channel_layer.group_discard)(
+    async def disconnect(self, close_code):
+        await self.channel_layer.group_discard(
             self.user.username,
             self.channel_name
         )
 
-    def receive(self, text_data=None, bytes_data=None):
+    async def receive(self, text_data=None, bytes_data=None):
         try:
             text_data_json = json.loads(text_data)
             text_data_json['user'] = {'username': self.user.username}
 
-            if text_data_json['type'] == 'send':
-                self.send_message(text_data_json)
-            elif text_data_json['type'] == 'load':
-                self.load_message(text_data_json)
-            elif text_data_json['type'] == 'edit':
-                self.edit_message(text_data_json)
-            elif text_data_json['type'] == 'delete':
-                self.delete_message(text_data_json)
+            await getattr(self, text_data_json['type'])(text_data_json)
 
         except (json.JSONDecodeError, KeyError):
-            self.error('Invalid json.')
+            await self.error('Invalid json.')
         except (Exception,) as e:
-            self.error('Internal server error.')
+            await self.error('Internal server error.')
 
-    def send_message(self, data):
+    async def send_message(self, data):
         serializer = SendMessageSerializer(data=data)
-        serializer.is_valid()
 
-        if not serializer.is_valid():
-            self.error(json.loads(json.dumps(serializer.errors)))
+        if not await database_sync_to_async(serializer.is_valid)():
+            await self.error(json.loads(json.dumps(serializer.errors)))
             return
 
-        message = serializer.save()
+        message = await database_sync_to_async(serializer.save)()
 
-        self.success()
+        await self.success()
 
-        for e in message.message_channel.users.all():
-            async_to_sync(self.channel_layer.group_send)(
-                e.username,
-                {
-                    'type': 'action',
-                    'action': 'send_message',
-                    'content': {
-                        'message': MessageSerializer(message).data,
-                    },
-                }
-            )
+        message_serializer = await sync_to_async(MessageSerializer)(message)
 
-    def load_message(self, data):
+        @sync_to_async
+        def send_messages():
+            for user in message.message_channel.users.all():
+                async_to_sync(self.channel_layer.group_send)(
+                    user.username,
+                    {
+                        'type': 'action',
+                        'action': 'send_message',
+                        'content': {
+                            'message': message_serializer.data,
+                        },
+                    }
+                )
+
+        await send_messages()
+
+    async def load_message(self, data):
         serializer = LoadMessageSerializer(data=data)
-        serializer.is_valid()
 
-        if not serializer.is_valid():
-            self.error(json.loads(json.dumps(serializer.errors)))
+        if not await database_sync_to_async(serializer.is_valid)():
+            await self.error(json.loads(json.dumps(serializer.errors)))
             return
 
         message_channel = serializer.validated_data['message_channel']
@@ -92,87 +90,109 @@ class ChatConsumer(WebsocketConsumer):
             messages = message_channel.message_set.all().filter(
                 id__lte=message_id).order_by('-id')
 
-        msg_list = [MessageSerializer(e).data for e in messages[:min(20, len(messages))]]
+        @sync_to_async
+        def generate_message_list():
+            return [MessageSerializer(e).data for e in messages[:min(20, len(messages))]]
 
-        self.success()
+        message_list = await generate_message_list()
 
-        async_to_sync(self.channel_layer.send)(
+        await self.success()
+
+        await self.channel_layer.send(
             self.channel_name,
             {
                 'type': 'action',
                 'action': 'load_message',
                 'content': {
-                    'messages': msg_list,
+                    'messages': message_list,
                 }
             }
         )
 
-    def edit_message(self, data):
+    async def edit_message(self, data):
         serializer = EditMessageSerializer(data=data)
-        serializer.is_valid()
 
-        if not serializer.is_valid():
-            self.error(json.loads(json.dumps(serializer.errors)))
+        if not await database_sync_to_async(serializer.is_valid)():
+            await self.error(json.loads(json.dumps(serializer.errors)))
             return
 
         message_id = serializer.validated_data['message_id']
         content = serializer.validated_data['content']
-        message = Message.objects.get(id=message_id)
+        message = await database_sync_to_async(Message.objects.get)(id=message_id)
 
         message_channel_id = message.message_channel_id
 
         message.content = content
-        message.save()
+        await database_sync_to_async(message.save)()
 
-        self.success()
+        await self.success()
 
-        for e in MessageChannel.objects.get(id=message_channel_id).users.all():
-            async_to_sync(self.channel_layer.group_send)(
-                e.username,
-                {
-                    'type': 'action',
-                    'action': 'edit_message',
-                    'content': {
-                        'message': MessageSerializer(message).data
+        message_serializer = await sync_to_async(MessageSerializer)(message)
+
+        @database_sync_to_async
+        def send_messages():
+            for user in MessageChannel.objects.get(id=message_channel_id).users.all():
+                async_to_sync(self.channel_layer.group_send)(
+                    user.username,
+                    {
+                        'type': 'action',
+                        'action': 'edit_message',
+                        'content': {
+                            'message': message_serializer.data
+                        }
                     }
-                }
-            )
+                )
 
-    def delete_message(self, data):
+        await send_messages()
+
+    async def delete_message(self, data):
         serializer = DeleteMessageSerializer(data=data)
-        serializer.is_valid()
 
-        if not serializer.is_valid():
-            self.error(json.loads(json.dumps(serializer.errors)))
+        if not await sync_to_async(serializer.is_valid)():
+            await self.error(json.loads(json.dumps(serializer.errors)))
             return
 
-        message = Message.objects.get(id=serializer.validated_data['message_id'])
-        message_channel = message.message_channel
+        @database_sync_to_async
+        def delete_message_from_db():
+            message = Message.objects.get(id=serializer.validated_data['message_id'])
+            mc = message.message_channel
+            message.delete()
+            return mc
 
-        message.delete()
+        message_channel = await delete_message_from_db()
 
-        self.success()
+        await self.success()
 
-        for e in message_channel.users.all():
-            async_to_sync(self.channel_layer.group_send)(
-                e.username,
-                {
-                    'type': 'action',
-                    'action': 'delete_message',
-                    'content': {
-                        'id': serializer.validated_data['message_id'],
+        @database_sync_to_async
+        def send_messages():
+            for user in message_channel.users.all():
+                async_to_sync(self.channel_layer.group_send)(
+                    user.username,
+                    {
+                        'type': 'action',
+                        'action': 'delete_message',
+                        'content': {
+                            'id': serializer.validated_data['message_id'],
+                        }
                     }
-                }
-            )
+                )
 
-    def status(self, event):
-        self.send(text_data=json.dumps({
+        await send_messages()
+
+    async def status(self, event):
+        await self.send(text_data=json.dumps({
             'type': 'status',
             'message': event['message'],
         }))
 
-    def success(self):
-        async_to_sync(self.channel_layer.send)(
+    async def action(self, event):
+        await self.send(text_data=json.dumps({
+            'action': event['action'],
+            'content': event['content'],
+        }))
+
+    async def success(self):
+        await self.channel_layer.send(
             self.channel_name,
             {
                 'type': 'status',
@@ -180,17 +200,11 @@ class ChatConsumer(WebsocketConsumer):
             }
         )
 
-    def error(self, message):
-        async_to_sync(self.channel_layer.send)(
+    async def error(self, message):
+        await self.channel_layer.send(
             self.channel_name,
             {
                 'type': 'status',
                 'message': message,
             }
         )
-
-    def action(self, event):
-        self.send(text_data=json.dumps({
-            'action': event['action'],
-            'content': event['content'],
-        }))
