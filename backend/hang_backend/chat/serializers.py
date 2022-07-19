@@ -38,12 +38,13 @@ class UserSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError("One of id, username, and email must be present.")
 
 
-class MessageChannelSerializer(serializers.Serializer):
+class MessageChannelSerializer(serializers.ModelSerializer):
     id = serializers.CharField(max_length=10)
 
     class Meta:
         model = MessageChannel
-        fields = ('id')
+        fields = ("id", "name", "channel_type")
+        read_only_fields = ["name", "channel_type"]
 
     def validate_id(self, data):
         if not MessageChannel.objects.filter(id=data).exists():
@@ -52,6 +53,15 @@ class MessageChannelSerializer(serializers.Serializer):
 
     def validate(self, data):
         return MessageChannel.objects.get(id=data['id'])
+
+
+class MessageChannelFullSerializer(serializers.ModelSerializer):
+    users = serializers.ListSerializer(child=UserSerializer())
+
+    class Meta:
+        model = MessageChannel
+        fields = ("id", "name", "users", "channel_type")
+        read_only_fields = ["id", "name", "users", "channel_type"]
 
 
 class MessageSerializer(serializers.Serializer):
@@ -70,10 +80,19 @@ class CreateDMSerializer(serializers.Serializer):
         return User.objects.get(id=data['user'].id)
 
 
+class CreateGCSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=75)
+    users = serializers.ListSerializer(child=UserSerializer())
+
+    # def validate(self, data):
+    #     for user in data['user']
+    #     return User.objects.get(id=data['user'].id)
+
+
 class SendMessageSerializer(serializers.Serializer):
     user = UserSerializer()
     message_channel = MessageChannelSerializer()
-    content = serializers.CharField()
+    content = serializers.CharField(max_length=2000)
 
     def validate_content(self, data):
         if len(data) > 2000:
@@ -106,7 +125,7 @@ class LoadMessageSerializer(serializers.Serializer):
 class EditMessageSerializer(serializers.Serializer):
     user = UserSerializer()
     message_id = serializers.IntegerField()
-    content = serializers.CharField()
+    content = serializers.CharField(max_length=2000)
 
     def validate_message_id(self, data):
         if not Message.objects.filter(id=data).exists():
