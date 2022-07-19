@@ -10,7 +10,7 @@ const Form = ({ client, currentRoom }) => {
         client.send(JSON.stringify({
             type: "send",
             channel: currentRoom,
-            message: message
+            message: message 
         }));
 
         setMessage("");

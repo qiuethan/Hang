@@ -9,11 +9,18 @@ const Verify = () => {
     
     const API = axios.create({ baseURL: 'http://localhost:8000'})
 
-    const validate = (key) => API.post('/auth/verify_email', {token: key} )
+    const validate = async (key) => {
+        try{
+            await API.post('/auth/verify_email', {token: key} );
+        }
+        catch(error){
+            console.log(error);
+        }
+    }
 
     useEffect(() => {
         const key = searchParams.get("key");
-        validate(key);
+        validate(key).then((response) => console.log(response));
     });
 
     return(

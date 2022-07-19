@@ -20,6 +20,8 @@ const Home = () => {
         history('/auth');
 
         setUser(null);
+
+        localStorage.clear();
     }
 
     return(

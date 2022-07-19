@@ -14,5 +14,7 @@ export const login = (inputs) => API.post('/auth/login', inputs);
 export const signin = (inputs) => API.post('/auth/register', inputs);
 export const logout = (token) => API.post('/auth/logout', null);
 
+export const sendemail = (inputs) => API.post('/auth/send_email', inputs);
+
 //Load Rooms List
 export const loadrooms = () => API.get('/chat/list_channels/');

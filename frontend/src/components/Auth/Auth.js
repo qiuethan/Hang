@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from 'react-router-dom';
 import { GoogleLogin } from 'react-google-login';
 
-import { login, signup } from "../../actions/login.js";
+import { login, sendemail, signup } from "../../actions/login.js";
 
 const initialState = {username: "", email: "", password: ""};
 
@@ -19,6 +19,8 @@ const Auth = (props) => {
     const [isSignup, setIsSignup] = useState(false);
     const [confirm, setConfirm] = useState({confirmPassword: ""})
 
+    const [confirmAccount, setConfirmAccount] = useState(false);
+    const [invalidCredentials, setInvalidCredentials] = useState(false);
 
     const handleChange = (event) => {
         const name = event.target.name;
@@ -31,15 +33,40 @@ const Auth = (props) => {
 
         if(isSignup){
             if(inputs.password == confirm.confirmPassword){  
-                dispatch(signup(inputs, history));
+                dispatch(signup(inputs, history))
+                .then((response) => {
+                    handleErrors(response.response.data.non_field_errors);
+                });
             }
             else{
                 console.log("Passwords don't match.")
             }
         }
         else{
-            dispatch(login(inputs, history));
+            dispatch(login(inputs, history))
+            .then((response) => {
+                try{
+                    handleErrors(response.response.data);
+                }
+                catch (error){
+                    console.log(error);
+                }
+            })
         }
+    }
+
+    const handleErrors = (response) => {
+        if(response.non_field_errors !== undefined){
+            if(response.non_field_errors[0] == "User is not verified."){
+                setConfirmAccount(true);
+                sendVerificationEmail();
+            }
+        }
+    }
+
+    const sendVerificationEmail = () => {
+        dispatch(sendemail(inputs));
+        setInputs(initialState);
     }
 
     const confirmHandleChange = (event) => {
@@ -53,23 +80,16 @@ const Auth = (props) => {
         setIsSignup((prevIsSignup) => !prevIsSignup);
     }
 
-    const googleSuccess = async(res) => {
-        const result = res?.profileObj;
-        const token = res?.tokenId;
-
-        try{
-            dispatch({type: Auth, data: {result, token}});
-            
-            history('/');
-        } catch (error){
-            console.log(error);
-        }
-    };
-
-    const googleError = () => alert('Google login was unsuccessful. Try again later');
-
     return(
         <div>
+            {
+                confirmAccount && (
+                    <div>
+                        Email Has Been Sent, Please Verify Account 
+                    </div>
+                )
+            }
+
             <form onSubmit={handleSubmit} class = "signin-form">
             {
                 isSignup && (
