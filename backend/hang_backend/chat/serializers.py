@@ -1,5 +1,7 @@
 from django.contrib.auth.models import User
+from knox.auth import TokenAuthentication
 from rest_framework import serializers
+from rest_framework.exceptions import AuthenticationFailed
 
 from .models import Message, MessageChannel
 
@@ -84,9 +86,23 @@ class CreateGCSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=75)
     users = serializers.ListSerializer(child=UserSerializer())
 
-    # def validate(self, data):
-    #     for user in data['user']
-    #     return User.objects.get(id=data['user'].id)
+
+class AuthenticateWebsocketSerializer(serializers.Serializer):
+    user = UserSerializer()
+    token = serializers.CharField(max_length=100)
+
+    def validate_token(self, data):
+        try:
+            auth = TokenAuthentication().authenticate_credentials(
+                data.encode('utf-8'))
+            return auth[0]
+        except AuthenticationFailed:
+            raise serializers.ValidationError("Invalid Token.")
+
+    def validate(self, data):
+        if data["token"].username != data["user"].username:
+            raise serializers.ValidationError("Token does not match user.")
+        return data["token"]
 
 
 class SendMessageSerializer(serializers.Serializer):

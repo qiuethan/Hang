@@ -7,23 +7,20 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import User
 
 from .models import Message, MessageChannel
-from .serializers import MessageSerializer, SendMessageSerializer, LoadMessageSerializer, EditMessageSerializer, \
-    DeleteMessageSerializer
+from .serializers import AuthenticateWebsocketSerializer, MessageSerializer, SendMessageSerializer, \
+    LoadMessageSerializer, EditMessageSerializer, DeleteMessageSerializer
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
+        self.user = None
+        self.authenticated = False
+
     async def connect(self):
         username = self.scope['url_route']['kwargs']['room_name']
 
-        if self.scope['user'].is_anonymous or username != self.scope['user'].username:
-            await self.close(403)
-
         self.user = await database_sync_to_async(User.objects.get)(username=username)
-
-        await self.channel_layer.group_add(
-            self.user.username,
-            self.channel_name
-        )
 
         await self.accept()
 
@@ -38,12 +35,31 @@ class ChatConsumer(AsyncWebsocketConsumer):
             text_data_json = json.loads(text_data)
             text_data_json['user'] = {'username': self.user.username}
 
+            if not self.authenticated:
+                await self.authenticate(text_data_json)
+                return
+
             await getattr(self, text_data_json['type'])(text_data_json)
 
         except (json.JSONDecodeError, KeyError):
             await self.error('Invalid json.')
         except (Exception,) as e:
-            await self.error('Internal server error.')
+            await self.error(f'Internal server error: {e}.')
+
+    async def authenticate(self, data):
+        serializer = AuthenticateWebsocketSerializer(data=data)
+
+        if not await database_sync_to_async(serializer.is_valid)():
+            await self.error(json.loads(json.dumps(serializer.errors)))
+            return
+
+        await self.channel_layer.group_add(
+            self.user.username,
+            self.channel_name
+        )
+
+        self.authenticated = True
+        await self.success()
 
     async def send_message(self, data):
         serializer = SendMessageSerializer(data=data)
