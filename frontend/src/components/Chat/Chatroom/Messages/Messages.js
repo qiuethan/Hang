@@ -8,6 +8,7 @@ const Messages = ({ client, currentRoom, clientOpened }) => {
     const [messages, setMessages] = useState([]);
 
     useEffect(() => {
+        setMessages([]);
         if(clientOpened && currentRoom !== undefined){
             client.send(JSON.stringify({
                 type: "load_message",
@@ -20,19 +21,19 @@ const Messages = ({ client, currentRoom, clientOpened }) => {
     }, [currentRoom, clientOpened]);
 
     client.onmessage = (message) => {
-        console.log(message);
         const messageObject = JSON.parse(message.data);
-        if(messageObject.type === "status"){
+        console.log(messageObject);
+        if(messageObject.action === "status"){
             if(messageObject.message !== "success"){
                 console.log(message);
             }
         }
-        if(messageObject.type === "load_message"){
-            setMessages([...messages, ...messageObject.messages])
+        if(messageObject.action === "load_message"){
+            setMessages([...messages, ...messageObject.content.messages])
         }
-        if(messageObject.type === "receive_message"){
-            if(messageObject.message.message_channel.id === currentRoom){  
-                setMessages([messageObject.message, ...messages])
+        if(messageObject.action === "send_message"){
+            if(messageObject.content.message.message_channel.id === currentRoom){  
+                setMessages([messageObject.content.message, ...messages])
             }
             else{
                 

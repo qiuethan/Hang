@@ -7,6 +7,9 @@ const Message = ({ message }) => {
         //Message
         <div>
             <div>
+                {message.user.username}
+            </div>
+            <div>
                 {message.content}
             </div>
             <div>

@@ -8,9 +8,11 @@ const Form = ({ client, currentRoom }) => {
         event.preventDefault();
 
         client.send(JSON.stringify({
-            type: "send",
-            channel: currentRoom,
-            message: message 
+            type: "send_message",
+            message_channel: {
+                id: currentRoom
+            },
+            content: message 
         }));
 
         setMessage("");
