@@ -1,6 +1,7 @@
 import * as api from '../api/index.js';
+import { client } from '../api/ws.js';
 
-import { LOADROOMS } from '../constants/actionTypes.js';
+import { LOADROOMS, CONNECTWS } from '../constants/actionTypes.js';
 
 export const loadrooms = () => async (dispatch) => {
     try{
@@ -10,5 +11,15 @@ export const loadrooms = () => async (dispatch) => {
     }
     catch(error){
         console.log(error)
+    }
+}
+
+export const connectws = () => (dispatch) => {
+    try{
+
+        dispatch({ type: CONNECTWS, payload: client});
+    }
+    catch (error){
+        console.log(error);
     }
 }

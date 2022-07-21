@@ -3,13 +3,23 @@ import { w3cwebsocket as W3CWebSocket } from "websocket";
 
 import Chatroom from './Chatroom/Chatroom';
 import Chatlist from './Chatlist/Chatlist';
+import { useDispatch, useSelector } from 'react-redux';
+import { connectws } from '../../actions/chat';
 
 const Chat = () => {
 
     const [currentRoom, setCurrentRoom] = useState();
-    const [client] = useState(new W3CWebSocket(`ws://localhost:8000/ws/chat/${JSON.parse(localStorage.getItem('profile')).user.username}/`));
-    
+    const client = useSelector(state => state.websocket);
+
     const [clientOpened, setClientOpened] = useState(false);
+
+    const dispatch = useDispatch();
+
+    console.log(useSelector(state => state.websocket))
+
+    useEffect(() => {
+        dispatch(connectws());
+    })
 
     client.onopen = () => {
         console.log("Client Connected");
