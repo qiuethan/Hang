@@ -8,10 +8,12 @@ const Messages = ({ client, currentRoom, clientOpened }) => {
     const [messages, setMessages] = useState([]);
 
     useEffect(() => {
-        if(clientOpened){
+        if(clientOpened && currentRoom !== undefined){
             client.send(JSON.stringify({
-                type: "load",
-                channel: currentRoom
+                type: "load_message",
+                message_channel: {
+                    id: currentRoom
+                }
             }));
         }
         console.log(currentRoom);

@@ -3,16 +3,18 @@ import { useDispatch, useSelector } from "react-redux";
 import { loadrooms } from "../../../actions/chat";
 import Chatitem from "./Chatitem/Chatitem";
 
-const Chatlist = ({ currentRoom, setCurrentRoom }) => {
+const Chatlist = ({ currentRoom, setCurrentRoom, clientOpened }) => {
     
     const dispatch = useDispatch();
 
-    useEffect(() => {
-        dispatch(loadrooms());
-        console.log(currentRoom);
-    }, [currentRoom]);
-
     const rooms = useSelector(state => state.chat);
+
+    useEffect(() => {
+        if(clientOpened){ 
+            dispatch(loadrooms());
+            console.log(currentRoom);
+        }
+    }, [currentRoom, clientOpened]);
 
     console.log(rooms);
 
