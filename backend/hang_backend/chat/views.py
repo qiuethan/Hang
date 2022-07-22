@@ -31,7 +31,8 @@ class CreateDMView(generics.CreateAPIView):
             while MessageChannel.objects.filter(id=ss).exists():
                 ss = generate_random_string()
 
-            dm = MessageChannel(id=ss, name=f"DM {user.username} {request.user.username}", channel_type="DM")
+            dm = MessageChannel(id=ss, name=f"DM {user.username} {request.user.username}", owner=request.user,
+                                channel_type="DM")
             dm.save()
 
             dm.users.add(request.user)
