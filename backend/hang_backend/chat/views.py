@@ -5,7 +5,7 @@ from django.http import JsonResponse
 from rest_framework import generics, permissions
 
 from .models import MessageChannel
-from .serializers import CreateDMSerializer, MessageChannelFullSerializer, CreateGCSerializer
+from .serializers import CreateDMSerializer, MessageChannelFullSerializer, CreateGCSerializer, ModifyGCSerializer
 
 
 class CreateDMView(generics.CreateAPIView):
@@ -59,7 +59,7 @@ class CreateGCView(generics.CreateAPIView):
         while MessageChannel.objects.filter(id=ss).exists():
             ss = generate_random_string()
 
-        gc = MessageChannel(id=ss, name=serializer.validated_data["name"], channel_type="GC")
+        gc = MessageChannel(id=ss, name=serializer.validated_data["name"], owner=request.user, channel_type="GC")
         gc.save()
 
         gc.users.add(request.user)
@@ -70,7 +70,25 @@ class CreateGCView(generics.CreateAPIView):
         return JsonResponse(MessageChannelFullSerializer(gc).data)
 
 
-# TODO add to gc
+class ModifyGCView(generics.UpdateAPIView):
+    permission_classes = [
+        permissions.IsAuthenticated,
+    ]
+    serializer_class = ModifyGCSerializer
+
+    def put(self, request, *args, **kwargs):
+        request.data["user"] = {"id": request.user.id}
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        message_channel = MessageChannel.objects.get(id=serializer.validated_data["message_channel"].id)
+        serializer = self.get_serializer(message_channel, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        message_channel = serializer.save()
+        message_channel.save()
+        res = JsonResponse(MessageChannelFullSerializer(message_channel).data)
+        if not message_channel.users.exists():
+            message_channel.delete()
+        return res
 
 
 class ListMessageChannelsView(generics.ListAPIView):

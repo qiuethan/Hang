@@ -6,9 +6,11 @@ from django.db import models
 
 class MessageChannel(models.Model):
     id = models.CharField(max_length=10, primary_key=True)
-    users = models.ManyToManyField(User)
     name = models.CharField(max_length=75)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="owner")
+    users = models.ManyToManyField(User)
     channel_type = models.CharField(max_length=2, choices=(("DM", "Direct Message"), ("GC", "Group Chat")))
+    created_at = models.DateTimeField(auto_now_add=True)
 
 
 class Message(models.Model):
@@ -19,4 +21,4 @@ class Message(models.Model):
     message_channel = models.ForeignKey(
         MessageChannel, on_delete=models.CASCADE)
 
-# TODO friend requests
+# TODO friend requests; send and accept

@@ -69,7 +69,7 @@ class SendEmail(generics.CreateAPIView):
         token.save()
 
         send_mail("""Verification Placeholder""",
-                  f"""UWUUWUUWU\nwill be invalid after 24 hours\ntoken is {token.id}\nchange the message in accounts/views.py""",
+                  f"""UWUUWUUWU\nwill be invalid after 24 hours\ntoken is localhost:3000/verify?key={token.id}\nchange the message in accounts/views.py""",
                   settings.EMAIL_HOST_USER,
                   [serializer.validated_data.email])
         return Response({'status': 'success'})

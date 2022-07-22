@@ -20,26 +20,31 @@ const Messages = ({ client, currentRoom, clientOpened }) => {
         console.log(currentRoom);
     }, [currentRoom, clientOpened]);
 
-    client.onmessage = (message) => {
-        const messageObject = JSON.parse(message.data);
-        console.log(messageObject);
-        if(messageObject.action === "status"){
-            if(messageObject.message !== "success"){
-                console.log(message);
+    try{
+        client.onmessage = (message) => {
+            const messageObject = JSON.parse(message.data);
+            console.log(messageObject);
+            if(messageObject.action === "status"){
+                if(messageObject.message !== "success"){
+                    console.log(message);
+                }
             }
-        }
-        if(messageObject.action === "load_message"){
-            setMessages([...messages, ...messageObject.content.messages])
-        }
-        if(messageObject.action === "send_message"){
-            if(messageObject.content.message.message_channel.id === currentRoom){  
-                setMessages([messageObject.content.message, ...messages])
+            if(messageObject.action === "load_message"){
+                setMessages([...messages, ...messageObject.content.messages])
             }
-            else{
-                
+            if(messageObject.action === "send_message"){
+                if(messageObject.content.message.message_channel.id === currentRoom){  
+                    setMessages([messageObject.content.message, ...messages])
+                }
+                else{
+                    
+                }
             }
         }
     }
+    catch (error){
+        console.log(error);
+    }    
 
     console.log(messages);
 

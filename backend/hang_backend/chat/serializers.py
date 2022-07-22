@@ -58,12 +58,13 @@ class MessageChannelSerializer(serializers.ModelSerializer):
 
 
 class MessageChannelFullSerializer(serializers.ModelSerializer):
+    owner = UserSerializer()
     users = serializers.ListSerializer(child=UserSerializer())
 
     class Meta:
         model = MessageChannel
-        fields = ("id", "name", "users", "channel_type")
-        read_only_fields = ["id", "name", "users", "channel_type"]
+        fields = ("id", "name", "owner", "users", "channel_type", "created_at")
+        read_only_fields = ["id", "name", "owner", "users", "channel_type", "created_at"]
 
 
 class MessageSerializer(serializers.Serializer):
@@ -85,6 +86,53 @@ class CreateDMSerializer(serializers.Serializer):
 class CreateGCSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=75)
     users = serializers.ListSerializer(child=UserSerializer())
+
+
+class ModifyGCSerializer(serializers.Serializer):
+    message_channel = MessageChannelSerializer()
+    name = serializers.CharField(max_length=75, required=False)
+    owner = UserSerializer(required=False)
+    user = UserSerializer()
+    users = serializers.ListSerializer(child=UserSerializer(), required=False)
+
+    def validate_message_channel(self, data):
+        if data.channel_type != "GC":
+            raise serializers.ValidationError("The message channel must be a GC.")
+        return data
+
+    def validate(self, data):
+        message_channel = data["message_channel"]
+        user = data["user"]
+
+        if not message_channel.users.filter(id=user.id).exists():
+            raise serializers.ValidationError("Permission denied.")
+
+        if "users" in data:
+            users = data["users"]
+            curr_users = set(message_channel.users.all())
+            curr_users.remove(user)
+            new_users = users.copy()
+            if user in users:
+                new_users.remove(user)
+            if len(curr_users.intersection(new_users)) != len(curr_users) and \
+                    message_channel.owner.id != user.id:
+                raise serializers.ValidationError("Permission denied.")
+
+        if "owner" in data:
+            owner = data["owner"]
+            if message_channel.owner != owner and user != message_channel.owner:
+                raise serializers.ValidationError("Permission denied.")
+        return data
+
+    def update(self, instance, validated_data):
+        instance.name = validated_data.get("name", instance.name)
+        instance.owner = validated_data.get("owner", instance.owner)
+        instance.users.set(validated_data.get("users", instance.users))
+
+        if not instance.users.filter(id=instance.owner.id).exists() and instance.users.exists():
+            instance.owner = instance.users.first()
+
+        return instance
 
 
 class AuthenticateWebsocketSerializer(serializers.Serializer):
@@ -109,11 +157,6 @@ class SendMessageSerializer(serializers.Serializer):
     user = UserSerializer()
     message_channel = MessageChannelSerializer()
     content = serializers.CharField(max_length=2000)
-
-    def validate_content(self, data):
-        if len(data) > 2000:
-            raise serializers.ValidationError("Messages cannot be over 2000 characters long.")
-        return data
 
     def validate(self, data):
         if not data['message_channel'].users.filter(username=data['user'].username).exists():
@@ -146,11 +189,6 @@ class EditMessageSerializer(serializers.Serializer):
     def validate_message_id(self, data):
         if not Message.objects.filter(id=data).exists():
             raise serializers.ValidationError("The message does not exist.")
-        return data
-
-    def validate_content(self, data):
-        if len(data) > 2000:
-            raise serializers.ValidationError("Messages cannot be over 2000 characters long.")
         return data
 
     def validate(self, data):
