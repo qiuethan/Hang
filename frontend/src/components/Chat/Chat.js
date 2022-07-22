@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { w3cwebsocket as W3CWebSocket } from "websocket";
 
 import Chatroom from './Chatroom/Chatroom';
 import Chatlist from './Chatlist/Chatlist';
 import { useDispatch, useSelector } from 'react-redux';
 import { connectws } from '../../actions/chat';
+import { useNavigate } from 'react-router-dom';
 
 const Chat = () => {
 
@@ -17,21 +18,37 @@ const Chat = () => {
 
     console.log(useSelector(state => state.websocket))
 
+    const navigate = useNavigate();
+
     useEffect(() => {
+        if(JSON.parse(localStorage.getItem('profile')) == null){
+            navigate("/auth")
+        }
         dispatch(connectws());
     })
 
-    client.onopen = () => {
-        console.log("Client Connected");
-        client.send(JSON.stringify({
-            token: JSON.parse(localStorage.getItem('profile')).token
-        }));
-        setClientOpened(true);
+    try{
+        client.onopen = () => {
+            console.log("Client Connected");
+            client.send(JSON.stringify({
+                token: JSON.parse(localStorage.getItem('profile')).token
+            }));
+            setClientOpened(true);
+        }
     }
-
-    client.onclose = () => {
-        setClientOpened(false);
+    catch (error){
+        console.log(error);
     }
+    
+    try{
+        client.onclose = () => {
+            setClientOpened(false);
+        }
+    }
+    catch (error){
+        console.log(error);
+    }
+    
 
     return(
         <div>

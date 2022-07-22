@@ -24,16 +24,20 @@ const Form = ({ client, currentRoom }) => {
 
     return(
         <div>
-            <form onSubmit={messageSend}>
-                <input 
-                    type="text" 
-                    name="message" 
-                    value={message || ""} 
-                    onChange={handleChange} 
-                />
+            {
+                JSON.parse(localStorage.getItem('profile') !== null) &&
+                <form onSubmit={messageSend}>
+                    <input 
+                        type="text" 
+                        name="message" 
+                        value={message || ""} 
+                        onChange={handleChange} 
+                    />
 
-                <button type="submit">Send Message</button>
-            </form>
+                    <button type="submit">Send Message</button>
+                </form>
+            }
+            
         </div>
     );
 };
