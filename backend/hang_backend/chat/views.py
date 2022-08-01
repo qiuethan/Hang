@@ -1,105 +1,45 @@
-import random
-import string
-
-from django.http import JsonResponse
 from rest_framework import generics, permissions
 
-from .models import MessageChannel
-from .serializers import CreateDMSerializer, MessageChannelFullSerializer, CreateGCSerializer, ModifyGCSerializer
+from .models import DirectMessage, GroupChat
+from .serializers import DirectMessageSerializer, \
+    GroupChatSerializer
 
 
-class CreateDMView(generics.CreateAPIView):
+class ListCreateDirectMessageView(generics.ListCreateAPIView):
     permission_classes = [
         permissions.IsAuthenticated,
     ]
-    serializer_class = CreateDMSerializer
+    serializer_class = DirectMessageSerializer
 
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        user = serializer.validated_data
-
-        try:
-            dm = request.user.messagechannel_set.all().filter(channel_type="DM").get(users=user)
-        except MessageChannel.DoesNotExist:
-            def generate_random_string():
-                return ''.join(
-                    [random.choice(string.ascii_letters) for _ in range(10)])
-
-            ss = generate_random_string()
-            while MessageChannel.objects.filter(id=ss).exists():
-                ss = generate_random_string()
-
-            dm = MessageChannel(id=ss, name=f"DM {user.username} {request.user.username}", owner=request.user,
-                                channel_type="DM")
-            dm.save()
-
-            dm.users.add(request.user)
-            dm.users.add(user)
-        except MessageChannel.MultipleObjectsReturned:
-            return JsonResponse({"email": ["Cannot create a DM with yourself."]})
-        return JsonResponse(MessageChannelFullSerializer(dm).data)
+    def get_queryset(self):
+        return DirectMessage.objects.filter(users=self.request.user).all()
 
 
-class CreateGCView(generics.CreateAPIView):
+class RetrieveDirectMessageView(generics.RetrieveAPIView):
     permission_classes = [
         permissions.IsAuthenticated,
     ]
-    serializer_class = CreateGCSerializer
+    serializer_class = DirectMessageSerializer
 
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        def generate_random_string():
-            return ''.join(
-                [random.choice(string.ascii_letters) for _ in range(10)])
-
-        ss = generate_random_string()
-        while MessageChannel.objects.filter(id=ss).exists():
-            ss = generate_random_string()
-
-        gc = MessageChannel(id=ss, name=serializer.validated_data["name"], owner=request.user, channel_type="GC")
-        gc.save()
-
-        gc.users.add(request.user)
-
-        for user in serializer.validated_data["users"]:
-            gc.users.add(user)
-
-        return JsonResponse(MessageChannelFullSerializer(gc).data)
+    def get_queryset(self):
+        return DirectMessage.objects.filter(users=self.request.user).all()
 
 
-class ModifyGCView(generics.UpdateAPIView):
+class ListCreateGroupChatView(generics.ListCreateAPIView):
     permission_classes = [
-        permissions.IsAuthenticated,
+        permissions.IsAuthenticated
     ]
-    serializer_class = ModifyGCSerializer
+    serializer_class = GroupChatSerializer
 
-    def put(self, request, *args, **kwargs):
-        request.data["user"] = {"id": request.user.id}
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        message_channel = MessageChannel.objects.get(id=serializer.validated_data["message_channel"].id)
-        serializer = self.get_serializer(message_channel, data=request.data)
-        serializer.is_valid(raise_exception=True)
-        message_channel = serializer.save()
-        message_channel.save()
-        res = JsonResponse(MessageChannelFullSerializer(message_channel).data)
-        if not message_channel.users.exists():
-            message_channel.delete()
-        return res
+    def get_queryset(self):
+        return GroupChat.objects.filter(users=self.request.user).all()
 
 
-class ListMessageChannelsView(generics.ListAPIView):
+class RetrieveUpdateDestroyGroupChatView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [
-        permissions.IsAuthenticated,
+        permissions.IsAuthenticated
     ]
+    serializer_class = GroupChatSerializer
 
-    def get(self, request, **kwargs):
-        message_channels = request.user.messagechannel_set.all()
-
-        ret = MessageChannelFullSerializer(message_channels, many=True)
-
-        return JsonResponse(ret.data, safe=False)
+    def get_queryset(self):
+        return GroupChat.objects.filter(users=self.request.user).all()

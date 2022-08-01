@@ -1,13 +1,13 @@
 from django.contrib.auth.models import User
 from django.db import migrations
 
-from accounts.models import Settings
+from accounts.models import UserDetails
 
 
 def update_setting(apps, schema_editor):
     users = User.objects.all()
     for user in users:
-        setting = Settings(user=user, is_verified=False)
+        setting = UserDetails(user=user, is_verified=False)
         setting.save()
 
 

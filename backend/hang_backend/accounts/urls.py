@@ -1,13 +1,26 @@
 from django.urls import path
 from knox import views as knox_views
 
-from .views import LoginAPI, RegisterAPI, UserAPI, SendEmail, VerifyEmail
+from .views import LoginView, RegisterView, UserView, SendEmailView, VerifyEmailView, ListFriendsView, \
+    ListCreateBlockedUsersView, ListCreateSentFriendRequestView, RetrieveDestroySentFriendRequestView, \
+    ListReceivedFriendRequestView, RetrieveUpdateDestroyReceivedFriendRequestView, RemoveFriendsView, \
+    RemoveBlockedUsersView
+
+app_name = "accounts"
 
 urlpatterns = [
-    path('register', RegisterAPI.as_view()),
-    path('login', LoginAPI.as_view()),
-    path('logout', knox_views.LogoutView.as_view(), name='knox_logout'),
-    path('user', UserAPI.as_view()),
-    path('send_email', SendEmail.as_view()),
-    path('verify_email', VerifyEmail.as_view()),
+    path("register", RegisterView.as_view()),
+    path("login", LoginView.as_view()),
+    path("logout", knox_views.LogoutView.as_view(), name="knox_logout"),
+    path("user", UserView.as_view()),
+    path("send_email", SendEmailView.as_view()),
+    path("verify_email", VerifyEmailView.as_view()),
+    path("sent_friend_request", ListCreateSentFriendRequestView.as_view()),
+    path("sent_friend_request/<str:user_id>", RetrieveDestroySentFriendRequestView.as_view()),
+    path("received_friend_request", ListReceivedFriendRequestView.as_view()),
+    path("received_friend_request/<str:user_id>", RetrieveUpdateDestroyReceivedFriendRequestView.as_view()),
+    path("friends", ListFriendsView.as_view()),
+    path("friends/<str:pk>", RemoveFriendsView.as_view()),
+    path("blocked_users", ListCreateBlockedUsersView.as_view()),
+    path("blocked_users/<str:pk>", RemoveBlockedUsersView.as_view()),
 ]

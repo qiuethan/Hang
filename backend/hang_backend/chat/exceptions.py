@@ -1,0 +1,2 @@
+class ChatActionError(Exception):
+    pass
