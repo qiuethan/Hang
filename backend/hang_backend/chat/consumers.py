@@ -25,8 +25,8 @@ class ChatAction(abc.ABC):
         try:
             if self.needs_authentication and not self.chat_consumer.authenticated:
                 raise ChatActionError("User is not authenticated.")
-            result = await self.action()
-            message = "success" if result is None else result
+            await self.action()
+            message = "success"
         except ChatActionError as e:
             message = str(e)
         await self.chat_consumer.channel_layer.send(
@@ -40,6 +40,16 @@ class ChatAction(abc.ABC):
     @abc.abstractmethod
     async def action(self):
         pass
+
+    async def reply_to_sender(self, data):
+        await self.chat_consumer.channel_layer.send(
+            self.chat_consumer.channel_name,
+            {
+                "type": "action",
+                "action": self.name,
+                "content": data,
+            }
+        )
 
     async def send_to_message_channel(self, message_channel_id, data):
         if not await database_sync_to_async((await database_sync_to_async(MessageChannel.objects.filter)(
@@ -103,7 +113,7 @@ class LoadMessageAction(ChatAction):
             num_messages = min(20, await database_sync_to_async(messages.count)())
             messages = await database_sync_to_async(messages.__getitem__)(slice(num_messages))
         serializer = MessageSerializer(messages, many=True)
-        return await database_sync_to_async(getattr)(serializer, "data")
+        await self.reply_to_sender(await database_sync_to_async(getattr)(serializer, "data"))
 
 
 class EditMessageAction(ChatAction):
