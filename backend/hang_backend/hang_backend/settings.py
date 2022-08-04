@@ -46,13 +46,13 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
-
-    'accounts',
     'knox',
-
     'corsheaders',
     'channels',
+
+    'accounts',
     'chat',
+    'hang_event',
 ]
 
 REST_FRAMEWORK = {

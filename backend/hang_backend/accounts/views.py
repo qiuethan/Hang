@@ -132,8 +132,6 @@ class RetrieveUpdateDestroyReceivedFriendRequestView(generics.RetrieveUpdateAPIV
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-# TODO accept friend requests, integrate friend system with chat, remove friend, block and unblock
-
 class RemoveFriendsView(generics.GenericAPIView):
     permission_classes = [
         permissions.IsAuthenticated,
