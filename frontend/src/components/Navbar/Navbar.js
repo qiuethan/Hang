@@ -17,6 +17,9 @@ const Navbar = () => {
                 <li>
                     <a href="/auth">Login</a>
                 </li>
+                <li>
+                    <a href="/chat">Chat</a>
+                </li>
             </ul>
         </div>
     );

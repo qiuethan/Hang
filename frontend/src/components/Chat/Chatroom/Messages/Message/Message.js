@@ -4,7 +4,6 @@ import moment from 'moment';
 const Message = ({ message }) => {
 
     return(
-        //Message
         <div>
             <div>
                 {message.user.username}

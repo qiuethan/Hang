@@ -6,6 +6,7 @@ import Chatlist from './Chatlist/Chatlist';
 import { useDispatch, useSelector } from 'react-redux';
 import { connectws } from '../../actions/chat';
 import { useNavigate } from 'react-router-dom';
+import Grouplist from './Chatlist/Grouplist';
 
 const Chat = () => {
 
@@ -31,7 +32,10 @@ const Chat = () => {
         client.onopen = () => {
             console.log("Client Connected");
             client.send(JSON.stringify({
-                token: JSON.parse(localStorage.getItem('profile')).token
+                action: "authenticate",
+                content: {
+                    token: JSON.parse(localStorage.getItem('profile')).token
+                }
             }));
             setClientOpened(true);
         }
@@ -53,6 +57,7 @@ const Chat = () => {
     return(
         <div>
             <Chatlist client={client} currentRoom={currentRoom} setCurrentRoom={setCurrentRoom} clientOpened={clientOpened}/>
+            <Grouplist client={client} currentRoom={currentRoom} setCurrentRoom = {setCurrentRoom} clientOpened={clientOpened}/>
             <Chatroom client={client} currentRoom={currentRoom} clientOpened={clientOpened} setClientOpened={setClientOpened}/>
         </div>
     );

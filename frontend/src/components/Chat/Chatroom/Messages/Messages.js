@@ -11,9 +11,9 @@ const Messages = ({ client, currentRoom, clientOpened }) => {
         setMessages([]);
         if(clientOpened && currentRoom !== undefined){
             client.send(JSON.stringify({
-                type: "load_message",
-                message_channel: {
-                    id: currentRoom
+                action: "load_message",
+                content: {
+                    message_channel_id: currentRoom
                 }
             }));
         }
@@ -30,11 +30,11 @@ const Messages = ({ client, currentRoom, clientOpened }) => {
                 }
             }
             if(messageObject.action === "load_message"){
-                setMessages([...messages, ...messageObject.content.messages])
+                setMessages([...messages, ...messageObject.content])
             }
             if(messageObject.action === "send_message"){
-                if(messageObject.content.message.message_channel.id === currentRoom){  
-                    setMessages([messageObject.content.message, ...messages])
+                if(messageObject.content.message_channel.id === currentRoom){  
+                    setMessages([messageObject.content, ...messages])
                 }
                 else{
                     

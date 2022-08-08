@@ -1,10 +1,10 @@
 import { LOADROOMS } from "../constants/actionTypes";
 
-export default (messages = [], action) => {
+export default (rooms = [], action) => {
     switch (action.type){
         case LOADROOMS:
             return action.payload;
         default: 
-            return messages;
+            return rooms;
     }
 }

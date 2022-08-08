@@ -1,7 +1,7 @@
 import React from "react";
 import * as actionTypes from "../../constants/actionTypes"; 
 import { useState, getState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { logout } from "../../actions/login";
 
@@ -13,6 +13,8 @@ const Home = () => {
     const [user, setUser] = useState(JSON.parse(localStorage.getItem('profile')));
 
     console.log(user);
+
+    console.log(useSelector(state => state));
 
     const logOut = () => {
         dispatch(logout(user.token))

@@ -11,7 +11,7 @@ const Verify = () => {
 
     const validate = async (key) => {
         try{
-            await API.post('/auth/verify_email', {token: key} );
+            await API.patch('/v1/accounts/verify_email', {token: key} );
         }
         catch(error){
             console.log(error);
