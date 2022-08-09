@@ -6,7 +6,7 @@ const Message = ({ message }) => {
     return(
         <div>
             <div>
-                {message.user.username}
+                {message.user}
             </div>
             <div>
                 {message.content}

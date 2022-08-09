@@ -12,17 +12,13 @@ const Chatlist = ({ currentRoom, setCurrentRoom, clientOpened }) => {
     useEffect(() => {
         if(clientOpened){ 
             dispatch(loadrooms());
-            console.log(currentRoom);
         }
     }, [currentRoom, clientOpened]);
-
-    console.log(rooms);
-    console.log(currentRoom);
 
     return(
         (rooms.length === 0) ?  <div/>: <div>
             {rooms.map((room) => 
-                <Chatitem roomid = {room.id} users = {JSON.stringify(room.users)} type = {room.channel_type} setCurrentRoom = {setCurrentRoom}/>
+                <Chatitem key={room.id} roomid = {room.id} users = {JSON.stringify(room.users)} type = {room.channel_type} setCurrentRoom = {setCurrentRoom}/>
             )}
         </div>
     );

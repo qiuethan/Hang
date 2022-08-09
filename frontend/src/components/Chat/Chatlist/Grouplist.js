@@ -12,17 +12,13 @@ const Grouplist = ({ currentRoom, setCurrentRoom, clientOpened }) => {
     useEffect(() => {
         if(clientOpened){ 
             dispatch(loadgroups());
-            console.log(currentRoom);
         }
     }, [currentRoom, clientOpened]);
-
-    console.log(rooms);
-    console.log(currentRoom);
 
     return(
         (rooms.length === 0) ?  <div/>: <div>
             {rooms.map((room) => 
-                <Chatitem roomid = {room.id} users = {JSON.stringify(room.users)} type = {room.channel_type} setCurrentRoom = {setCurrentRoom} gcName={room.name}/>
+                <Chatitem key={room.id} roomid = {room.id} users = {JSON.stringify(room.users)} type = {room.channel_type} setCurrentRoom = {setCurrentRoom} gcName={room.name}/>
             )}
         </div>
     );

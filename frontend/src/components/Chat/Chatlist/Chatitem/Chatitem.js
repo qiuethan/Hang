@@ -9,8 +9,6 @@ const Chatitem = ({ roomid, users, type, gcName, setCurrentRoom }) => {
 
     const [name, setName] = useState("");
 
-    console.log(JSON.parse(users));
-
     useEffect(() => {
         if(type === "DM"){
             setName(JSON.parse(users).find(user => user.id !== JSON.parse(localStorage.getItem("profile")).user.id).username);

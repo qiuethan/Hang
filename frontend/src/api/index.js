@@ -19,3 +19,7 @@ export const sendemail = (inputs) => API.post('/v1/accounts/send_email', inputs)
 //Load Rooms List
 export const loadrooms = () => API.get('/v1/chat/direct_message');
 export const loadgroups = () => API.get('/v1/chat/group_chat');
+
+//Load Friends
+
+export const loadfriends = () => API.get('/v1/accounts/friends');

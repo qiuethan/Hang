@@ -7,6 +7,7 @@ import Auth  from './components/Auth/Auth';
 import Navbar from './components/Navbar/Navbar';
 import Chat from './components/Chat/Chat';
 import Verify from './components/Verify/Verify';
+import Friends from './components/Friends/Friends';
 
 const App = () => {
   return (
@@ -17,6 +18,7 @@ const App = () => {
           <Route path="/" element={<Home/>}/>
           <Route path="/auth" element={<Auth/>}/>
           <Route path="/chat" element={<Chat/>}/>
+          <Route path="/friends" element={<Friends/>}/>
           <Route path="/verify" element={<Verify/>}/>
         </Routes>
       </div>

@@ -17,13 +17,11 @@ const Messages = ({ client, currentRoom, clientOpened }) => {
                 }
             }));
         }
-        console.log(currentRoom);
     }, [currentRoom, clientOpened]);
 
     try{
         client.onmessage = (message) => {
             const messageObject = JSON.parse(message.data);
-            console.log(messageObject);
             if(messageObject.action === "status"){
                 if(messageObject.message !== "success"){
                     console.log(message);
@@ -46,12 +44,10 @@ const Messages = ({ client, currentRoom, clientOpened }) => {
         console.log(error);
     }    
 
-    console.log(messages);
-
     return(
         messages.length === 0 ? <div/> : <div>
             {messages.map((message) => (
-                <Message message={message}/>
+                <Message key={message.id} message={message}/>
             ))}
         </div>
     );

@@ -17,8 +17,6 @@ const Chat = () => {
 
     const dispatch = useDispatch();
 
-    console.log(useSelector(state => state.websocket))
-
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -30,7 +28,6 @@ const Chat = () => {
 
     try{
         client.onopen = () => {
-            console.log("Client Connected");
             client.send(JSON.stringify({
                 action: "authenticate",
                 content: {
