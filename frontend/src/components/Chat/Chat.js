@@ -8,7 +8,7 @@ import { connectws } from '../../actions/chat';
 import { useNavigate } from 'react-router-dom';
 import Grouplist from './Chatlist/Grouplist';
 
-const Chat = () => {
+const Chat = ({ currentPage, setCurrentPage }) => {
 
     const [currentRoom, setCurrentRoom] = useState();
     const client = useSelector(state => state.websocket);
@@ -20,11 +20,12 @@ const Chat = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
+        setCurrentPage("chat");
         if(JSON.parse(localStorage.getItem('profile')) == null){
             navigate("/auth")
         }
         dispatch(connectws());
-    })
+    }, [currentPage]);
 
     try{
         client.onopen = () => {

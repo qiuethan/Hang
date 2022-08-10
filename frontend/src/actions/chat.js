@@ -27,6 +27,17 @@ export const loadgroups = () => async (dispatch) => {
 
 export const connectws = () => (dispatch) => {
     try{
+        try{
+            client.send(JSON.stringify({
+                action: "authenticate",
+                content: {
+                    token: JSON.parse(localStorage.getItem('profile')).token
+                }
+            }));
+        }
+        catch(error){
+            console.log(error);
+        }
 
         dispatch({ type: CONNECTWS, payload: client});
     }

@@ -10,9 +10,7 @@ const Grouplist = ({ currentRoom, setCurrentRoom, clientOpened }) => {
     const rooms = useSelector(state => state.groups);
 
     useEffect(() => {
-        if(clientOpened){ 
-            dispatch(loadgroups());
-        }
+        dispatch(loadgroups());
     }, [currentRoom, clientOpened]);
 
     return(

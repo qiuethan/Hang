@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { connectws } from '../../../../actions/chat';
 
 import Message from './Message/Message';
 
@@ -9,7 +10,7 @@ const Messages = ({ client, currentRoom, clientOpened }) => {
 
     useEffect(() => {
         setMessages([]);
-        if(clientOpened && currentRoom !== undefined){
+        if(currentRoom !== undefined){
             client.send(JSON.stringify({
                 action: "load_message",
                 content: {
@@ -22,7 +23,7 @@ const Messages = ({ client, currentRoom, clientOpened }) => {
     try{
         client.onmessage = (message) => {
             const messageObject = JSON.parse(message.data);
-            if(messageObject.action === "status"){
+            if(messageObject.type === "status"){
                 if(messageObject.message !== "success"){
                     console.log(message);
                 }

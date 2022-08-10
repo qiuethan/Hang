@@ -10,9 +10,7 @@ const Chatlist = ({ currentRoom, setCurrentRoom, clientOpened }) => {
     const rooms = useSelector(state => state.dms);
 
     useEffect(() => {
-        if(clientOpened){ 
-            dispatch(loadrooms());
-        }
+        dispatch(loadrooms());
     }, [currentRoom, clientOpened]);
 
     return(

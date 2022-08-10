@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 import './App.css';
@@ -9,19 +9,28 @@ import Chat from './components/Chat/Chat';
 import Verify from './components/Verify/Verify';
 import Friends from './components/Friends/Friends';
 
+import Box from "@mui/material/Box";
+import CssBaseline from "@mui/material/CssBaseline";
+
 const App = () => {
+
+  const [currentPage, setCurrentPage] = useState();
+
   return (
     <BrowserRouter>
-      <div>
-        <Navbar/>
-        <Routes>
-          <Route path="/" element={<Home/>}/>
-          <Route path="/auth" element={<Auth/>}/>
-          <Route path="/chat" element={<Chat/>}/>
-          <Route path="/friends" element={<Friends/>}/>
-          <Route path="/verify" element={<Verify/>}/>
-        </Routes>
-      </div>
+      <Box sx={{ display : "flex"}}>
+        <CssBaseline/>
+        <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage}/>
+        <Box sx={{ flexGrow : 1, p:3 }}>
+          <Routes>
+            <Route path="/" element={<Home currentPage={currentPage} setCurrentPage={setCurrentPage}/>}/>
+            <Route path="/auth" element={<Auth currentPage={currentPage} setCurrentPage={setCurrentPage}/>}/>
+            <Route path="/chat" element={<Chat currentPage={currentPage} setCurrentPage={setCurrentPage}/>}/>
+            <Route path="/friends" element={<Friends currentPage={currentPage} setCurrentPage={setCurrentPage}/>}/>
+            <Route path="/verify" element={<Verify/>}/>
+          </Routes> 
+        </Box>
+      </Box>
     </BrowserRouter>
   );
 }
