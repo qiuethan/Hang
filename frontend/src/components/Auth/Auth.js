@@ -10,7 +10,7 @@ import { login, sendemail, signup } from "../../actions/login.js";
 
 const initialState = {username: "", email: "", password: ""};
 
-const Auth = (props) => {
+const Auth = ({}) => {
 
     const dispatch = useDispatch();
     const history = useNavigate();

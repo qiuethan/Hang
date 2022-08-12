@@ -39,6 +39,8 @@ export const logout = (token) => async(dispatch) => {
     try{
         const res = await api.logout(token);
         dispatch({type: LOGOUT});
+
+        return;
     }
     catch (error){
         console.log(error);

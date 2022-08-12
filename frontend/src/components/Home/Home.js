@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { logout } from "../../actions/login";
 
-const Home = () => {
+const Home = ({}) => {
 
     const dispatch = useDispatch();
     const history = useNavigate();
@@ -18,10 +18,15 @@ const Home = () => {
 
     const logOut = () => {
         dispatch(logout(user.token))
-
-        history('/auth');
+        .then((response) => {
+            console.log(response);
+            localStorage.clear();
+            console.log(localStorage);
+        })
 
         setUser(null);
+
+        history('/auth');
     }
 
     return(

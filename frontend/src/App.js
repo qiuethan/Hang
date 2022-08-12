@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 import './App.css';
@@ -20,11 +20,11 @@ const App = () => {
     <BrowserRouter>
       <Box sx={{ display : "flex"}}>
         <CssBaseline/>
-        <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage}/>
+        <Navbar setCurrentPage={setCurrentPage}/>
         <Box sx={{ flexGrow : 1, p:3 }}>
           <Routes>
             <Route path="/" element={<Home currentPage={currentPage} setCurrentPage={setCurrentPage}/>}/>
-            <Route path="/auth" element={<Auth currentPage={currentPage} setCurrentPage={setCurrentPage}/>}/>
+            <Route path="/auth" element={<Auth currentPage={currentPage} setCurrentPage={setCurrentPage} />}/>
             <Route path="/chat" element={<Chat currentPage={currentPage} setCurrentPage={setCurrentPage}/>}/>
             <Route path="/friends" element={<Friends currentPage={currentPage} setCurrentPage={setCurrentPage}/>}/>
             <Route path="/verify" element={<Verify/>}/>

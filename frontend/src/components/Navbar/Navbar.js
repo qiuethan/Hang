@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {Link, useNavigate, useLocation} from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
 import { styled, useTheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
@@ -18,6 +18,10 @@ import ListItemText from "@mui/material/ListItemText";
 import CloseIcon from "@mui/icons-material/Close";
 import HomeIcon from '@mui/icons-material/Home';
 import ChatIcon from '@mui/icons-material/Chat';
+import PeopleIcon from '@mui/icons-material/People';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+
+import logo from '../../images/logo.svg';
 
 const drawerWidth = 240;
 
@@ -68,20 +72,53 @@ const Drawer = styled(MuiDrawer, {
   })
 }));
 
-const Navbar = ({ currentPage, setCurrentPage }) => {
+const getWindowDimensions = () => {
+  const { innerWidth: width, innerHeight: height } = window;
+  return{
+    width,
+    height
+  };
+}
+
+const useWindowDimensions = () => {
+  const [windowDimensions, setWindowDimensions] = useState(getWindowDimensions());
+  
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowDimensions(getWindowDimensions());
+    }
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return windowDimensions
+}
+
+const Navbar = ({ setCurrentPage }) => {
     const [user, setUser] = useState(JSON.parse(localStorage.getItem('profile')));
     const dispatch = useDispatch();
     const location = useLocation();
     const history = useNavigate();
 
+    useEffect(() => {
+      console.log(localStorage);
+      setUser(JSON.parse(localStorage.getItem('profile')));
+    }, [useSelector((state) => state)])
+
+    const {height, width} = useWindowDimensions();
+
     const home = () => {
         history("/");
         setCurrentPage("home");
     }
-
     const chat = () => {
         history("/chat");
         setCurrentPage("chat");
+    }
+    const friends = () => {
+        history("/friends");
+        setCurrentPage("friends");
     }
 
     const theme = useTheme();
@@ -104,13 +141,13 @@ const Navbar = ({ currentPage, setCurrentPage }) => {
     };
 
     return(
-      <Drawer variant="permanent" open={open}>
+      <Drawer variant="permanent" open={open} sx={{height : '100%'}}>
         <DrawerHeader>
           <IconButton onClick={handleDrawer}>
             {open ? <CloseIcon /> : <MenuIcon />}
           </IconButton>
         </DrawerHeader>
-        <List>
+        <List sx={{height : '100%'}}>
           <ListItem key={"logo"} disablePadding sx={{display: "block"}}>
             <ListItemButton
               sx={{
@@ -127,33 +164,85 @@ const Navbar = ({ currentPage, setCurrentPage }) => {
                   justifyContent: "center"
                 }}
               >
-                <HomeIcon/>
+                <img src={logo} style={{height: "24px", width: "24px"}}/>
               </ListItemIcon>
               <ListItemText primary={"Home"} sx={{ opacity: open ? 1 : 0}}/>
             </ListItemButton>
           </ListItem>
-          <ListItem key={"chat"} disablePadding sx={{display: "block"}}>
-            <ListItemButton
-              sx={{
-                minHeight: 48,
-                justifyContent: open ? "initial" : "center",
-                px: 2.5
-              }}
-              onClick={chat}
-            >
-              <ListItemIcon
+          
+          {user !== null &&
+            (
+              <ListItem key={"chat"} disablePadding sx={{display: "block"}}>
+                <ListItemButton
+                  sx={{
+                    minHeight: 48,
+                    justifyContent: open ? "initial" : "center",
+                    px: 2.5
+                  }}
+                  onClick={chat}
+                >
+                  <ListItemIcon
+                    sx={{
+                      minWidth: 0,
+                      mr: open ? 3 : "auto",
+                      justifyContent: "center"
+                    }}
+                  >
+                    <ChatIcon/>
+                  </ListItemIcon>
+                  <ListItemText primary={"Chat"} sx={{ opacity: open ? 1 : 0}}/>
+                </ListItemButton>
+              </ListItem>
+            )
+          }
+          {user !== null &&
+            <ListItem key={"friends"} disablePadding sx={{display: "block"}}>
+              <ListItemButton
                 sx={{
-                  minWidth: 0,
-                  mr: open ? 3 : "auto",
-                  justifyContent: "center"
+                  minHeight: 48,
+                  justifyContent: open ? "initial" : "center",
+                  px: 2.5
                 }}
+                onClick={friends}
               >
-                <ChatIcon/>
-              </ListItemIcon>
-              <ListItemText primary={"Chat"} sx={{ opacity: open ? 1 : 0}}/>
-            </ListItemButton>
-          </ListItem>
+                <ListItemIcon
+                  sx={{
+                    minWidth: 0,
+                    mr: open ? 3 : "auto",
+                    justifyContent: "center"
+                  }}
+                >
+                  <PeopleIcon/>
+                </ListItemIcon>
+                <ListItemText primary={"Friends"} sx={{ opacity: open ? 1 : 0}}/>
+              </ListItemButton>
+            </ListItem>
+          }
+          {user !== null &&
+            <ListItem key={"account"} disablePadding sx={{display: "block", position: height >= 264 ? "absolute" : "relative", bottom: 0}}>
+              <ListItemButton
+                sx={{
+                  minHeight: 48,
+                  justifyContent: open ? "initial" : "center",
+                  px: 2.5
+                }}
+                onClick={friends}
+              >
+                <ListItemIcon
+                  sx={{
+                    minWidth: 0,
+                    mr: open ? 3 : "auto",
+                    justifyContent: "center"
+                  }}
+                >
+                  <AccountCircleIcon/>
+                </ListItemIcon>
+                <ListItemText primary={"Account"} sx={{ opacity: open ? 1 : 0}}/>
+              </ListItemButton>
+            </ListItem>
+          }
         </List>
+        
       </Drawer>
     );
 };
