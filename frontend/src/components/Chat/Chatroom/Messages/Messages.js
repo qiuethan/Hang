@@ -4,6 +4,8 @@ import { connectws } from '../../../../actions/chat';
 
 import Message from './Message/Message';
 
+import { Box } from '@mui/material';
+
 const Messages = ({ client, currentRoom, clientOpened }) => {
     
     const [messages, setMessages] = useState([]);
@@ -46,11 +48,12 @@ const Messages = ({ client, currentRoom, clientOpened }) => {
     }    
 
     return(
-        messages.length === 0 ? <div/> : <div>
+        messages.length === 0 ? <Box/> : 
+        <Box sx={{display: "flex", flexDirection: "column-reverse"}}>
             {messages.map((message) => (
                 <Message key={message.id} message={message}/>
             ))}
-        </div>
+        </Box>
     );
 }
 

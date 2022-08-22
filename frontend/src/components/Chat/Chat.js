@@ -8,6 +8,8 @@ import { connectws } from '../../actions/chat';
 import { useNavigate } from 'react-router-dom';
 import Grouplist from './Chatlist/Grouplist';
 
+import { Grid, Box } from '@mui/material';
+
 const Chat = ({ currentPage, setCurrentPage }) => {
 
     const [currentRoom, setCurrentRoom] = useState();
@@ -53,11 +55,19 @@ const Chat = ({ currentPage, setCurrentPage }) => {
     
 
     return(
-        <div>
-            <Chatlist client={client} currentRoom={currentRoom} setCurrentRoom={setCurrentRoom} clientOpened={clientOpened}/>
-            <Grouplist client={client} currentRoom={currentRoom} setCurrentRoom = {setCurrentRoom} clientOpened={clientOpened}/>
-            <Chatroom client={client} currentRoom={currentRoom} clientOpened={clientOpened} setClientOpened={setClientOpened}/>
-        </div>
+        <Box sx={{display: "block", height: '98%', width: '98%', border: 1, margin: 1}}> 
+            <Grid container>
+                <Grid item xs={2}>
+                    <Chatlist client={client} currentRoom={currentRoom} setCurrentRoom={setCurrentRoom} clientOpened={clientOpened}/>
+                    <Grouplist client={client} currentRoom={currentRoom} setCurrentRoom = {setCurrentRoom} clientOpened={clientOpened}/>
+                </Grid>
+                <Grid item xs={10}>
+                    <Chatroom client={client} currentRoom={currentRoom} clientOpened={clientOpened} setClientOpened={setClientOpened}/>
+                </Grid>
+            </Grid>
+            
+            
+        </Box>
     );
 }
 

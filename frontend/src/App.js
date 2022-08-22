@@ -18,10 +18,10 @@ const App = () => {
 
   return (
     <BrowserRouter>
-      <Box sx={{ display : "flex"}}>
+      <Box sx={{ display:"flex", height:'100vh', width:'100vw'}}>
         <CssBaseline/>
         <Navbar setCurrentPage={setCurrentPage}/>
-        <Box sx={{ flexGrow : 1, p:3 }}>
+        <Box sx={{ flexGrow : 1 }}>
           <Routes>
             <Route path="/" element={<Home currentPage={currentPage} setCurrentPage={setCurrentPage}/>}/>
             <Route path="/auth" element={<Auth currentPage={currentPage} setCurrentPage={setCurrentPage} />}/>
