@@ -7,20 +7,13 @@ const Form = ({ client, currentRoom }) => {
 
     const [message, setMessage] = useState("");
 
-    const [enter, setEnter] = useState(false);
-    const [shift, setShift] = useState(false);
-
-    const EnterMessageSend = (event) => {
-        //Need to do shift + enter key down combo check
-    }
-
     const messageSend = (event) => {
         try{
             event.preventDefault();
         }
         catch (error){}
 
-        if(message !== ""){
+        if(message.trim() !== ""){
             client.send(JSON.stringify({
                 action: "send_message",
                 content: {
@@ -40,7 +33,7 @@ const Form = ({ client, currentRoom }) => {
     }
 
     return(
-        <Box sx={{bgcolor:"green"}}>
+        <Box sx={{bgcolor:"#0c7c59"}}>
             {
                 JSON.parse(localStorage.getItem('profile') !== null) &&
                 <form onSubmit={messageSend}>
@@ -51,10 +44,11 @@ const Form = ({ client, currentRoom }) => {
                                 value={message || ""} 
                                 onChange={handleChange} 
                                 onKeyDown={(e) => {
-                                    if(e.key === 'Enter'){
-                                        setEnter(true);
-                                        EnterMessageSend();
+                                    if(e.code === "Enter" && !e.shiftKey){
+                                        messageSend();
+                                        e.preventDefault();
                                     }
+
                                 }}
                                 InputProps={{
                                     form:{
@@ -64,6 +58,7 @@ const Form = ({ client, currentRoom }) => {
                                 InputLabelProps={{shrink: false}}
                                 multiline
                                 size="small"
+                                maxRows={5}
                                 sx={{marginRight: 1, borderRadius: "10px", bgcolor: "white", width:"98%", "& .MuiOutlinedInput-root":{"& > fieldset": {border: "none"}},"& .MuiInputLabel-root":{color: "#0c7c59"}, "& label.Mui-focused": {color: "black"}}}
                             />
                         </Grid>
