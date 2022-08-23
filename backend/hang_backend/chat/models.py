@@ -8,6 +8,7 @@ class MessageChannel(models.Model):
     channel_type = models.CharField(max_length=2, choices=(("DM", "Direct Message"), ("GC", "Group Chat")))
     users = models.ManyToManyField(User, related_name="message_channels")
     created_at = models.DateTimeField(auto_now_add=True)
+    message_last_sent = models.DateTimeField(auto_now_add=True)
 
 
 class DirectMessage(MessageChannel):
@@ -27,3 +28,6 @@ class Message(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     content = models.CharField(max_length=2000)
     message_channel = models.ForeignKey(MessageChannel, on_delete=models.CASCADE, related_name="messages")
+
+# TODO: add a real time websocket
+# TODO: fix chat auto-disconnects

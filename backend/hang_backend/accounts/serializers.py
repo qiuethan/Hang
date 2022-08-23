@@ -1,3 +1,4 @@
+import hashlib
 import random
 import string
 from datetime import datetime, timezone, timedelta
@@ -5,9 +6,11 @@ from datetime import datetime, timezone, timedelta
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
+from django.core.mail import send_mail
 from rest_framework import serializers, validators
 
 from common.util import validators as util_validators
+from hang_backend import settings
 from .models import EmailAuthToken, FriendRequest, UserDetails
 
 
@@ -25,6 +28,14 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ("id", "username", "email")
+
+
+class UserDetailsSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+
+    class Meta:
+        model = UserDetails
+        fields = ("user", "profile_picture", "is_verified")
 
 
 class UserReaderSerializer(UserSerializer):
@@ -152,8 +163,15 @@ class SendEmailSerializer(serializers.Serializer):
         while EmailAuthToken.objects.filter(id=ss).exists():
             ss = generate_random_string()
 
-        token = EmailAuthToken(id=ss, user=User.objects.get(email=validated_data["email"]))
+        token = EmailAuthToken(id=hashlib.sha256(ss.encode("utf-8")).hexdigest(),
+                               user=User.objects.get(email=validated_data["email"]))
         token.save()
+
+        send_mail("Hang Email Verification Token",
+                  f"Your email verification token is {ss}. This token will stay valid for 24 hours.",
+                  settings.EMAIL_HOST_USER,
+                  [token.user.email])
+
         return token
 
     def update(self, instance, validated_data):
@@ -165,6 +183,7 @@ class VerifyEmailSerializer(serializers.Serializer):
     token = serializers.CharField()
 
     def validate(self, data):
+        data["token"] = hashlib.sha256(data["token"].encode("utf-8")).hexdigest()
         if not EmailAuthToken.objects.filter(id=data["token"]).exists():
             raise serializers.ValidationError("Token does not exist.")
         token = EmailAuthToken.objects.get(id=data["token"])

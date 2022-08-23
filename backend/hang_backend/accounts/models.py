@@ -9,19 +9,18 @@ class FriendRequest(models.Model):
 
 
 class EmailAuthToken(models.Model):
-    id = models.CharField(max_length=20, primary_key=True)
+    id = models.CharField(max_length=64, primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
 
 class UserDetails(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
+    profile_picture = models.CharField(max_length=200, default="default profile pic change this later")  # TODO: CHANGE
     is_verified = models.BooleanField(default=False)  # Shows whether the user has been verified by email.
 
     friends = models.ManyToManyField(User, related_name="+")
     blocked_users = models.ManyToManyField(User, related_name="+")
-
-
 
 # TODO: hang requests
 # time, location, budget, user list, needs and tasks

@@ -1,5 +1,6 @@
 import random
 import string
+from datetime import datetime
 
 from knox.auth import TokenAuthentication
 from rest_framework import serializers, validators
@@ -13,8 +14,8 @@ from .models import Message, MessageChannel, DirectMessage, GroupChat
 class MessageChannelSerializer(serializers.ModelSerializer):
     class Meta:
         model = MessageChannel
-        fields = ["id", "channel_type"]
-        read_only_fields = ["channel_type"]
+        fields = ["id", "channel_type", "created_at", "message_last_sent"]
+        read_only_fields = ["channel_type", "created_at", "message_last_sent"]
 
 
 class MessageChannelReaderSerializer(serializers.Serializer):
@@ -136,6 +137,7 @@ class GroupChatSerializer(MessageChannelSerializer):
 
 
 class MessageSerializer(serializers.ModelSerializer):
+    user = UserSerializer(required=False)
     message_channel = MessageChannelReaderSerializer()
 
     class Meta:
@@ -150,6 +152,10 @@ class MessageSerializer(serializers.ModelSerializer):
         message = Message(user=self.context["user"], content=validated_data["content"],
                           message_channel=validated_data["message_channel"])
         message.save()
+
+        validated_data["message_channel"].message_last_sent = datetime.now()
+        validated_data["message_channel"].save()
+
         return message
 
     def update(self, instance, validated_data):

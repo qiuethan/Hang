@@ -1,3 +1,6 @@
+import hashlib
+
+from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.http import JsonResponse
 from knox.models import AuthToken
@@ -9,7 +12,8 @@ from rest_framework.status import HTTP_204_NO_CONTENT
 from hang_backend import settings
 from .models import EmailAuthToken, FriendRequest
 from .serializers import LoginSerializer, UserSerializer, RegisterSerializer, SendEmailSerializer, \
-    VerifyEmailSerializer, FriendRequestReceivedSerializer, FriendRequestSentSerializer, UserReaderSerializer
+    VerifyEmailSerializer, FriendRequestReceivedSerializer, FriendRequestSentSerializer, UserReaderSerializer, \
+    UserDetailsSerializer
 
 
 class RegisterView(views.APIView):
@@ -20,8 +24,7 @@ class RegisterView(views.APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         return JsonResponse({
-            "user": UserSerializer(user).data,
-            "token": AuthToken.objects.create(user)[1]
+            "user": UserSerializer(user).data
         }, safe=False)
 
 
@@ -38,15 +41,27 @@ class LoginView(views.APIView):
         })
 
 
-class UserView(generics.RetrieveAPIView):
+class RetrieveUserView(generics.RetrieveAPIView):
+    permission_classes = [
+        permissions.IsAuthenticated,
+    ]
+    serializer_class = UserDetailsSerializer
+
+    queryset = User.objects.all()
+
+    def get_object(self):
+        return super(RetrieveUserView, self).get_object().userdetails
+
+
+class RetrieveCurrentUserView(generics.RetrieveAPIView):
     """Method that returns the currently logged-in user."""
     permission_classes = [
         permissions.IsAuthenticated,
     ]
-    serializer_class = UserSerializer
+    serializer_class = UserDetailsSerializer
 
     def get_object(self):
-        return self.request.user
+        return self.request.user.userdetails
 
 
 class SendEmailView(views.APIView):
@@ -55,13 +70,7 @@ class SendEmailView(views.APIView):
     def post(self, request):
         serializer = SendEmailSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        token = serializer.save()
-
-        send_mail("Hang Email Verification Token",
-                  f"Your email verification token is {token.id}. This token will stay valid for 24 hours.",
-                  settings.EMAIL_HOST_USER,
-                  [token.user.email])
-
+        serializer.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
