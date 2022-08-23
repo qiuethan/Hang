@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { connectws } from '../../../../actions/chat';
 
@@ -9,6 +9,8 @@ import { Box } from '@mui/material';
 const Messages = ({ client, currentRoom, clientOpened }) => {
     
     const [messages, setMessages] = useState([]);
+    const [sentMessage, setSentMessage] = useState();
+    const scrollRef = useRef(null);
 
     useEffect(() => {
         setMessages([]);
@@ -20,7 +22,16 @@ const Messages = ({ client, currentRoom, clientOpened }) => {
                 }
             }));
         }
+        if (scrollRef.current) {
+            scrollRef.current.scrollIntoView({ behaviour: "auto" });
+        }
     }, [currentRoom, clientOpened]);
+
+    useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollIntoView({ behaviour: "smooth" });
+        }
+    }, [sentMessage]);
 
     try{
         client.onmessage = (message) => {
@@ -35,6 +46,7 @@ const Messages = ({ client, currentRoom, clientOpened }) => {
             }
             if(messageObject.action === "send_message"){
                 if(messageObject.content.message_channel.id === currentRoom){  
+                    setSentMessage(messageObject.content);
                     setMessages([messageObject.content, ...messages])
                 }
                 else{
@@ -49,10 +61,13 @@ const Messages = ({ client, currentRoom, clientOpened }) => {
 
     return(
         messages.length === 0 ? <Box/> : 
-        <Box sx={{display: "flex", flexDirection: "column-reverse"}}>
-            {messages.map((message) => (
-                <Message key={message.id} message={message}/>
-            ))}
+        <Box sx={{display: "flex", flexDirection: "column-reverse", overflow: "auto", maxHeight: "calc(98vh - 66px)"}}>
+            <div ref={scrollRef}/>
+            <Box sx={{display: "flex", flexDirection: "column-reverse"}}>
+                {messages.map((message) => (
+                    <Message key={message.id} message={message}/>
+                ))}
+            </Box>
         </Box>
     );
 }

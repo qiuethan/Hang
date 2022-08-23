@@ -10,12 +10,10 @@ import { Box } from '@mui/material';
 const Chatroom = ({ client, currentRoom, clientOpened }) => {
 
     return(
-        <Box sx={{display: "block"}}>
-            <Box sx={{display: "flex", flexDirection: "column-reverse"}}>
+        <Box sx={{display: "block", height: "98vh"}}>
+            <Box sx={{display: "flex", flexDirection: "column-reverse", height: "100%"}}>
                 <Form client={client} currentRoom={currentRoom}/>
-                <Box sx={{display: "flex", flexDirection: "column-reverse", overflow: "auto", height: "calc(98vh - 66px)"}}>
-                    <Messages client={client} currentRoom={currentRoom} clientOpened={clientOpened}/>
-                </Box>
+                <Messages client={client} currentRoom={currentRoom} clientOpened={clientOpened}/>
             </Box>
         </Box>
     );

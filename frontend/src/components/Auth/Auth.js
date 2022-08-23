@@ -1,5 +1,5 @@
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ReactDOM } from "react";
 import './Auth.css';
 import { useDispatch, useSelector } from "react-redux";
@@ -20,7 +20,12 @@ const Auth = ({}) => {
     const [confirm, setConfirm] = useState({confirmPassword: ""})
 
     const [confirmAccount, setConfirmAccount] = useState(false);
-    const [invalidCredentials, setInvalidCredentials] = useState(false);
+
+    useEffect(() => {
+        if(JSON.parse(localStorage.getItem('profile')) !== null){
+            history('/');
+        }
+    }, [useSelector((state) => state)])
 
     const handleChange = (event) => {
         const name = event.target.name;
@@ -33,9 +38,14 @@ const Auth = ({}) => {
 
         if(isSignup){
             if(inputs.password == confirm.confirmPassword){  
-                dispatch(signup(inputs, history))
+                dispatch(signup(inputs))
                 .then((response) => {
-                    handleErrors(response.response.data.non_field_errors);
+                    try{
+                        handleErrors(response.response.data.non_field_errors);
+                    }
+                    catch (error){
+                        window.location.reload();
+                    }
                 });
             }
             else{
@@ -43,13 +53,14 @@ const Auth = ({}) => {
             }
         }
         else{
-            dispatch(login(inputs, history))
+            dispatch(login(inputs))
             .then((response) => {
                 try{
                     handleErrors(response.response.data);
                 }
                 catch (error){
                     console.log(error);
+                    window.location.reload();
                 }
             })
         }
