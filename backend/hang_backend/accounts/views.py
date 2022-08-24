@@ -151,6 +151,7 @@ class RemoveFriendsView(generics.GenericAPIView):
         return self.request.user.userdetails.friends.all()
 
     def delete(self, request, *args, **kwargs):
+        self.get_object().userdetails.friends.remove(self.request.user)
         self.request.user.userdetails.friends.remove(self.get_object())
         return Response(status=status.HTTP_204_NO_CONTENT)
 
