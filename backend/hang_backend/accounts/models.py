@@ -21,7 +21,3 @@ class UserDetails(models.Model):
 
     friends = models.ManyToManyField(User, related_name="+")
     blocked_users = models.ManyToManyField(User, related_name="+")
-
-# TODO: hang requests
-# time, location, budget, user list, needs and tasks
-#
