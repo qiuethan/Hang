@@ -12,7 +12,7 @@ from chat.serializers import AuthenticateWebsocketSerializer
 def send_message(user, action, content):
     channel_layer = get_channel_layer()
     channel_layer.group_send(
-        user.username,
+        user.username, # TODO: might clash with chat
         {
             "type": "action",
             "action": action,
