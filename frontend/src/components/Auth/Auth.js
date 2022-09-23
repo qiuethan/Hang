@@ -10,7 +10,7 @@ import { login, sendemail, signup } from "../../actions/login.js";
 
 const initialState = {username: "", email: "", password: ""};
 
-const Auth = ({}) => {
+const Auth = ({currentPage, setCurrentPage}) => {
 
     const dispatch = useDispatch();
     const history = useNavigate();
@@ -22,6 +22,7 @@ const Auth = ({}) => {
     const [confirmAccount, setConfirmAccount] = useState(false);
 
     useEffect(() => {
+        setCurrentPage("auth")
         if(JSON.parse(localStorage.getItem('profile')) !== null){
             history('/');
         }
