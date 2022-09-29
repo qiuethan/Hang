@@ -28,3 +28,6 @@ export const loadfriends = () => API.get('/v1/accounts/friends');
 //Friend Requests
 export const loadrecievedfriendrequests = () => API.get('/v1/accounts/received_friend_request');
 export const acceptfriendrequest = (id) => API.delete(`/v1/accounts/received_friend_request/${id}`)
+
+//Hang Requests
+export const createhangevent = (inputs) => API.post('/v1/hang_event/hang_event', inputs);

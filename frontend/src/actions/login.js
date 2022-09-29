@@ -1,7 +1,7 @@
 import * as api from '../api/index.js'
 import { LOGIN, LOGOUT } from '../constants/actionTypes'
 
-export const login = (inputs, ) => async (dispatch) => {
+export const login = (inputs) => async (dispatch) => {
     try{
         const { data } = await api.login(inputs);
         dispatch({ type: LOGIN, data });
@@ -12,7 +12,7 @@ export const login = (inputs, ) => async (dispatch) => {
     }
 }
 
-export const signup = (inputs, ) => async (dispatch) => {
+export const signup = (inputs) => async (dispatch) => {
     try{
         const { data } = await api.signin(inputs);
         dispatch({type: LOGIN, data})
