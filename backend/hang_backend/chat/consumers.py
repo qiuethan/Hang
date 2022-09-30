@@ -60,7 +60,7 @@ class ChatAction(abc.ABC):
         users_list = await sync_to_async(list)(users)
         for user in users_list:
             await self.chat_consumer.channel_layer.group_send(
-                user.username,
+                "chat." + user.username,
                 {
                     "type": "action",
                     "action": self.name,
@@ -78,7 +78,7 @@ class AuthenticateAction(ChatAction):
         await sync_to_async(serializer.is_valid)(raise_exception=True)
 
         await self.chat_consumer.channel_layer.group_add(
-            self.chat_consumer.user.username,
+            "chat." + self.chat_consumer.user.username,
             self.chat_consumer.channel_name
         )
 
@@ -158,7 +158,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(
-            self.user.username,
+            "chat." + self.user.username,
             self.channel_name
         )
 

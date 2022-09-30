@@ -1,7 +1,4 @@
-import hashlib
-
 from django.contrib.auth.models import User
-from django.core.mail import send_mail
 from django.http import JsonResponse
 from knox.models import AuthToken
 from rest_framework import generics, permissions, status, views, exceptions
@@ -9,7 +6,6 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.status import HTTP_204_NO_CONTENT
 
-from hang_backend import settings
 from .models import EmailAuthToken, FriendRequest
 from .serializers import LoginSerializer, UserSerializer, RegisterSerializer, SendEmailSerializer, \
     VerifyEmailSerializer, FriendRequestReceivedSerializer, FriendRequestSentSerializer, UserReaderSerializer, \
