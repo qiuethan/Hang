@@ -14,15 +14,22 @@ from .serializers import AuthenticateWebsocketSerializer, MessageSerializer
 
 
 class ChatAction(abc.ABC):
-    name = None
-    needs_authentication = False
+    """
+    Generic action for chat websocket.
+    """
+    name = None  # Name of websocket.
+    needs_authentication = False  # Whether the websocket needs authentication.
 
     def __init__(self, chat_consumer, data):
         self.chat_consumer = chat_consumer
         self.data = data
 
     async def run(self):
+        """
+        Runs the ChatAction.
+        """
         try:
+
             if self.needs_authentication and not self.chat_consumer.authenticated:
                 raise ChatActionError("User is not authenticated.")
             await self.action()

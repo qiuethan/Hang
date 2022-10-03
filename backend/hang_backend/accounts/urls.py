@@ -3,7 +3,7 @@ from knox import views as knox_views
 
 from .views import LoginView, RegisterView, RetrieveCurrentUserView, SendEmailView, VerifyEmailView, ListFriendsView, \
     ListCreateBlockedUsersView, ListCreateSentFriendRequestView, RetrieveDestroySentFriendRequestView, \
-    ListReceivedFriendRequestView, RetrieveUpdateDestroyReceivedFriendRequestView, RemoveFriendsView, \
+    ListReceivedFriendRequestView, RetrieveAcceptDenyReceivedFriendRequestView, RemoveFriendsView, \
     RemoveBlockedUsersView, RetrieveUserView
 
 app_name = "accounts"
@@ -19,7 +19,7 @@ urlpatterns = [
     path("sent_friend_request", ListCreateSentFriendRequestView.as_view()),
     path("sent_friend_request/<str:user_id>", RetrieveDestroySentFriendRequestView.as_view()),
     path("received_friend_request", ListReceivedFriendRequestView.as_view()),
-    path("received_friend_request/<str:user_id>", RetrieveUpdateDestroyReceivedFriendRequestView.as_view()),
+    path("received_friend_request/<str:user_id>", RetrieveAcceptDenyReceivedFriendRequestView.as_view()),
     path("friends", ListFriendsView.as_view()),
     path("friends/<str:pk>", RemoveFriendsView.as_view()),
     path("blocked_users", ListCreateBlockedUsersView.as_view()),
