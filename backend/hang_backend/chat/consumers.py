@@ -29,14 +29,18 @@ class ChatAction(abc.ABC):
         Runs the ChatAction.
         """
         try:
-
+            # Throws an error if the ChatAction needs authentication and the user is not authenticated.
             if self.needs_authentication and not self.chat_consumer.authenticated:
                 raise ChatActionError("User is not authenticated.")
+
+            # Runs the ChatAction.
             await self.action()
             message = "success"
         except ChatActionError as e:
+            # If the ChatAction is invalid, change message to the error.
             message = str(e)
         await self.chat_consumer.channel_layer.send(
+
             self.chat_consumer.channel_name,
             {
                 "type": "status",
