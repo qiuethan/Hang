@@ -14,22 +14,33 @@ from .serializers import AuthenticateWebsocketSerializer, MessageSerializer
 
 
 class ChatAction(abc.ABC):
-    name = None
-    needs_authentication = False
+    """
+    Generic action for chat websocket.
+    """
+    name = None  # Name of websocket.
+    needs_authentication = False  # Whether the websocket needs authentication.
 
     def __init__(self, chat_consumer, data):
         self.chat_consumer = chat_consumer
         self.data = data
 
     async def run(self):
+        """
+        Runs the ChatAction.
+        """
         try:
+            # Throws an error if the ChatAction needs authentication and the user is not authenticated.
             if self.needs_authentication and not self.chat_consumer.authenticated:
                 raise ChatActionError("User is not authenticated.")
+
+            # Runs the ChatAction.
             await self.action()
             message = "success"
         except ChatActionError as e:
+            # If the ChatAction is invalid, change message to the error.
             message = str(e)
         await self.chat_consumer.channel_layer.send(
+
             self.chat_consumer.channel_name,
             {
                 "type": "status",
@@ -60,7 +71,7 @@ class ChatAction(abc.ABC):
         users_list = await sync_to_async(list)(users)
         for user in users_list:
             await self.chat_consumer.channel_layer.group_send(
-                user.username,
+                "chat." + user.username,
                 {
                     "type": "action",
                     "action": self.name,
@@ -78,7 +89,7 @@ class AuthenticateAction(ChatAction):
         await sync_to_async(serializer.is_valid)(raise_exception=True)
 
         await self.chat_consumer.channel_layer.group_add(
-            self.chat_consumer.user.username,
+            "chat." + self.chat_consumer.user.username,
             self.chat_consumer.channel_name
         )
 
@@ -158,7 +169,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(
-            self.user.username,
+            "chat." + self.user.username,
             self.channel_name
         )
 

@@ -1,7 +1,4 @@
-import hashlib
-
 from django.contrib.auth.models import User
-from django.core.mail import send_mail
 from django.http import JsonResponse
 from knox.models import AuthToken
 from rest_framework import generics, permissions, status, views, exceptions
@@ -9,7 +6,6 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.status import HTTP_204_NO_CONTENT
 
-from hang_backend import settings
 from .models import EmailAuthToken, FriendRequest
 from .serializers import LoginSerializer, UserSerializer, RegisterSerializer, SendEmailSerializer, \
     VerifyEmailSerializer, FriendRequestReceivedSerializer, FriendRequestSentSerializer, UserReaderSerializer, \
@@ -17,7 +13,7 @@ from .serializers import LoginSerializer, UserSerializer, RegisterSerializer, Se
 
 
 class RegisterView(views.APIView):
-    """Method to register a user."""
+    """Viem to register a user."""
 
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
@@ -29,7 +25,7 @@ class RegisterView(views.APIView):
 
 
 class LoginView(views.APIView):
-    """Method to log a user in."""
+    """View to log a user in."""
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
@@ -42,11 +38,11 @@ class LoginView(views.APIView):
 
 
 class RetrieveUserView(generics.RetrieveAPIView):
+    """View to retrieve a user by ID."""
     permission_classes = [
         permissions.IsAuthenticated,
     ]
     serializer_class = UserDetailsSerializer
-
     queryset = User.objects.all()
 
     def get_object(self):
@@ -54,7 +50,7 @@ class RetrieveUserView(generics.RetrieveAPIView):
 
 
 class RetrieveCurrentUserView(generics.RetrieveAPIView):
-    """Method that returns the currently logged-in user."""
+    """View that returns the currently logged-in user."""
     permission_classes = [
         permissions.IsAuthenticated,
     ]
@@ -65,7 +61,7 @@ class RetrieveCurrentUserView(generics.RetrieveAPIView):
 
 
 class SendEmailView(views.APIView):
-    """Method that send a verification email if the current user's account has not been verified."""
+    """View that send a verification email if the current user's account has not been verified."""
 
     def post(self, request):
         serializer = SendEmailSerializer(data=request.data)
@@ -75,22 +71,27 @@ class SendEmailView(views.APIView):
 
 
 class VerifyEmailView(views.APIView):
-    """Method that takes a user's verification token and verifies them."""
+    """View that takes a user's verification token and verifies them."""
 
     def patch(self, request):
         serializer = VerifyEmailSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        # Updates user's profile.
         user = serializer.validated_data
         user.userdetails.is_verified = True
         user.userdetails.save()
 
+        # Deletes EmailAuthToken.
         EmailAuthToken.objects.filter(user=user).delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ListCreateSentFriendRequestView(generics.ListCreateAPIView):
+    """
+    View that can list a user's friend requests and can create new friend requests.
+    """
     permission_classes = [
         permissions.IsAuthenticated,
     ]
@@ -101,6 +102,9 @@ class ListCreateSentFriendRequestView(generics.ListCreateAPIView):
 
 
 class RetrieveDestroySentFriendRequestView(generics.RetrieveDestroyAPIView):
+    """
+    View that retrieves / deletes a friend request by ID.
+    """
     permission_classes = [
         permissions.IsAuthenticated,
     ]
@@ -112,6 +116,9 @@ class RetrieveDestroySentFriendRequestView(generics.RetrieveDestroyAPIView):
 
 
 class ListReceivedFriendRequestView(generics.ListAPIView):
+    """
+    View that lists all friend requests that have been received by the user.
+    """
     permission_classes = {
         permissions.IsAuthenticated,
     }
@@ -121,7 +128,10 @@ class ListReceivedFriendRequestView(generics.ListAPIView):
         return FriendRequest.objects.filter(to_user=self.request.user).all()
 
 
-class RetrieveUpdateDestroyReceivedFriendRequestView(generics.RetrieveUpdateAPIView):
+class RetrieveAcceptDenyReceivedFriendRequestView(generics.RetrieveUpdateAPIView):
+    """
+    View that can retrieve, accept, or deny a friend request that a user a received.
+    """
     permission_classes = {
         permissions.IsAuthenticated,
     }
@@ -142,6 +152,9 @@ class RetrieveUpdateDestroyReceivedFriendRequestView(generics.RetrieveUpdateAPIV
 
 
 class RemoveFriendsView(generics.GenericAPIView):
+    """
+    View that allows a user to remove friends.
+    """
     permission_classes = [
         permissions.IsAuthenticated,
     ]
@@ -157,6 +170,9 @@ class RemoveFriendsView(generics.GenericAPIView):
 
 
 class ListFriendsView(generics.ListAPIView):
+    """
+    View that lists all a user's friends.
+    """
     permission_classes = [
         permissions.IsAuthenticated,
     ]
@@ -167,6 +183,9 @@ class ListFriendsView(generics.ListAPIView):
 
 
 class ListCreateBlockedUsersView(generics.ListAPIView):
+    """
+    View that lists all the users that are blocked.
+    """
     permission_classes = [
         permissions.IsAuthenticated,
     ]
@@ -178,6 +197,7 @@ class ListCreateBlockedUsersView(generics.ListAPIView):
     def post(self, request):
         serializer = UserReaderSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
         blocked_user = serializer.validated_data
         if self.request.user == blocked_user:
             raise exceptions.ParseError("Cannot block yourself.")
@@ -186,6 +206,9 @@ class ListCreateBlockedUsersView(generics.ListAPIView):
 
 
 class RemoveBlockedUsersView(generics.GenericAPIView):
+    """
+    View that allows a user to unblock another user.
+    """
     permission_classes = [
         permissions.IsAuthenticated,
     ]
