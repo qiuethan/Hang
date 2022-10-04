@@ -1,13 +1,17 @@
 import React, { useEffect } from 'react';
 import { useState } from 'react';
-import Description from './Fields/Description';
+import { useDispatch } from 'react-redux'
 
 import Name from './Fields/Name';
+import Description from './Fields/Description';
+import { createhangevent } from '../../actions/create';
 
 const Create = () => {
     
     const [fields, setFields] = useState({name: "", description: "", picture: "", scheduled_time_start: "", scheduled_time_end: "", latitude: "", longitude: "", budget: 0.00, attendees: [], needs: [], tasks: []});
     const [user, setUser] = useState(JSON.parse(localStorage.getItem("profile")));
+
+    const dispatch = useDispatch()
 
     useEffect(() => {
         setFields({...fields, name: `${user.user.username}'s Hang`, description: `A Hang hosted by ${user.user.username}!`});
@@ -16,6 +20,11 @@ const Create = () => {
     const handleChange = (event) => {
         event.preventDefault();
         setFields({...fields, [event.target.name]: event.target.value})
+    }
+
+    const handleSubmit = (event) => {
+        event.preventDefault();
+        dispatch(createhangevent(fields))
     }
 
     return(
@@ -40,6 +49,7 @@ const Create = () => {
                 value={fields.scheduled_time_end || ""}
                 onChange={handleChange}
             />
+            <button onClick={handleSubmit}>Submit</button>
         </div>
     )
 }
