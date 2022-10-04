@@ -11,7 +11,12 @@ const Chatitem = ({ roomid, users, type, gcName, setCurrentRoom }) => {
 
     useEffect(() => {
         if(type === "DM"){
-            setName(JSON.parse(users).find(user => user.id !== JSON.parse(localStorage.getItem("profile")).user.id).username);
+            try{
+                setName(JSON.parse(users).find(user => user.id !== JSON.parse(localStorage.getItem("profile")).user.id).username);
+            }
+            catch (error){
+                setName("Could Not Access User");
+            }
         }
         if(type === "GC"){
             setName(gcName);

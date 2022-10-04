@@ -6,7 +6,7 @@ const Message = ({ message }) => {
     return(
         <div>
             <div>
-                {message.user}
+                {message.user.username}
             </div>
             <div>
                 {message.content}
@@ -18,4 +18,4 @@ const Message = ({ message }) => {
     )
 }
 
-export default Message
+export default Message;
