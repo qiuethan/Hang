@@ -6,6 +6,7 @@ from .serializers import DirectMessageSerializer, \
 
 
 class ListCreateDirectMessageView(generics.ListCreateAPIView):
+    """View that can list/create DMs."""
     permission_classes = [
         permissions.IsAuthenticated,
     ]
@@ -16,6 +17,7 @@ class ListCreateDirectMessageView(generics.ListCreateAPIView):
 
 
 class RetrieveDirectMessageView(generics.RetrieveAPIView):
+    """View that can retrieve a DM by id."""
     permission_classes = [
         permissions.IsAuthenticated,
     ]
@@ -26,6 +28,7 @@ class RetrieveDirectMessageView(generics.RetrieveAPIView):
 
 
 class ListCreateGroupChatView(generics.ListCreateAPIView):
+    """View that can list/create GCs."""
     permission_classes = [
         permissions.IsAuthenticated
     ]
@@ -36,6 +39,7 @@ class ListCreateGroupChatView(generics.ListCreateAPIView):
 
 
 class RetrieveUpdateDestroyGroupChatView(generics.RetrieveUpdateDestroyAPIView):
+    """View that can retrieve/update/delete a DM by id."""
     permission_classes = [
         permissions.IsAuthenticated
     ]
