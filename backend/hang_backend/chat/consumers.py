@@ -4,7 +4,7 @@ import sys
 import traceback
 
 from asgiref.sync import sync_to_async
-from channels.db import database_sync_to_async
+from channels.db import database_sync_to_async as dbsa
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import User
 
@@ -39,8 +39,9 @@ class ChatAction(abc.ABC):
         except ChatActionError as e:
             # If the ChatAction is invalid, change message to the error.
             message = str(e)
-        await self.chat_consumer.channel_layer.send(
 
+        # Send status message to user.
+        await self.chat_consumer.channel_layer.send(
             self.chat_consumer.channel_name,
             {
                 "type": "status",
@@ -50,9 +51,11 @@ class ChatAction(abc.ABC):
 
     @abc.abstractmethod
     async def action(self):
+        """Body code of the ChatAction."""
         pass
 
     async def reply_to_sender(self, data):
+        """Function that sends a message to the sender of the ChatAction."""
         await self.chat_consumer.channel_layer.send(
             self.chat_consumer.channel_name,
             {
@@ -63,11 +66,15 @@ class ChatAction(abc.ABC):
         )
 
     async def send_to_message_channel(self, message_channel_id, data):
-        if not await database_sync_to_async((await database_sync_to_async(MessageChannel.objects.filter)(
+        """Function that sends a message to all users in a MessageChannel."""
+        # Verifies that the MessageChannel exists.
+        if not await dbsa((await dbsa(MessageChannel.objects.filter)(
                 id=message_channel_id, users=self.chat_consumer.user)).exists)():
             raise ChatActionError("Message channel does not exist.")
-        message_channel = await database_sync_to_async(MessageChannel.objects.get)(id=message_channel_id)
-        users = await database_sync_to_async(message_channel.users.all)()
+
+        # Sends the message to all users.
+        message_channel = await dbsa(MessageChannel.objects.get)(id=message_channel_id)
+        users = await dbsa(message_channel.users.all)()
         users_list = await sync_to_async(list)(users)
         for user in users_list:
             await self.chat_consumer.channel_layer.group_send(
@@ -81,13 +88,16 @@ class ChatAction(abc.ABC):
 
 
 class AuthenticateAction(ChatAction):
+    """ChatAction that allows a user to authenticate themselves in a MessageChannel."""
     name = "authenticate"
     needs_authentication = False
 
     async def action(self):
+        # Verifies the data.
         serializer = AuthenticateWebsocketSerializer(data=self.data, context={"user": self.chat_consumer.user})
         await sync_to_async(serializer.is_valid)(raise_exception=True)
 
+        # Adds the user to their own MessageChannel.
         await self.chat_consumer.channel_layer.group_add(
             "chat." + self.chat_consumer.user.username,
             self.chat_consumer.channel_name
@@ -97,64 +107,87 @@ class AuthenticateAction(ChatAction):
 
 
 class SendMessageAction(ChatAction):
+    """ChatAction that allows a user to send a message to a MessageChannel."""
     name = "send_message"
     needs_authentication = True
 
     async def action(self):
+        # Verifies the message.
         serializer = MessageSerializer(data=self.data, context={"user": self.chat_consumer.user})
         await sync_to_async(serializer.is_valid)(raise_exception=True)
-        message = await database_sync_to_async(serializer.save)()
 
+        # Saves the message.
+        message = await dbsa(serializer.save)()
+
+        # Sends the message to all users in the MessageChannel.
         await self.send_to_message_channel(message_channel_id=message.message_channel.id, data=serializer.data)
 
 
 class LoadMessageAction(ChatAction):
+    """ChatAction that allows a user to load past messages."""
     name = "load_message"
     needs_authentication = True
 
     async def action(self):
-        message_channel = await database_sync_to_async(self.chat_consumer.user.message_channels.get)(
+        # Gets the MessageChannel by id.
+        message_channel = await dbsa(self.chat_consumer.user.message_channels.get)(
             id=self.data["message_channel_id"])
+
+        # If the user provides a "message_id" field, load 20 messages sent before said id.
         if "message_id" in self.data:
             messages = message_channel.messages.filter(id__lte=self.data["message_id"]).order_by("-id")
-            num_messages = min(20, await database_sync_to_async(messages.count)())
-            messages = await database_sync_to_async(messages.__getitem__)(slice(num_messages))
+            num_messages = min(20, await dbsa(messages.count)())
+            messages = await dbsa(messages.__getitem__)(slice(num_messages))
+
+        # If the user does not, load the 20 last sent messages.
         else:
             messages = message_channel.messages.order_by("-id")
-            num_messages = min(20, await database_sync_to_async(messages.count)())
-            messages = await database_sync_to_async(messages.__getitem__)(slice(num_messages))
+            num_messages = min(20, await dbsa(messages.count)())
+            messages = await dbsa(messages.__getitem__)(slice(num_messages))
+
+        # Save and send messages.
         serializer = MessageSerializer(messages, many=True)
-        await self.reply_to_sender(await database_sync_to_async(getattr)(serializer, "data"))
+        await self.reply_to_sender(await dbsa(getattr)(serializer, "data"))
 
 
 class EditMessageAction(ChatAction):
+    """ChatAction that allows a user to edit their past messages."""
     name = "edit_message"
     needs_authentication = True
 
     async def action(self):
-        serializer = MessageSerializer(await database_sync_to_async(Message.objects.get)(id=self.data["id"]),
+        # Retrieves a message by id.
+        serializer = MessageSerializer(await dbsa(Message.objects.get)(id=self.data["id"]),
                                        data=self.data,
                                        context={"user": self.chat_consumer.user}, partial=True)
         await sync_to_async(serializer.is_valid)(raise_exception=True)
-        message = await database_sync_to_async(serializer.save)()
+
+        # Re-saves the updated message.
+        message = await dbsa(serializer.save)()
+
+        # Sends a message to all users in the MessageChannel.
         await self.send_to_message_channel(
             message_channel_id=(await sync_to_async(getattr)(message, "message_channel")).id,
             data=await sync_to_async(getattr)(serializer, "data"))
 
 
 class DeleteMessageAction(ChatAction):
+    """ChatAction that allows a user to delete a past message."""
     name = "delete_message"
     needs_authentication = True
 
     async def action(self):
-        message = await database_sync_to_async(self.chat_consumer.user.messages.get)(id=self.data["id"])
+        # Deletes a message.
+        message = await dbsa(self.chat_consumer.user.messages.get)(id=self.data["id"])
         await self.send_to_message_channel(
             message_channel_id=(await sync_to_async(getattr)(message, "message_channel")).id,
             data={"id": self.data["id"]})
-        await database_sync_to_async(message.delete)()
+        await dbsa(message.delete)()
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
+    """Websocket for Chat."""
+    # ChatActions.
     chat_actions = [AuthenticateAction, SendMessageAction, LoadMessageAction, EditMessageAction, DeleteMessageAction]
 
     def __init__(self, *args, **kwargs):
@@ -163,22 +196,27 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.authenticated = False
 
     async def connect(self):
+        """Connects user to WS."""
         username = self.scope["url_route"]["kwargs"]["room_name"]
-        self.user = await database_sync_to_async(User.objects.get)(username=username)
+        self.user = await dbsa(User.objects.get)(username=username)
         await self.accept()
 
     async def disconnect(self, close_code):
+        """Disconnects user from WS."""
         await self.channel_layer.group_discard(
             "chat." + self.user.username,
             self.channel_name
         )
 
     async def receive(self, text_data=None, bytes_data=None):
+        """Runs everytime a message is received."""
         try:
+            # Load the data the user sent, and run the corresponding action.
             data = json.loads(text_data)
             action = list(filter(lambda x: x.name == data["action"], self.chat_actions))[0]
             await action(self, data["content"]).run()
         except (json.JSONDecodeError, KeyError, IndexError):
+            # Throws and error if the data is malformed.
             traceback.print_exception(*sys.exc_info())
             await self.channel_layer.send(
                 self.channel_name,
@@ -188,6 +226,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 }
             )
         except (Exception,) as e:
+            # Otherwise throw a generic error.
             traceback.print_exception(*sys.exc_info())
             await self.channel_layer.send(
                 self.channel_name,

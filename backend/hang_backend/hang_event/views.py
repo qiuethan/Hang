@@ -4,6 +4,7 @@ from hang_event.serializer import HangEventSerializer
 
 
 class ListCreateHangEventView(generics.ListCreateAPIView):
+    """View to list/create HangEvents."""
     permission_classes = {
         permissions.IsAuthenticated,
     }
@@ -14,6 +15,7 @@ class ListCreateHangEventView(generics.ListCreateAPIView):
 
 
 class RetrieveUpdateDestroyHangEventView(generics.RetrieveUpdateDestroyAPIView):
+    """View to retrieve/update/destroy HangEvents."""
     permission_classes = {
         permissions.IsAuthenticated,
     }

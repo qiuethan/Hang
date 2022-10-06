@@ -11,6 +11,7 @@ class ObjectExistsValidator:
         self.fields = fields
 
     def __call__(self, value):
+        """Verifies that there is an object with some given fields."""
         if len(self.fields) != len(set(self.fields)):
             raise validators.ValidationError("All fields must be unique.")
 

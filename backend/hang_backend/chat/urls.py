@@ -4,6 +4,7 @@ from . import views
 
 app_name = "chats"
 
+# Register URLs.
 urlpatterns = [
     path("direct_message", views.ListCreateDirectMessageView.as_view(), name="DirectMessage"),
     path("direct_message/<str:pk>", views.RetrieveDirectMessageView.as_view(), name="DirectMessage"),
