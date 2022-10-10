@@ -23,9 +23,8 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install Dependencies
       run: |
-        cd backend/hang_backend
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install -r backend/requirements.txt
     - name: Run Tests
       run: |
-        python manage.py test
+        python backend/hang_backend/manage.py test
