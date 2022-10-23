@@ -116,7 +116,8 @@ class RegisterSerializer(serializers.Serializer):
     """Serializer for RegisterView."""
 
     # Ensures that username and email are unique, and that the password is valid.
-    username = serializers.CharField(validators=[validators.UniqueValidator(queryset=User.objects.all())])
+    username = serializers.CharField(validators=[validators.UniqueValidator(queryset=User.objects.all())],
+                                     max_length=40)
     email = serializers.EmailField(validators=[validators.UniqueValidator(queryset=User.objects.all())])
     password = serializers.CharField(validators=[validate_password], write_only=True)
 
@@ -150,6 +151,7 @@ class LoginSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         raise NotImplementedError
+
     def update(self, instance, validated_data):
         raise NotImplementedError
 

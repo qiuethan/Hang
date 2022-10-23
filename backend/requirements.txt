@@ -6,3 +6,4 @@ django-rest-knox
 boto3
 channels
 django-allauth
+freezegun

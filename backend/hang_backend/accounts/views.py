@@ -6,6 +6,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.status import HTTP_204_NO_CONTENT
 
+from real_time_ws.consumers import send_message
 from .models import EmailAuthToken, FriendRequest
 from .serializers import LoginSerializer, UserSerializer, RegisterSerializer, SendEmailSerializer, \
     VerifyEmailSerializer, FriendRequestReceivedSerializer, FriendRequestSentSerializer, UserReaderSerializer, \
@@ -13,7 +14,7 @@ from .serializers import LoginSerializer, UserSerializer, RegisterSerializer, Se
 
 
 class RegisterView(views.APIView):
-    """Viem to register a user."""
+    """View to register a user."""
 
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
