@@ -1,7 +1,5 @@
 import abc
 import json
-import sys
-import traceback
 
 from asgiref.sync import sync_to_async
 from channels.db import database_sync_to_async as dbsa
@@ -131,7 +129,7 @@ class LoadMessageAction(ChatAction):
     async def action(self):
         # Gets the MessageChannel by id.
         message_channel = await dbsa(self.chat_consumer.user.message_channels.get)(
-            id=self.data["message_channel_id"])
+            id=self.data["message_channel"])
 
         # If the user provides a "message_id" field, load 20 messages sent before said id.
         if "message_id" in self.data:
@@ -215,19 +213,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
             data = json.loads(text_data)
             action = list(filter(lambda x: x.name == data["action"], self.chat_actions))[0]
             await action(self, data["content"]).run()
-        except (json.JSONDecodeError, KeyError, IndexError):
-            # Throws and error if the data is malformed.
-            traceback.print_exception(*sys.exc_info())
-            await self.channel_layer.send(
-                self.channel_name,
-                {
-                    "type": "status",
-                    "message": "Invalid json",
-                }
-            )
         except (Exception,) as e:
             # Otherwise throw a generic error.
-            traceback.print_exception(*sys.exc_info())
+            # traceback.print_exception(*sys.exc_info())
             await self.channel_layer.send(
                 self.channel_name,
                 {

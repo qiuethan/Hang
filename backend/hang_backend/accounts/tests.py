@@ -238,8 +238,7 @@ class SentFriendRequestTest(TestCase):
         self.client.credentials(HTTP_AUTHORIZATION="Token " + self.token1)
 
     def testSendFriendRequest(self):
-        response = self.client.post("/v1/accounts/sent_friend_request", {"to_user": {"id": 2}},
-                                    format="json")
+        response = self.client.post("/v1/accounts/sent_friend_request", {"to_user": {"id": 2}}, format="json")
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.content,
                          b'{"from_user":{"id":1,"username":"test_user_1","email":"test_user_1@gmail.com"},"to_user":{"id":2,"username":"test_user_2","email":"test_user_2@gmail.com"}}')
@@ -252,12 +251,12 @@ class SentFriendRequestTest(TestCase):
 
     def testMultipleSendFriendRequest(self):
         FriendRequest.objects.create(from_user=User.objects.get(id=1), to_user=User.objects.get(id=2), declined=False)
-        response = self.client.post("/v1/accounts/sent_friend_request", {"to_user": {"id": 2}},
+        response = self.client.post("/v1/accounts/sent_friend_request", {"to_user": 2},
                                     format="json")
         self.assertEqual(response.status_code, 400)
 
     def testSendFriendRequestToSelf(self):
-        response = self.client.post("/v1/accounts/sent_friend_request", {"to_user": {"id": 1}},
+        response = self.client.post("/v1/accounts/sent_friend_request", {"to_user": 1},
                                     format="json")
         self.assertEqual(response.status_code, 400)
 

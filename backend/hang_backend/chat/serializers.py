@@ -1,13 +1,11 @@
-import random
-import string
 from datetime import datetime
 
 from knox.auth import TokenAuthentication
 from rest_framework import serializers, validators
 from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.relations import PrimaryKeyRelatedField
 
-from accounts.serializers import UserSerializer, UserReaderSerializer
-from common.util import validators as util_validators
+from accounts.serializers import UserSerializer
 from .models import Message, MessageChannel, DirectMessage, GroupChat
 
 
@@ -20,39 +18,10 @@ class MessageChannelSerializer(serializers.ModelSerializer):
         read_only_fields = ["channel_type", "created_at", "message_last_sent"]
 
 
-class MessageChannelReaderSerializer(serializers.Serializer):
-    """Reads in a MessageChannel from JSON and return the Model object."""
-    id = serializers.CharField(max_length=10)
-    validators = [
-        util_validators.ObjectExistsValidator(queryset=MessageChannel.objects.all(), fields=["id"]),
-    ]
-
-    def validate(self, data):
-        return MessageChannel.objects.get(id=data["id"])
-
-    def create(self, validated_data):
-        raise NotImplementedError
-
-    def update(self, instance, validated_data):
-        raise NotImplementedError
-
-
-def generate_random_string():
-    """Utility method to generate a random string."""
-    return "".join([random.choice(string.ascii_letters) for _ in range(10)])
-
-
-def generate_message_channel_id():
-    """Utility method to generate a random id for a MessageChannel."""
-    message_channel_id = generate_random_string()
-    while MessageChannel.objects.filter(id=message_channel_id).exists():
-        message_channel_id = generate_random_string()
-    return message_channel_id
-
-
 class DirectMessageSerializer(MessageChannelSerializer):
     """Serializer for DM."""
-    users = UserReaderSerializer(many=True)
+
+    users = UserSerializer(many=True)
 
     class Meta(MessageChannelSerializer.Meta):
         model = DirectMessage
@@ -74,21 +43,16 @@ class DirectMessageSerializer(MessageChannelSerializer):
             raise validators.ValidationError("DM already exists.")
 
         # Creates MessageChannel from data.
-        message_channel_id = generate_message_channel_id()
+        return MessageChannel.objects.create_direct_message(current_user, to_user)
 
-        direct_message = DirectMessage(id=message_channel_id, channel_type="DM")
-        direct_message.save()
-
-        direct_message.users.add(current_user)
-        direct_message.users.add(to_user)
-
-        return direct_message
+    def update(self, instance, validated_data):
+        raise NotImplementedError
 
 
 class GroupChatSerializer(MessageChannelSerializer):
     """Serializer for GC."""
-    owner = UserReaderSerializer(required=False)
-    users = UserReaderSerializer(many=True)
+    owner = UserSerializer(required=False)
+    users = UserSerializer(many=True)
     channel_type = serializers.CharField(required=False)
 
     class Meta(MessageChannelSerializer.Meta):
@@ -105,16 +69,7 @@ class GroupChatSerializer(MessageChannelSerializer):
             raise validators.ValidationError("The creation of a DM must include the current user.")
 
         # Creates GC and saves it.
-        message_channel_id = generate_message_channel_id()
-
-        group_chat = GroupChat(id=message_channel_id, name=validated_data["name"], owner=current_user,
-                               channel_type="GC")
-        group_chat.save()
-
-        group_chat.users.add(current_user)
-        group_chat.users.add(*users)
-
-        return group_chat
+        return MessageChannel.objects.create_group_chat(name=validated_data["name"], owner=current_user, users=users)
 
     def update(self, instance, validated_data):
         current_user = self.context["request"].user
@@ -127,15 +82,15 @@ class GroupChatSerializer(MessageChannelSerializer):
             # User can only add more users / leave a GC; owner can remove user.
             users = validated_data["users"]
             curr_users = set(instance.users.all())
+            new_users = set(users.copy())
+
             curr_users.remove(current_user)
-            new_users = users.copy()
             if current_user in users:
                 new_users.remove(current_user)
+
             if len(curr_users.intersection(new_users)) != len(curr_users) and \
                     instance.owner.id != current_user.id:
                 raise serializers.ValidationError("Permission Denied.")
-            if len(users) == 0:
-                raise serializers.ValidationError("There must be at least one user in the GC.")
 
         if "owner" in validated_data:
             # Only owner can transfer ownership.
@@ -152,7 +107,10 @@ class GroupChatSerializer(MessageChannelSerializer):
 
         # Transfer ownership if the owner leaves.
         if not instance.users.filter(id=instance.owner.id).exists():
-            instance.owner = instance.users.first()
+            if instance.users.exists():
+                instance.owner = instance.users.first()
+            else:
+                instance.owner = None
 
         instance.save()
         return instance
@@ -161,7 +119,7 @@ class GroupChatSerializer(MessageChannelSerializer):
 class MessageSerializer(serializers.ModelSerializer):
     """Serializer for a message."""
     user = UserSerializer(required=False)
-    message_channel = MessageChannelReaderSerializer()
+    message_channel = PrimaryKeyRelatedField(queryset=MessageChannel.objects.all())
 
     class Meta:
         model = Message
