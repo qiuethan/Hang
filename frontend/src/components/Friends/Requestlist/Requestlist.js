@@ -10,7 +10,9 @@ const Requestlist = () => {
     return(
         requests.length === 0 ? <div/> : <div>
             {requests.map((request) => (
-                <Request key={request.from_user.id} user={request.from_user}/>
+                !request.declined && (
+                    <Request key={request.from_user.id} user={request.from_user}/>
+                )
             ))}
         </div>
     )

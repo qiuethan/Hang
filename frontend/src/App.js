@@ -8,10 +8,10 @@ import Navbar from './components/Navbar/Navbar';
 import Chat from './components/Chat/Chat';
 import Verify from './components/Verify/Verify';
 import Friends from './components/Friends/Friends';
-import Create from './components/Create/Create'
 
 import Box from "@mui/material/Box";
 import CssBaseline from "@mui/material/CssBaseline";
+import Hang from './components/Hang/Hang';
 
 const App = () => {
 
@@ -28,7 +28,7 @@ const App = () => {
             <Route path="/auth" element={<Auth currentPage={currentPage} setCurrentPage={setCurrentPage} />}/>
             <Route path="/chat" element={<Chat currentPage={currentPage} setCurrentPage={setCurrentPage}/>}/>
             <Route path="/friends" element={<Friends currentPage={currentPage} setCurrentPage={setCurrentPage}/>}/>
-            <Route path="/create" element={<Create currentPage={currentPage} setCurrentPage={setCurrentPage}/>}/>
+            <Route path="/hang/*" element={<Hang currentPage={currentPage} setCurrentPage={setCurrentPage}/>}/>
             <Route path="/verify" element={<Verify/>}/>
           </Routes> 
         </Box>

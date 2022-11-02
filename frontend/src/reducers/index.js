@@ -7,6 +7,7 @@ import friends from './friends';
 import websocket from './websocket';
 import friendrequests from './friendrequests';
 import hangs from './hangs'
+import blocked from './blocked';
 
 export const reducers = combineReducers({
     login,
@@ -16,4 +17,5 @@ export const reducers = combineReducers({
     websocket,
     friendrequests,
     hangs,
+    blocked,
 });

@@ -22,12 +22,16 @@ export const sendemail = (inputs) => API.post('/v1/accounts/send_email', inputs)
 export const loadrooms = () => API.get('/v1/chat/direct_message');
 export const loadgroups = () => API.get('/v1/chat/group_chat');
 
-//Load Friends
+//Friends
 export const loadfriends = () => API.get('/v1/accounts/friends');
+export const removefriend = (id) => API.delete(`/v1/accounts/friends/${id}`)
+export const blockfriend = (id) => API.post(`v1/accounts/blocked_users`, {id: id})
 
 //Friend Requests
 export const loadrecievedfriendrequests = () => API.get('/v1/accounts/received_friend_request');
-export const acceptfriendrequest = (id) => API.delete(`/v1/accounts/received_friend_request/${id}`)
-
+export const acceptfriendrequest = (id) => API.delete(`/v1/accounts/received_friend_request/${id}`);
+export const declinefriendrequest = (id) => API.patch(`/v1/accounts/received_friend_request/${id}`);
+export const sendfriendrequest = (email) => API.post(`/v1/accounts/sent_friend_request`, {to_user: { email: email }})
+ 
 //Hang Requests
 export const createhangevent = (inputs) => API.post('/v1/hang_event/hang_event', inputs);

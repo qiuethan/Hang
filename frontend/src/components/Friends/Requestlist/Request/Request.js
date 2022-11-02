@@ -1,6 +1,6 @@
 import React from "react";
 import { useDispatch } from "react-redux";
-import { acceptfriendrequest } from "../../../../actions/friends";
+import { acceptfriendrequest, declinefriendrequest } from "../../../../actions/friends";
 
 const Request = ({user}) => {
 
@@ -11,8 +11,9 @@ const Request = ({user}) => {
         dispatch(acceptfriendrequest(user));
     }
 
-    const declineRequest = () => {
-
+    const declineRequest = (e) => {
+        e.preventDefault();
+        dispatch(declinefriendrequest(user));
     }
 
     return(
