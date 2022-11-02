@@ -9,14 +9,13 @@ from django.contrib.auth.models import User
 from chat.serializers import AuthenticateWebsocketSerializer
 
 
-def send_message(user, action, content):
+def send_message(user, action):
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
         "real_time_ws." + user.username,
         {
             "type": "action",
             "action": action,
-            "content": content,
         }
     )
 

@@ -8,12 +8,11 @@ from rest_framework.status import HTTP_204_NO_CONTENT
 
 from .models import EmailAuthToken, FriendRequest
 from .serializers import LoginSerializer, UserSerializer, RegisterSerializer, SendEmailSerializer, \
-    VerifyEmailSerializer, FriendRequestReceivedSerializer, FriendRequestSentSerializer, UserReaderSerializer, \
-    UserDetailsSerializer
+    VerifyEmailSerializer, FriendRequestReceivedSerializer, FriendRequestSentSerializer, UserDetailsSerializer
 
 
 class RegisterView(views.APIView):
-    """Viem to register a user."""
+    """View to register a user."""
 
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
@@ -195,7 +194,7 @@ class ListCreateBlockedUsersView(generics.ListAPIView):
         return self.request.user.userdetails.blocked_users.all()
 
     def post(self, request):
-        serializer = UserReaderSerializer(data=request.data)
+        serializer = UserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         blocked_user = serializer.validated_data

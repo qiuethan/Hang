@@ -38,7 +38,7 @@ class ListCreateGroupChatView(generics.ListCreateAPIView):
         return GroupChat.objects.filter(users=self.request.user).all()
 
 
-class RetrieveUpdateDestroyGroupChatView(generics.RetrieveUpdateDestroyAPIView):
+class RetrieveUpdateGroupChatView(generics.RetrieveUpdateAPIView):
     """View that can retrieve/update/delete a DM by id."""
     permission_classes = [
         permissions.IsAuthenticated

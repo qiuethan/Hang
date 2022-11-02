@@ -4,9 +4,9 @@ from hang_event.models import HangEvent
 
 
 class HangEventSerializer(serializers.ModelSerializer):
-    # owner = UserReaderSerializer()
+    # owner = UserSerializer()
     # # location = LocationSerializer()
-    # attendees = UserReaderSerializer(many=True)
+    # attendees = UserSerializer(many=True)
 
     class Meta:
         model = HangEvent

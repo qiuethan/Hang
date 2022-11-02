@@ -1,7 +1,6 @@
 import hashlib
 import random
 import string
-from abc import ABC
 from datetime import datetime, timezone, timedelta
 
 from django.contrib.auth import authenticate
@@ -10,7 +9,6 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.mail import send_mail
 from rest_framework import serializers, validators
 
-from common.util import validators as util_validators
 from hang_backend import settings
 from .models import EmailAuthToken, FriendRequest, UserDetails
 
@@ -25,6 +23,12 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ("id", "username", "email")
 
+    def validate(self, data):
+        qs = User.objects.filter(id=data["id"])
+        if qs.count() == 0:
+            raise serializers.ValidationError("User does not exist.")
+        return qs.get()
+
 
 class UserDetailsSerializer(serializers.ModelSerializer):
     """Class that serializes all a UserDetails object into JSON."""
@@ -33,23 +37,6 @@ class UserDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserDetails
         fields = ("user", "profile_picture", "is_verified")
-
-
-class UserReaderSerializer(UserSerializer):
-    """Class that reads a JSON object and returns its corresponding user."""
-
-    class Meta(UserSerializer.Meta):
-        validators = [
-            util_validators.ObjectExistsValidator(
-                queryset=User.objects.all(),
-                fields=("id", "username", "email"),
-            )
-        ]
-
-    def validate(self, data):
-        """Filter users by their id, username, and email, and returns the corresponding user."""
-        kwargs = dict(filter(lambda element: element[1] is not None, data.items()))
-        return User.objects.filter(**kwargs).get()
 
 
 class FriendRequestReceivedSerializer(serializers.ModelSerializer):
@@ -77,8 +64,8 @@ class FriendRequestSentSerializer(serializers.ModelSerializer):
     Serializer for a friend request object. It should be used to serialize sent friend requests, as it does not show
     whether the request has been declined.
     """
-    from_user = UserReaderSerializer(required=False)
-    to_user = UserReaderSerializer()
+    from_user = UserSerializer(required=False)
+    to_user = UserSerializer()
 
     class Meta:
         model = FriendRequest
@@ -116,7 +103,8 @@ class RegisterSerializer(serializers.Serializer):
     """Serializer for RegisterView."""
 
     # Ensures that username and email are unique, and that the password is valid.
-    username = serializers.CharField(validators=[validators.UniqueValidator(queryset=User.objects.all())])
+    username = serializers.CharField(validators=[validators.UniqueValidator(queryset=User.objects.all())],
+                                     max_length=40)
     email = serializers.EmailField(validators=[validators.UniqueValidator(queryset=User.objects.all())])
     password = serializers.CharField(validators=[validate_password], write_only=True)
 
@@ -150,6 +138,7 @@ class LoginSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         raise NotImplementedError
+
     def update(self, instance, validated_data):
         raise NotImplementedError
 
