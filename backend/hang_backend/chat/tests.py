@@ -9,7 +9,6 @@ from knox.models import AuthToken
 from rest_framework.test import APIClient
 
 from accounts.models import UserDetails
-from accounts.serializers import UserSerializer
 from chat.models import MessageChannel, GroupChat, DirectMessage, Message
 from chat.routing import websocket_urlpatterns
 from chat.serializers import MessageSerializer
@@ -37,12 +36,6 @@ class MessageChannelTest(TestCase):
         self.assertTrue({"id", "channel_type", "created_at", "message_last_sent", "users"}.issubset(res_dict))
         self.assertEqual(res_dict["channel_type"], "DM")
 
-    def serializeUser(self, user_id):
-        return UserSerializer(User.objects.get(id=user_id)).data
-
-    def serializeUsers(self, *users):
-        return list(map(self.serializeUser, users))
-
     def testListDirectMessage(self):
         MessageChannel.objects.create_direct_message(self.user1, self.user2)
         MessageChannel.objects.create_direct_message(self.user2, self.user3)
@@ -51,7 +44,7 @@ class MessageChannelTest(TestCase):
         res_dict = json.loads(response.content)
         self.assertEqual(len(res_dict), 1)
         self.verifyDirectMessage(res_dict[0])
-        self.assertEqual(res_dict[0]["users"], self.serializeUsers(1, 2))
+        self.assertEqual(res_dict[0]["users"], [1, 2])
 
     def testListDirectMessageEmpty(self):
         response = self.client.get("/v1/chat/direct_message")
@@ -59,24 +52,24 @@ class MessageChannelTest(TestCase):
         self.assertEqual(response.content, b'[]')
 
     def testCreateDirectMessage(self):
-        response = self.client.post("/v1/chat/direct_message", {"users": [{"id": 1}, {"id": 2}]}, format="json")
+        response = self.client.post("/v1/chat/direct_message", {"users": [1, 2]}, format="json")
         self.assertEqual(response.status_code, 201)
         res_dict = json.loads(response.content)
         self.verifyDirectMessage(res_dict)
-        self.assertEqual(res_dict["users"], self.serializeUsers(1, 2))
+        self.assertEqual(res_dict["users"], [1, 2])
         self.assertEqual(DirectMessage.objects.count(), 1)
 
-        response = self.client.post("/v1/chat/direct_message", {"users": [{"id": 1}, {"id": 2}]}, format="json")
+        response = self.client.post("/v1/chat/direct_message", {"users": [1, 2]}, format="json")
         self.assertEqual(response.status_code, 400)
 
     def testCreateDirectMessageInvalidUser(self):
-        response = self.client.post("/v1/chat/direct_message", {"users": [{"id": 1}, {"id": 4}]}, format="json")
+        response = self.client.post("/v1/chat/direct_message", {"users": [1, 4]}, format="json")
         self.assertEqual(response.status_code, 400)
-        response = self.client.post("/v1/chat/direct_message", {"users": [{"id": 2}, {"id": 3}]}, format="json")
+        response = self.client.post("/v1/chat/direct_message", {"users": [2, 3]}, format="json")
         self.assertEqual(response.status_code, 400)
 
     def testCreateDirectMessageUserTooManyUsers(self):
-        response = self.client.post("/v1/chat/direct_message", {"users": [{"id": 1}, {"id": 2}, {"id": 3}]},
+        response = self.client.post("/v1/chat/direct_message", {"users": [1, 2, 3]},
                                     format="json")
         self.assertEqual(response.status_code, 400)
 
@@ -86,7 +79,7 @@ class MessageChannelTest(TestCase):
         self.assertEqual(response.status_code, 200)
         res_dict = json.loads(response.content)
         self.verifyDirectMessage(res_dict)
-        self.assertEqual(res_dict["users"], self.serializeUsers(1, 2))
+        self.assertEqual(res_dict["users"], [1, 2])
 
     def testRetrieveDirectMessageDoesNotExist(self):
         response = self.client.get("/v1/chat/direct_message/aaaaaaaaaa")
@@ -110,24 +103,24 @@ class MessageChannelTest(TestCase):
         res_dict = json.loads(response.content)
         self.assertEqual(len(res_dict), 1)
         self.verifyGroupChat(res_dict[0])
-        self.assertEqual(res_dict[0]["owner"], self.serializeUser(1))
-        self.assertEqual(res_dict[0]["users"], self.serializeUsers(1, 2))
+        self.assertEqual(res_dict[0]["owner"], 1)
+        self.assertEqual(res_dict[0]["users"], [1, 2])
 
     def testCreateGroupChat(self):
         response = self.client.post("/v1/chat/group_chat",
-                                    {"name": "gc_12", "users": [{"id": 1}, {"id": 2}, {"id": 3}]},
+                                    {"name": "gc_12", "users": [1, 2, 3]},
                                     format="json")
         self.assertEqual(response.status_code, 201)
         res_dict = json.loads(response.content)
         self.verifyGroupChat(res_dict)
         self.assertEqual(res_dict["name"], "gc_12")
-        self.assertEqual(res_dict["owner"], self.serializeUser(1))
-        self.assertEqual(res_dict["users"], self.serializeUsers(1, 2, 3))
+        self.assertEqual(res_dict["owner"], 1)
+        self.assertEqual(res_dict["users"], [1, 2, 3])
         self.assertEqual(GroupChat.objects.count(), 1)
 
     def testCreateGroupChatInvalidUser(self):
         response = self.client.post("/v1/chat/group_chat",
-                                    {"name": "gc_12", "users": [{"id": 1}, {"id": 2}, {"id": 4}]},
+                                    {"name": "gc_12", "users": [1, 2, 4]},
                                     format="json")
         self.assertEqual(response.status_code, 400)
 
@@ -138,8 +131,8 @@ class MessageChannelTest(TestCase):
         self.assertEqual(response.status_code, 200)
         res_dict = json.loads(response.content)
         self.verifyGroupChat(res_dict)
-        self.assertEqual(res_dict["owner"], self.serializeUser(1))
-        self.assertEqual(res_dict["users"], self.serializeUsers(1, 2))
+        self.assertEqual(res_dict["owner"], 1)
+        self.assertEqual(res_dict["users"], [1, 2])
 
     def testRetrieveGroupChatDoesNotExist(self):
         response = self.client.get("/v1/chat/group_chat/aaaaaaaaaa")
@@ -155,69 +148,69 @@ class MessageChannelTest(TestCase):
         channel_id = MessageChannel.objects.create_group_chat(name="gc", owner=self.user1,
                                                               users=[self.user1, self.user2]).id
         response = self.client.patch(f"/v1/chat/group_chat/{channel_id}",
-                                     {"owner": {"id": 1}, "users": [{"id": 1}, {"id": 2}, {"id": 3}]}, format="json")
+                                     {"owner": 1, "users": [1, 2, 3]}, format="json")
         self.assertEqual(response.status_code, 200)
         res_dict = json.loads(response.content)
         self.verifyGroupChat(res_dict)
-        self.assertEqual(res_dict["owner"], self.serializeUser(1))
-        self.assertEqual(res_dict["users"], self.serializeUsers(1, 2, 3))
+        self.assertEqual(res_dict["owner"], 1)
+        self.assertEqual(res_dict["users"], [1, 2, 3])
 
     def testModifyGroupChatAddUserAsNonOwner(self):
         channel_id = MessageChannel.objects.create_group_chat(name="gc", owner=self.user2,
                                                               users=[self.user1, self.user2]).id
         response = self.client.patch(f"/v1/chat/group_chat/{channel_id}",
-                                     {"owner": {"id": 2}, "users": [{"id": 1}, {"id": 2}, {"id": 3}]}, format="json")
+                                     {"owner": 2, "users": [1, 2, 3]}, format="json")
         self.assertEqual(response.status_code, 200)
         res_dict = json.loads(response.content)
         self.verifyGroupChat(res_dict)
-        self.assertEqual(res_dict["owner"], self.serializeUser(2))
-        self.assertEqual(res_dict["users"], self.serializeUsers(1, 2, 3))
+        self.assertEqual(res_dict["owner"], 2)
+        self.assertEqual(res_dict["users"], [1, 2, 3])
 
     def testModifyGroupChatRemoveUserAsOwner(self):
         channel_id = MessageChannel.objects.create_group_chat(name="gc", owner=self.user1,
                                                               users=[self.user1, self.user2, self.user3]).id
         response = self.client.patch(f"/v1/chat/group_chat/{channel_id}",
-                                     {"owner": {"id": 1}, "users": [{"id": 1}, {"id": 2}]}, format="json")
+                                     {"owner": 1, "users": [1, 2]}, format="json")
         self.assertEqual(response.status_code, 200)
         res_dict = json.loads(response.content)
         self.verifyGroupChat(res_dict)
-        self.assertEqual(res_dict["owner"], self.serializeUser(1))
-        self.assertEqual(res_dict["users"], self.serializeUsers(1, 2))
+        self.assertEqual(res_dict["owner"], 1)
+        self.assertEqual(res_dict["users"], [1, 2])
 
     def testModifyGroupChatRemoveUserAsNonOwner(self):
         channel_id = MessageChannel.objects.create_group_chat(name="gc", owner=self.user2,
                                                               users=[self.user1, self.user2, self.user3]).id
         response = self.client.patch(f"/v1/chat/group_chat/{channel_id}",
-                                     {"owner": {"id": 2}, "users": [{"id": 1}, {"id": 2}]}, format="json")
+                                     {"owner": 2, "users": [1, 2]}, format="json")
         self.assertEqual(response.status_code, 400)
 
     def testModifyGroupChatLeaveAsOwner(self):
         channel_id = MessageChannel.objects.create_group_chat(name="gc", owner=self.user1,
                                                               users=[self.user1, self.user2]).id
         response = self.client.patch(f"/v1/chat/group_chat/{channel_id}",
-                                     {"owner": {"id": 1}, "users": [{"id": 2}]}, format="json")
+                                     {"owner": 1, "users": [2]}, format="json")
         self.assertEqual(response.status_code, 200)
         res_dict = json.loads(response.content)
         self.verifyGroupChat(res_dict)
-        self.assertEqual(res_dict["owner"], self.serializeUser(2))
-        self.assertEqual(res_dict["users"], self.serializeUsers(2))
+        self.assertEqual(res_dict["owner"], 2)
+        self.assertEqual(res_dict["users"], [2])
 
     def testModifyGroupChatLeaveAsNonOwner(self):
         channel_id = MessageChannel.objects.create_group_chat(name="gc", owner=self.user2,
                                                               users=[self.user1, self.user2]).id
         response = self.client.patch(f"/v1/chat/group_chat/{channel_id}",
-                                     {"owner": {"id": 2}, "users": [{"id": 2}]}, format="json")
+                                     {"owner": 2, "users": [2]}, format="json")
         self.assertEqual(response.status_code, 200)
         res_dict = json.loads(response.content)
         self.verifyGroupChat(res_dict)
-        self.assertEqual(res_dict["owner"], self.serializeUser(2))
-        self.assertEqual(res_dict["users"], self.serializeUsers(2))
+        self.assertEqual(res_dict["owner"], 2)
+        self.assertEqual(res_dict["users"], [2])
 
     def testModifyGroupChatLastUserLeaves(self):
         channel_id = MessageChannel.objects.create_group_chat(name="gc", owner=self.user1,
                                                               users=[self.user1]).id
         response = self.client.patch(f"/v1/chat/group_chat/{channel_id}",
-                                     {"owner": {"id": 1}, "users": []}, format="json")
+                                     {"owner": 1, "users": []}, format="json")
         self.assertEqual(response.status_code, 200)
         res_dict = json.loads(response.content)
         self.verifyGroupChat(res_dict)
@@ -228,18 +221,18 @@ class MessageChannelTest(TestCase):
         channel_id = MessageChannel.objects.create_group_chat(name="gc", owner=self.user1,
                                                               users=[self.user1, self.user2]).id
         response = self.client.patch(f"/v1/chat/group_chat/{channel_id}",
-                                     {"owner": {"id": 2}, "users": [{"id": 1}, {"id": 2}]}, format="json")
+                                     {"owner": 2, "users": [1, 2]}, format="json")
         self.assertEqual(response.status_code, 200)
         res_dict = json.loads(response.content)
         self.verifyGroupChat(res_dict)
-        self.assertEqual(res_dict["owner"], self.serializeUser(2))
-        self.assertEqual(res_dict["users"], self.serializeUsers(1, 2))
+        self.assertEqual(res_dict["owner"], 2)
+        self.assertEqual(res_dict["users"], [1, 2])
 
     def testTransferOwnershipOfGroupChatAsNonOwner(self):
         channel_id = MessageChannel.objects.create_group_chat(name="gc", owner=self.user2,
                                                               users=[self.user1, self.user2]).id
         response = self.client.patch(f"/v1/chat/group_chat/{channel_id}",
-                                     {"owner": {"id": 1}, "users": [{"id": 1}, {"id": 2}]}, format="json")
+                                     {"owner": 1, "users": [1, 2]}, format="json")
         self.assertEqual(response.status_code, 400)
 
 
@@ -283,7 +276,6 @@ class ChatWebsocketTest(TestCase):
     def verify_message(self, message):
         self.assertTrue(
             {"id", "user", "created_at", "updated_at", "content", "message_channel"}.issubset(message.keys()))
-        self.assertTrue({"id", "username", "email"}.issubset(message["user"].keys()))
 
     async def connectAndAuthenticate(self):
         self.communicator = WebsocketCommunicator(URLRouter(websocket_urlpatterns),

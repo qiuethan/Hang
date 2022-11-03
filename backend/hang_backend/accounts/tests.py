@@ -238,11 +238,9 @@ class SentFriendRequestTest(TestCase):
         self.client.credentials(HTTP_AUTHORIZATION="Token " + self.token1)
 
     def testSendFriendRequest(self):
-        response = self.client.post("/v1/accounts/sent_friend_request", {"to_user": {"id": 2}}, format="json")
+        response = self.client.post("/v1/accounts/sent_friend_request", {"to_user": 2}, format="json")
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.content,
-                         b'{"from_user":{"id":1,"username":"test_user_1","email":"test_user_1@gmail.com"},"to_user":{"id":2,"username":"test_user_2","email":"test_user_2@gmail.com"}}')
-
+        self.assertEqual(response.content, b'{"from_user":1,"to_user":2}')
         self.assertEqual(FriendRequest.objects.count(), 1)
         friend_request = FriendRequest.objects.get()
         self.assertEqual(friend_request.from_user.id, 1)
@@ -251,13 +249,11 @@ class SentFriendRequestTest(TestCase):
 
     def testMultipleSendFriendRequest(self):
         FriendRequest.objects.create(from_user=User.objects.get(id=1), to_user=User.objects.get(id=2), declined=False)
-        response = self.client.post("/v1/accounts/sent_friend_request", {"to_user": 2},
-                                    format="json")
+        response = self.client.post("/v1/accounts/sent_friend_request", {"to_user": 2}, format="json")
         self.assertEqual(response.status_code, 400)
 
     def testSendFriendRequestToSelf(self):
-        response = self.client.post("/v1/accounts/sent_friend_request", {"to_user": 1},
-                                    format="json")
+        response = self.client.post("/v1/accounts/sent_friend_request", {"to_user": 1}, format="json")
         self.assertEqual(response.status_code, 400)
 
     def testLoadFriendRequest(self):
@@ -265,26 +261,21 @@ class SentFriendRequestTest(TestCase):
                                                            to_user=User.objects.get(id=2), declined=False)
         response = self.client.get("/v1/accounts/sent_friend_request")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.content,
-                         b'[{"from_user":{"id":1,"username":"test_user_1","email":"test_user_1@gmail.com"},"to_user":{"id":2,"username":"test_user_2","email":"test_user_2@gmail.com"}}]'
-                         )
+        self.assertEqual(response.content, b'[{"from_user":1,"to_user":2}]')
 
         self.friend_request.declined = True
         self.friend_request.save()
 
         response = self.client.get("/v1/accounts/sent_friend_request")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.content,
-                         b'[{"from_user":{"id":1,"username":"test_user_1","email":"test_user_1@gmail.com"},"to_user":{"id":2,"username":"test_user_2","email":"test_user_2@gmail.com"}}]'
-                         )
+        self.assertEqual(response.content, b'[{"from_user":1,"to_user":2}]')
 
     def testRetrieveFriendRequest(self):
         self.friend_request = FriendRequest.objects.create(from_user=User.objects.get(id=1),
                                                            to_user=User.objects.get(id=2), declined=False)
         response = self.client.get("/v1/accounts/sent_friend_request/2")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.content,
-                         b'{"from_user":{"id":1,"username":"test_user_1","email":"test_user_1@gmail.com"},"to_user":{"id":2,"username":"test_user_2","email":"test_user_2@gmail.com"}}')
+        self.assertEqual(response.content, b'{"from_user":1,"to_user":2}')
 
     def testRetrieveNonExistentFriendRequest(self):
         response = self.client.get("/v1/accounts/sent_friend_request/2")
@@ -321,25 +312,21 @@ class ReceivedFriendRequestTest(TestCase):
                                                            to_user=User.objects.get(id=1), declined=False)
         response = self.client.get("/v1/accounts/received_friend_request")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.content,
-                         b'[{"from_user":{"id":2,"username":"test_user_2","email":"test_user_2@gmail.com"},"to_user":{"id":1,"username":"test_user_1","email":"test_user_1@gmail.com"},"declined":false}]'
-                         )
+        self.assertEqual(response.content, b'[{"from_user":2,"to_user":1,"declined":false}]')
 
         self.friend_request.declined = True
         self.friend_request.save()
 
         response = self.client.get("/v1/accounts/received_friend_request")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.content,
-                         b'[{"from_user":{"id":2,"username":"test_user_2","email":"test_user_2@gmail.com"},"to_user":{"id":1,"username":"test_user_1","email":"test_user_1@gmail.com"},"declined":true}]')
+        self.assertEqual(response.content, b'[{"from_user":2,"to_user":1,"declined":true}]')
 
     def testRetrieveFriendRequest(self):
         self.friend_request = FriendRequest.objects.create(from_user=User.objects.get(id=2),
                                                            to_user=User.objects.get(id=1), declined=False)
         response = self.client.get("/v1/accounts/received_friend_request/2")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.content,
-                         b'{"from_user":{"id":2,"username":"test_user_2","email":"test_user_2@gmail.com"},"to_user":{"id":1,"username":"test_user_1","email":"test_user_1@gmail.com"},"declined":false}')
+        self.assertEqual(response.content, b'{"from_user":2,"to_user":1,"declined":false}')
 
     def testRetrieveNonExistentFriendRequest(self):
         response = self.client.get("/v1/accounts/sent_friend_request/2")

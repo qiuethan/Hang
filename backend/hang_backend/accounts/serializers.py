@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.mail import send_mail
 from rest_framework import serializers, validators
+from rest_framework.relations import PrimaryKeyRelatedField
 
 from hang_backend import settings
 from .models import EmailAuthToken, FriendRequest, UserDetails
@@ -44,8 +45,8 @@ class FriendRequestReceivedSerializer(serializers.ModelSerializer):
     Serializer for a friend request object. It should be used to serialize received friend requests, as it shows
     whether the request has been declined.
     """
-    from_user = UserSerializer()
-    to_user = UserSerializer()
+    from_user = PrimaryKeyRelatedField(queryset=User.objects.all())
+    to_user = PrimaryKeyRelatedField(queryset=User.objects.all())
 
     class Meta:
         model = FriendRequest
@@ -64,8 +65,8 @@ class FriendRequestSentSerializer(serializers.ModelSerializer):
     Serializer for a friend request object. It should be used to serialize sent friend requests, as it does not show
     whether the request has been declined.
     """
-    from_user = UserSerializer(required=False)
-    to_user = UserSerializer()
+    from_user = PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
+    to_user = PrimaryKeyRelatedField(queryset=User.objects.all())
 
     class Meta:
         model = FriendRequest

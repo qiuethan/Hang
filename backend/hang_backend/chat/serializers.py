@@ -1,11 +1,11 @@
 from datetime import datetime
 
+from django.contrib.auth.models import User
 from knox.auth import TokenAuthentication
 from rest_framework import serializers, validators
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.relations import PrimaryKeyRelatedField
 
-from accounts.serializers import UserSerializer
 from .models import Message, MessageChannel, DirectMessage, GroupChat
 
 
@@ -21,7 +21,7 @@ class MessageChannelSerializer(serializers.ModelSerializer):
 class DirectMessageSerializer(MessageChannelSerializer):
     """Serializer for DM."""
 
-    users = UserSerializer(many=True)
+    users = PrimaryKeyRelatedField(queryset=User.objects.all(), many=True)
 
     class Meta(MessageChannelSerializer.Meta):
         model = DirectMessage
@@ -51,8 +51,8 @@ class DirectMessageSerializer(MessageChannelSerializer):
 
 class GroupChatSerializer(MessageChannelSerializer):
     """Serializer for GC."""
-    owner = UserSerializer(required=False)
-    users = UserSerializer(many=True)
+    owner = PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
+    users = PrimaryKeyRelatedField(queryset=User.objects.all(), many=True)
     channel_type = serializers.CharField(required=False)
 
     class Meta(MessageChannelSerializer.Meta):
@@ -118,7 +118,7 @@ class GroupChatSerializer(MessageChannelSerializer):
 
 class MessageSerializer(serializers.ModelSerializer):
     """Serializer for a message."""
-    user = UserSerializer(required=False)
+    user = PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
     message_channel = PrimaryKeyRelatedField(queryset=MessageChannel.objects.all())
 
     class Meta:
@@ -176,8 +176,8 @@ class AuthenticateWebsocketSerializer(serializers.Serializer):
 
 class LoadMessageSerializer(serializers.Serializer):
     """Serializer for LoadMessage ChatAction."""
-    user = UserSerializer()
-    message_channel = MessageChannelSerializer()
+    user = PrimaryKeyRelatedField(queryset=User.objects.all())
+    message_channel = PrimaryKeyRelatedField(queryset=MessageChannel.objects.all())
     message_id = serializers.IntegerField(default=None)
 
     def validate(self, data):
