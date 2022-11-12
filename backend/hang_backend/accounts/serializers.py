@@ -145,7 +145,7 @@ class LoginSerializer(serializers.Serializer):
 
 
 class SendEmailSerializer(serializers.Serializer):
-    """Serializer for SendEmailView."""
+    """Serializer for SendVerificationEmailView."""
 
     email = serializers.EmailField()
     password = serializers.CharField()
@@ -188,7 +188,7 @@ class SendEmailSerializer(serializers.Serializer):
 
 
 class VerifyEmailSerializer(serializers.Serializer):
-    """Serializer for VerifyEmailView."""
+    """Serializer for VerifyEmailVerificationTokenView."""
     token = serializers.CharField()
 
     def validate(self, data):

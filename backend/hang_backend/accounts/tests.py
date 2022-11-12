@@ -416,5 +416,3 @@ class BlockedUsersTest(TestCase):
         response = self.client.delete("/v1/accounts/blocked_users/2")
         self.assertEqual(response.status_code, 204)
         self.assertEqual(self.user1.userdetails.blocked_users.count(), 0)
-
-# TODO: Discuss with Ethan on Retrieving user by ID

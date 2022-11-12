@@ -9,13 +9,13 @@ from django.contrib.auth.models import User
 from chat.serializers import AuthenticateWebsocketSerializer
 
 
-def send_message(user, action):
+def send_message(user, content):
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
         "real_time_ws." + user.username,
         {
-            "type": "action",
-            "action": action,
+            "type": "update",
+            "content": content,
         }
     )
 
@@ -65,8 +65,7 @@ class RealTimeWSConsumer(AsyncWebsocketConsumer):
             "message": event["message"],
         }))
 
-    async def action(self, event):
+    async def update(self, event):
         await self.send(text_data=json.dumps({
-            "action": event["action"],
             "content": event["content"],
         }))
