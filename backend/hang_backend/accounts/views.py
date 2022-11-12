@@ -144,7 +144,7 @@ class RetrieveAcceptDenyReceivedFriendRequestView(rtwsgenerics.RTWSRetrieveUpdat
         permissions.IsAuthenticated,
     }
     serializer_class = FriendRequestReceivedSerializer
-    update_actions = ["friend_request", "friends"] # TODO: seperate accept + deny, comment all new code
+    update_actions = ["friend_request", "friends"]  # TODO: seperate accept + deny, comment all new code
 
     def get_object(self):
         query = FriendRequest.objects.filter(from_user=self.kwargs["user_id"],
@@ -178,9 +178,9 @@ class RemoveFriendsView(generics.GenericAPIView, rtwsmixins.RTWSGenericMixin):
         return self.request.user.userdetails.friends.all()
 
     def delete(self, request, *args, **kwargs):
+        self.send_rtws_message({self.request.user, self.get_object()})
         self.get_object().userdetails.friends.remove(self.request.user)
         self.request.user.userdetails.friends.remove(self.get_object())
-        self.send_rtws_message({self.request.user, self.get_object()})
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
