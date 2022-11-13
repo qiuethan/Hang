@@ -5,9 +5,10 @@ from asgiref.sync import sync_to_async
 from channels.db import database_sync_to_async as dbsa
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import User
+from rest_framework.exceptions import ValidationError
 
 from .exceptions import ChatActionError
-from .models import Message, MessageChannel
+from .models import Message, MessageChannel, Reaction
 from .serializers import AuthenticateWebsocketSerializer, MessageSerializer
 
 
@@ -118,7 +119,9 @@ class SendMessageAction(ChatAction):
         message = await dbsa(serializer.save)()
 
         # Sends the message to all users in the MessageChannel.
-        await self.send_to_message_channel(message_channel_id=message.message_channel.id, data=serializer.data)
+        message_channel_id = (await sync_to_async(getattr)(message, "message_channel")).id
+        data = await sync_to_async(getattr)(serializer, "data")
+        await self.send_to_message_channel(message_channel_id=message_channel_id, data=data)
 
 
 class LoadMessageAction(ChatAction):
@@ -183,10 +186,39 @@ class DeleteMessageAction(ChatAction):
         await dbsa(message.delete)()
 
 
+class ReactionAction(ChatAction):
+    """ChatAction that allows a user to modify their reactions to a message."""
+    name = "reaction"
+    needs_authentication = True
+
+    async def action(self):
+        message = await dbsa(Message.objects.get)(id=self.data["id"])
+
+        # Checks if user can see message.
+        message_channel_id = (await sync_to_async(getattr)(message, "message_channel")).id
+        if not await dbsa(self.chat_consumer.user.message_channels.filter(id=message_channel_id).exists)():
+            raise ValidationError("Message does not exist.")
+
+        # Delete all user's reactions.
+        await dbsa(message.reactions.filter(user=self.chat_consumer.user).delete)()
+
+        for emoji in self.data["emoji"]:
+            # TODO: implement check for proper emoji
+            reaction = Reaction(user=self.chat_consumer.user, emoji=emoji, message=message)
+            await dbsa(reaction.save)()
+            await dbsa(message.reactions.add)(reaction)
+
+        await dbsa(message.refresh_from_db)()
+        # Send messages.
+        serializer = MessageSerializer(message)
+        await self.reply_to_sender(await dbsa(getattr)(serializer, "data"))
+
+
 class ChatConsumer(AsyncWebsocketConsumer):
     """Websocket for Chat."""
     # ChatActions.
-    chat_actions = [AuthenticateAction, SendMessageAction, LoadMessageAction, EditMessageAction, DeleteMessageAction]
+    chat_actions = [AuthenticateAction, SendMessageAction, LoadMessageAction, EditMessageAction, DeleteMessageAction,
+                    ReactionAction]
 
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)
