@@ -37,7 +37,7 @@ class LoginView(views.APIView):
         })
 
 
-class RetrieveUserView(generics.RetrieveAPIView):
+class RetrieveUserViewID(generics.RetrieveAPIView):
     """View to retrieve a user by ID."""
     permission_classes = [
         permissions.IsAuthenticated,
@@ -46,7 +46,33 @@ class RetrieveUserView(generics.RetrieveAPIView):
     queryset = User.objects.all()
 
     def get_object(self):
-        return super(RetrieveUserView, self).get_object().userdetails
+        return super(RetrieveUserViewID, self).get_object().userdetails
+
+
+class RetrieveUserViewEmail(generics.RetrieveAPIView):
+    """View to retrieve a user by ID."""
+    permission_classes = [
+        permissions.IsAuthenticated,
+    ]
+    serializer_class = UserDetailsSerializer
+    queryset = User.objects.all()
+    lookup_field = "email"
+
+    def get_object(self):
+        return super(RetrieveUserViewEmail, self).get_object().userdetails
+
+
+class RetrieveUserViewUsername(generics.RetrieveAPIView):
+    """View to retrieve a user by ID."""
+    permission_classes = [
+        permissions.IsAuthenticated,
+    ]
+    serializer_class = UserDetailsSerializer
+    queryset = User.objects.all()
+    lookup_field = "username"
+
+    def get_object(self):
+        return super(RetrieveUserViewUsername, self).get_object().userdetails
 
 
 class RetrieveCurrentUserView(generics.RetrieveAPIView):

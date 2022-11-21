@@ -1,10 +1,11 @@
 from django.urls import path
 from knox import views as knox_views
 
-from .views import LoginView, RegisterView, RetrieveCurrentUserView, SendVerificationEmailView, VerifyEmailVerificationTokenView, ListFriendsView, \
+from .views import LoginView, RegisterView, RetrieveCurrentUserView, SendVerificationEmailView, \
+    VerifyEmailVerificationTokenView, ListFriendsView, \
     ListCreateBlockedUsersView, ListCreateSentFriendRequestView, RetrieveDestroySentFriendRequestView, \
     ListReceivedFriendRequestView, RetrieveAcceptDenyReceivedFriendRequestView, RemoveFriendsView, \
-    RemoveBlockedUsersView, RetrieveUserView
+    RemoveBlockedUsersView, RetrieveUserViewID, RetrieveUserViewEmail, RetrieveUserViewUsername
 
 app_name = "accounts"
 
@@ -12,7 +13,9 @@ urlpatterns = [
     path("register", RegisterView.as_view()),
     path("login", LoginView.as_view()),
     path("logout", knox_views.LogoutView.as_view(), name="knox_logout"),
-    path("user/<str:pk>", RetrieveUserView.as_view()),
+    path("user/id/<str:pk>", RetrieveUserViewID.as_view()),
+    path("user/email/<str:email>", RetrieveUserViewEmail.as_view()),
+    path("user/username/<str:username>", RetrieveUserViewUsername.as_view()),
     path("current_user", RetrieveCurrentUserView.as_view()),
     path("send_email", SendVerificationEmailView.as_view()),
     path("verify_email", VerifyEmailVerificationTokenView.as_view()),
