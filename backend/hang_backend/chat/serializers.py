@@ -6,7 +6,7 @@ from rest_framework import serializers, validators
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.relations import PrimaryKeyRelatedField
 
-from .models import Message, MessageChannel, DirectMessage, GroupChat
+from .models import Message, MessageChannel, DirectMessage, GroupChat, Reaction
 
 
 class MessageChannelSerializer(serializers.ModelSerializer):
@@ -116,24 +116,38 @@ class GroupChatSerializer(MessageChannelSerializer):
         return instance
 
 
+class ReactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Reaction
+        fields = ("user", "emoji")
+        read_only_fields = ("user", "emoji")
+
+
 class MessageSerializer(serializers.ModelSerializer):
     """Serializer for a message."""
     user = PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
     message_channel = PrimaryKeyRelatedField(queryset=MessageChannel.objects.all())
+    reply = PrimaryKeyRelatedField(queryset=Message.objects.all(), allow_null=True)
+    reactions = ReactionSerializer(many=True, required=False)
 
     class Meta:
         model = Message
-        fields = ("id", "user", "created_at", "updated_at", "content", "message_channel")
-        read_only_fields = ("id", "user", "created_at", "updated_at", "message_channel")
+        fields = ("id", "user", "created_at", "updated_at", "content", "message_channel", "reply", "reactions")
+        read_only_fields = ("id", "user", "created_at", "updated_at", "message_channel", "reply", "reactions")
 
     def create(self, validated_data):
         # Verifies that the MessageChannel exists.
         if not validated_data["message_channel"].users.filter(username=self.context["user"].username).exists():
             raise serializers.ValidationError("Message channel does not exist.")
 
+        # Verifies that the Message that is being replied exists in the current message channel or is null.
+        if validated_data["reply"] is not None and \
+                validated_data["reply"].message_channel != validated_data["message_channel"]:
+            raise serializers.ValidationError("Replied message does not exist.")
+
         # Creates and saves the message.
         message = Message(user=self.context["user"], content=validated_data["content"],
-                          message_channel=validated_data["message_channel"])
+                          message_channel=validated_data["message_channel"], reply=validated_data["reply"])
         message.save()
 
         validated_data["message_channel"].message_last_sent = datetime.now()

@@ -67,8 +67,15 @@ def generate_message_channel_id():
 
 class Message(models.Model):
     """Model that represents a Message."""
-    user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="messages")
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="messages", null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     content = models.CharField(max_length=2000)
     message_channel = models.ForeignKey(MessageChannel, on_delete=models.CASCADE, related_name="messages")
+    reply = models.ForeignKey("self", on_delete=models.SET_NULL, related_name="replies", null=True)
+
+
+class Reaction(models.Model):
+    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name="reactions")
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    emoji = models.CharField(max_length=2)

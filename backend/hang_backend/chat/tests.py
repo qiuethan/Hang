@@ -275,7 +275,8 @@ class ChatWebsocketTest(TestCase):
 
     def verify_message(self, message):
         self.assertTrue(
-            {"id", "user", "created_at", "updated_at", "content", "message_channel"}.issubset(message.keys()))
+            {"id", "user", "created_at", "updated_at", "content", "message_channel", "reply", "reactions"}
+            .issubset(message.keys()))
 
     async def connectAndAuthenticate(self):
         self.communicator = WebsocketCommunicator(URLRouter(websocket_urlpatterns),
@@ -297,7 +298,8 @@ class ChatWebsocketTest(TestCase):
         await self.connectAndAuthenticate()
         await self.send_message("send_message", {
             "message_channel": self.channel1,
-            "content": "a" * 2000
+            "content": "a" * 2000,
+            "reply": None
         })
 
         response = await self.communicator.receive_json_from()
