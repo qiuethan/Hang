@@ -1,0 +1,6 @@
+User Formatting
+- Chat (Done)
+- Send Friend Requests
+- Create DMs, Create GCs
+
+Fix Chat Auto Scrolling

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import {useSelector} from "react-redux";
 
 const Chatitem = ({ roomid, users, type, gcName, setCurrentRoom }) => {
     
@@ -12,7 +13,8 @@ const Chatitem = ({ roomid, users, type, gcName, setCurrentRoom }) => {
     useEffect(() => {
         if(type === "DM"){
             try{
-                setName(JSON.parse(users).find(user => user.id !== JSON.parse(localStorage.getItem("profile")).user.id).username);
+
+                setName(JSON.parse(users).find(user => user !== JSON.parse(localStorage.getItem("profile")).user.id));
             }
             catch (error){
                 setName("Could Not Access User");

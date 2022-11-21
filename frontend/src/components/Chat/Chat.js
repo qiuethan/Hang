@@ -52,7 +52,6 @@ const Chat = ({ currentPage, setCurrentPage }) => {
     catch (error){
         console.log(error);
     }
-    
 
     return(
         <Box sx={{display: "block", height: '98%', width: '98%', border: 1, margin: 1}}> 

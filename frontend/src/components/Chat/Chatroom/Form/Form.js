@@ -17,9 +17,7 @@ const Form = ({ client, currentRoom }) => {
             client.send(JSON.stringify({
                 action: "send_message",
                 content: {
-                    message_channel: {
-                        id: currentRoom
-                    },
+                    message_channel: currentRoom,
                     content: message
                 }
             }));

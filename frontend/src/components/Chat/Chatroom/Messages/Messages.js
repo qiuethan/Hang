@@ -18,7 +18,7 @@ const Messages = ({ client, currentRoom, clientOpened }) => {
             client.send(JSON.stringify({
                 action: "load_message",
                 content: {
-                    message_channel_id: currentRoom
+                    message_channel: currentRoom
                 }
             }));
         }
@@ -28,8 +28,10 @@ const Messages = ({ client, currentRoom, clientOpened }) => {
     }, [currentRoom, clientOpened]);
 
     useEffect(() => {
+        console.log("Scroll Dammit")
         if (scrollRef.current) {
-            scrollRef.current.scrollIntoView({ behaviour: "smooth" });
+            console.log("Scroll Dammit Scroll")
+            scrollRef.current.scrollIntoView({ behaviour: "auto" });
         }
     }, [sentMessage]);
 
@@ -45,8 +47,9 @@ const Messages = ({ client, currentRoom, clientOpened }) => {
                 setMessages([...messages, ...messageObject.content])
             }
             if(messageObject.action === "send_message"){
-                if(messageObject.content.message_channel.id === currentRoom){  
+                if(messageObject.content.message_channel === currentRoom){
                     setSentMessage(messageObject.content);
+                    console.log(messageObject);
                     setMessages([messageObject.content, ...messages])
                 }
                 else{

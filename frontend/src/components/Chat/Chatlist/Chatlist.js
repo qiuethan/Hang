@@ -13,6 +13,8 @@ const Chatlist = ({ currentRoom, setCurrentRoom, clientOpened }) => {
         dispatch(loadrooms());
     }, [currentRoom, clientOpened]);
 
+    console.log(rooms);
+
     return(
         (rooms.length === 0) ?  <div/>: <div>
             {rooms.map((room) => 

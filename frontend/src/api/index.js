@@ -22,6 +22,9 @@ export const sendemail = (inputs) => API.post('/v1/accounts/send_email', inputs)
 export const loadrooms = () => API.get('/v1/chat/direct_message');
 export const loadgroups = () => API.get('/v1/chat/group_chat');
 
+//Users
+export const getuser = (id) => API.get(`/v1/accounts/user/${id}`);
+
 //Friends
 export const loadfriends = () => API.get('/v1/accounts/friends');
 export const removefriend = (id) => API.delete(`/v1/accounts/friends/${id}`)
