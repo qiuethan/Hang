@@ -2,10 +2,11 @@ import React from 'react';
 
 import Attendee from './Attendee/Attendee.js'
 
-const Attendees = ({Attendees}) => {
+const Attendees = ({attendees}) => {
+
     return(
       <div>
-          {Attendees.map((attendee) => {
+          {attendees.map((attendee) => {
               <Attendee attendee={attendee}/>
           })}
       </div>

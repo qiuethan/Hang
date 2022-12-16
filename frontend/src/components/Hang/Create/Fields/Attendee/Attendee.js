@@ -3,7 +3,7 @@ import React from 'react';
 const Attendee = ({attendee}) => {
     return(
         <div>
-            attendee.name;
+            {attendee}
         </div>
     );
 }

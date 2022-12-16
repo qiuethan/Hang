@@ -14,9 +14,10 @@ import { createhangevent } from '../../../actions/create';
 const Create = () => {
     
     const [user, setUser] = useState(JSON.parse(localStorage.getItem("profile")));
+
     const [fields, setFields] = useState({name: "", owner: user.user.id, description: "", picture: "", scheduled_time_start: "", scheduled_time_end: "", latitude: 0, longitude: 0, budget: 0.00, attendees: [user.user.id], needs: [], tasks: []});
 
-    const dispatch = useDispatch()
+    const dispatch = useDispatch();
 
     useEffect(() => {
         setFields({...fields, name: `${user.user.username}'s Hang`, description: `A Hang hosted by ${user.user.username}!`});
