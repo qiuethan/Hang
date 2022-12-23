@@ -12,3 +12,12 @@ export const getuser = (id) => async(dispatch) => {
         console.log(error)
     }
 };
+
+export const getuserbyusername = (username) => async(dispatch) => {
+    try{
+        const { data } = await api.getuserbyemail(username);
+    }
+    catch(error){
+        console.log(error);
+    }
+}

@@ -1,14 +1,18 @@
 import React from 'react';
 
-import Attendee from './Attendee/Attendee.js'
+import Attendee from './Attendee/Attendee.js';
+import Form from './Attendee/Form.js';
 
-const Attendees = ({attendees}) => {
+const Attendees = ({attendees, updateAttendee}) => {
+
+    console.log(attendees);
 
     return(
       <div>
-          {attendees.map((attendee) => {
-              <Attendee attendee={attendee}/>
-          })}
+          <Form updateAttendee={updateAttendee}/>
+          {attendees.map((attendee) => (
+              <Attendee key={attendee.id} attendee={attendee}/>
+          ))}
       </div>
     );
 };

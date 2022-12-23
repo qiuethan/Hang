@@ -15,7 +15,7 @@ const Create = () => {
     
     const [user, setUser] = useState(JSON.parse(localStorage.getItem("profile")));
 
-    const [fields, setFields] = useState({name: "", owner: user.user.id, description: "", picture: "", scheduled_time_start: "", scheduled_time_end: "", latitude: 0, longitude: 0, budget: 0.00, attendees: [user.user.id], needs: [], tasks: []});
+    const [fields, setFields] = useState({name: "", owner: user.user.id, description: "", picture: "", scheduled_time_start: "", scheduled_time_end: "", latitude: 0, longitude: 0, budget: 0.00, attendees: [user.user], needs: [], tasks: []});
 
     const dispatch = useDispatch();
 
@@ -26,6 +26,10 @@ const Create = () => {
     const handleChange = (event) => {
         event.preventDefault();
         setFields({...fields, [event.target.name]: event.target.value})
+    }
+
+    const updateAttendee = (attendee) => {
+        setFields({...fields, attendees: [...fields.attendees, attendee]})
     }
 
     const handleSubmit = (event) => {
@@ -41,7 +45,7 @@ const Create = () => {
             <Picture value={fields.picture} handleChange={handleChange}/>
             <Time start={fields.scheduled_time_start} end={fields.scheduled_time_end} handleChange={handleChange}/>
             <Location longitude={fields.longitude} latitude={fields.latitude} handleChange={handleChange}/>
-            <Attendees attendees={fields.attendees}/>
+            <Attendees attendees={fields.attendees} updateAttendee={updateAttendee}/>
             <button onClick={handleSubmit}>Submit</button>
         </div>
     )
