@@ -1,8 +1,11 @@
 import React, {useState} from 'react';
+import { useDispatch } from 'react-redux';
+import {getuserbyusername} from "../../../../../actions/users";
 
 const Form = ({updateAttendee}) => {
 
     const [username, setUsername] = useState("");
+    const dispatch = useDispatch();
 
     const updateField = (event) => {
         event.preventDefault();
@@ -11,7 +14,15 @@ const Form = ({updateAttendee}) => {
 
     const addAttendee = (event) => {
         event.preventDefault();
-        
+        dispatch(getuserbyusername(username)).then((response) => {
+            try{
+                updateAttendee(response);
+            }
+            catch (error){
+                console.log(error);
+            }
+        })
+        setUsername("");
     }
 
     return(

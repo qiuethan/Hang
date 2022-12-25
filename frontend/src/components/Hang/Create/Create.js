@@ -15,7 +15,7 @@ const Create = () => {
     
     const [user, setUser] = useState(JSON.parse(localStorage.getItem("profile")));
 
-    const [fields, setFields] = useState({name: "", owner: user.user.id, description: "", picture: "", scheduled_time_start: "", scheduled_time_end: "", latitude: 0, longitude: 0, budget: 0.00, attendees: [user.user], needs: [], tasks: []});
+    const [fields, setFields] = useState({name: "", owner: user.user.id, description: "", picture: "", scheduled_time_start: "", scheduled_time_end: "", latitude: 0, longitude: 0, budget: 0.00, attendees: [user], needs: [], tasks: []});
 
     const dispatch = useDispatch();
 
@@ -30,6 +30,7 @@ const Create = () => {
 
     const updateAttendee = (attendee) => {
         setFields({...fields, attendees: [...fields.attendees, attendee]})
+        console.log(fields);
     }
 
     const handleSubmit = (event) => {

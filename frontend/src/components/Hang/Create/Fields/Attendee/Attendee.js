@@ -6,7 +6,7 @@ const Attendee = ({attendee}) => {
 
     return(
         <div>
-            {attendee.username}
+            {attendee.user.username}
         </div>
     );
 }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import Attendee from './Attendee/Attendee.js';
 import Form from './Attendee/Form.js';
@@ -6,6 +6,10 @@ import Form from './Attendee/Form.js';
 const Attendees = ({attendees, updateAttendee}) => {
 
     console.log(attendees);
+
+    useEffect(()=>{
+
+    }, [attendees]);
 
     return(
       <div>
