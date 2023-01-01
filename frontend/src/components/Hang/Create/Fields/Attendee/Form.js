@@ -16,13 +16,15 @@ const Form = ({updateAttendee}) => {
         event.preventDefault();
         dispatch(getuserbyusername(username)).then((response) => {
             try{
-                updateAttendee(response);
+                if(response !== undefined){
+                    updateAttendee(response);
+                    setUsername("");
+                }
             }
             catch (error){
                 console.log(error);
             }
         })
-        setUsername("");
     }
 
     return(
