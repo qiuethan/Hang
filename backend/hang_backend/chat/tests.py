@@ -9,6 +9,7 @@ from knox.models import AuthToken
 from rest_framework.test import APIClient
 
 from accounts.models import UserDetails
+from accounts.tests import build_numbered_test_user
 from chat.models import MessageChannel, GroupChat, DirectMessage, Message
 from chat.routing import websocket_urlpatterns
 from chat.serializers import MessageSerializer
@@ -16,18 +17,12 @@ from chat.serializers import MessageSerializer
 
 class MessageChannelTest(TestCase):
     def setUp(self):
-        self.user1 = User.objects.create_user(username="test_user_1", email="test_user_1@gmail.com",
-                                              password="test_user_1_password")
-        self.user1.userdetails = UserDetails.objects.create(is_verified=True)
+        self.user1 = build_numbered_test_user(1)
         self.token1 = AuthToken.objects.create(self.user1)[1]
 
-        self.user2 = User.objects.create_user(username="test_user_2", email="test_user_2@gmail.com",
-                                              password="test_user_2_password")
-        self.user2.userdetails = UserDetails.objects.create(is_verified=True)
+        self.user2 = build_numbered_test_user(2)
 
-        self.user3 = User.objects.create_user(username="test_user_3", email="test_user_3@gmail.com",
-                                              password="test_user_3_password")
-        self.user3.userdetails = UserDetails.objects.create(is_verified=True)
+        self.user3 = build_numbered_test_user(3)
 
         self.client = APIClient()
         self.client.credentials(HTTP_AUTHORIZATION="Token " + self.token1)

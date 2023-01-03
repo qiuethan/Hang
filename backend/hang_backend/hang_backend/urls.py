@@ -21,4 +21,5 @@ urlpatterns = [
     path("v1/accounts/", include("accounts.urls", namespace="accounts")),
     path("v1/chat/", include("chat.urls", namespace="chat")),
     path("v1/hang_event/", include("hang_event.urls", namespace="hang_event")),
+    path("v1/notifications/", include("notifications.urls", namespace="notifications")),
 ]
