@@ -23,7 +23,8 @@ export const loadrooms = () => API.get('/v1/chat/direct_message');
 export const loadgroups = () => API.get('/v1/chat/group_chat');
 
 //Users
-export const getuser = (id) => API.get(`/v1/accounts/user/${id}`);
+export const getuser = (id) => API.get(`/v1/accounts/user/id/${id}`);
+export const getuserbyusername = (username) => API.get(`/v1/accounts/user/username/${username}`)
 
 //Friends
 export const loadfriends = () => API.get('/v1/accounts/friends');

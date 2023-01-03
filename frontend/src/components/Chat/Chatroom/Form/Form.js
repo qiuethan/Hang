@@ -18,7 +18,8 @@ const Form = ({ client, currentRoom }) => {
                 action: "send_message",
                 content: {
                     message_channel: currentRoom,
-                    content: message
+                    content: message,
+                    reply: null
                 }
             }));
     
