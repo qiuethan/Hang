@@ -39,3 +39,4 @@ export const sendfriendrequest = (email) => API.post(`/v1/accounts/sent_friend_r
  
 //Hang Requests
 export const createhangevent = (inputs) => API.post('/v1/hang_event/hang_event', inputs);
+export const gethangevents = () => API.get('/v1/hang_event/hang_event');
