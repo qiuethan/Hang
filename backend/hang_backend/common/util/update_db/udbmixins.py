@@ -2,17 +2,14 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 
-from real_time_ws.consumers import send_message
+
+class UpdateDBGenericMixin:
+    def perform_update_db_actions(self, *serializers, current_user=None):
+        for action in self.update_db_actions:
+            action(self, *serializers, current_user=current_user)
 
 
-class RTWSGenericMixin:
-    def send_rtws_message(self, users):
-        for user in users:
-            for update_action in self.update_actions:
-                send_message(user, update_action)
-
-
-class RTWSCreateModelMixin(RTWSGenericMixin):
+class UpdateDBCreateModelMixin(UpdateDBGenericMixin):
     """
     Create a model instance and sends message to the real time websocket.
     """
@@ -22,7 +19,7 @@ class RTWSCreateModelMixin(RTWSGenericMixin):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
-        self.send_rtws_message(self.get_users(serializer.data))
+        self.perform_update_db_actions(serializer)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer):
@@ -35,7 +32,7 @@ class RTWSCreateModelMixin(RTWSGenericMixin):
             return {}
 
 
-class RTWSDestroyModelMixin(RTWSGenericMixin):
+class UpdateDBDestroyModelMixin(UpdateDBGenericMixin):
     """
     Destroy a model instance and sends message to the real time websocket.
     """
@@ -43,7 +40,7 @@ class RTWSDestroyModelMixin(RTWSGenericMixin):
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
-        self.send_rtws_message(self.get_users(serializer.data))
+        self.perform_update_db_actions(serializer)
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -51,7 +48,7 @@ class RTWSDestroyModelMixin(RTWSGenericMixin):
         instance.delete()
 
 
-class RTWSUpdateModelMixin(RTWSGenericMixin):
+class UpdateDBUpdateModelMixin(UpdateDBGenericMixin):
     """
     Update a model instance and sends message to the real time websocket.
     """
@@ -67,8 +64,7 @@ class RTWSUpdateModelMixin(RTWSGenericMixin):
             # If 'prefetch_related' has been applied to a queryset, we need to
             # forcibly invalidate the prefetch cache on the instance.
             instance._prefetched_objects_cache = {}
-        self.send_rtws_message(
-            self.get_users(serializer.data).union(self.get_users(self.get_serializer(instance).data)))
+        self.perform_update_db_actions(serializer, self.get_serializer(instance))
         return Response(serializer.data)
 
     def perform_update(self, serializer):

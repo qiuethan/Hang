@@ -1,19 +1,24 @@
 from rest_framework import generics, permissions
 from rest_framework.pagination import PageNumberPagination
 
+from common.util.update_db import udbgenerics
 from notifications.models import Notification
 from notifications.serializer import NotificationSerializer
 
 
-class RetrieveUpdateNotificationView(generics.RetrieveUpdateAPIView):
+class RetrieveUpdateNotificationView(udbgenerics.UpdateDBRetrieveUpdateAPIView):
     permission_classes = [
         permissions.IsAuthenticated,
     ]
     queryset = Notification.objects.all()
     serializer_class = NotificationSerializer
+    rtws_update_actions = ["notification"]
 
     def get_queryset(self):
         return Notification.objects.filter(user=self.request.user).all()
+
+    def get_rtws_users(self, data):
+        return {self.request.user}
 
 
 class NotificationPagination(PageNumberPagination):

@@ -1,23 +1,11 @@
 import json
 
-from asgiref.sync import sync_to_async, async_to_sync
+from asgiref.sync import sync_to_async
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
-from channels.layers import get_channel_layer
 from django.contrib.auth.models import User
 
 from chat.serializers import AuthenticateWebsocketSerializer
-
-
-def send_message(user, content):
-    channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.group_send)(
-        "real_time_ws." + user.username,
-        {
-            "type": "update",
-            "content": content,
-        }
-    )
 
 
 class RealTimeWSConsumer(AsyncWebsocketConsumer):

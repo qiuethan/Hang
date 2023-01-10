@@ -2,15 +2,14 @@
 # by composing the mixin classes with the base view.
 from rest_framework import mixins
 from rest_framework.generics import GenericAPIView
-
-from real_time_ws import rtwsmixins
+from . import udbmixins
 
 
 # Classes below fulfill the same purpose as DRF's generic API classes,
 # but they also send updates to the real time websocket.
 
-class RTWSCreateAPIView(rtwsmixins.RTWSCreateModelMixin,
-                        GenericAPIView):
+class UpdateDBCreateAPIView(udbmixins.UpdateDBCreateModelMixin,
+                            GenericAPIView):
     """
     Concrete view for creating a model instance.
     """
@@ -19,8 +18,8 @@ class RTWSCreateAPIView(rtwsmixins.RTWSCreateModelMixin,
         return self.create(request, *args, **kwargs)
 
 
-class RTWSDestroyAPIView(rtwsmixins.RTWSDestroyModelMixin,
-                         GenericAPIView):
+class UpdateDBDestroyAPIView(udbmixins.UpdateDBDestroyModelMixin,
+                             GenericAPIView):
     """
     Concrete view for deleting a model instance.
     """
@@ -29,8 +28,8 @@ class RTWSDestroyAPIView(rtwsmixins.RTWSDestroyModelMixin,
         return self.destroy(request, *args, **kwargs)
 
 
-class RTWSUpdateAPIView(rtwsmixins.RTWSUpdateModelMixin,
-                        GenericAPIView):
+class UpdateDBUpdateAPIView(udbmixins.UpdateDBUpdateModelMixin,
+                            GenericAPIView):
     """
     Concrete view for updating a model instance.
     """
@@ -42,9 +41,9 @@ class RTWSUpdateAPIView(rtwsmixins.RTWSUpdateModelMixin,
         return self.partial_update(request, *args, **kwargs)
 
 
-class RTWSListCreateAPIView(mixins.ListModelMixin,
-                            rtwsmixins.RTWSCreateModelMixin,
-                            GenericAPIView):
+class UpdateDBListCreateAPIView(mixins.ListModelMixin,
+                                udbmixins.UpdateDBCreateModelMixin,
+                                GenericAPIView):
     """
     Concrete view for listing a queryset or creating a model instance.
     """
@@ -56,9 +55,9 @@ class RTWSListCreateAPIView(mixins.ListModelMixin,
         return self.create(request, *args, **kwargs)
 
 
-class RTWSRetrieveUpdateAPIView(mixins.RetrieveModelMixin,
-                                rtwsmixins.RTWSUpdateModelMixin,
-                                GenericAPIView):
+class UpdateDBRetrieveUpdateAPIView(mixins.RetrieveModelMixin,
+                                    udbmixins.UpdateDBUpdateModelMixin,
+                                    GenericAPIView):
     """
     Concrete view for retrieving, updating a model instance.
     """
@@ -73,9 +72,9 @@ class RTWSRetrieveUpdateAPIView(mixins.RetrieveModelMixin,
         return self.partial_update(request, *args, **kwargs)
 
 
-class RTWSRetrieveDestroyAPIView(mixins.RetrieveModelMixin,
-                                 rtwsmixins.RTWSDestroyModelMixin,
-                                 GenericAPIView):
+class UpdateDBRetrieveDestroyAPIView(mixins.RetrieveModelMixin,
+                                     udbmixins.UpdateDBDestroyModelMixin,
+                                     GenericAPIView):
     """
     Concrete view for retrieving or deleting a model instance.
     """
@@ -87,10 +86,10 @@ class RTWSRetrieveDestroyAPIView(mixins.RetrieveModelMixin,
         return self.destroy(request, *args, **kwargs)
 
 
-class RTWSRetrieveUpdateDestroyAPIView(mixins.RetrieveModelMixin,
-                                       rtwsmixins.RTWSUpdateModelMixin,
-                                       rtwsmixins.RTWSDestroyModelMixin,
-                                       GenericAPIView):
+class UpdateDBRetrieveUpdateDestroyAPIView(mixins.RetrieveModelMixin,
+                                           udbmixins.UpdateDBUpdateModelMixin,
+                                           udbmixins.UpdateDBDestroyModelMixin,
+                                           GenericAPIView):
     """
     Concrete view for retrieving, updating or deleting a model instance.
     """
