@@ -1,8 +1,24 @@
-import React from "react";
+import React, {useState} from "react";
+
+import MapComponent from "./GoogleMap/MapComponent";
 
 const Location = ({longitude, latitude, handleChange}) => {
+
+    const [address, setAddress] = useState("");
+
+    const changeAddress = (e) => {
+        e.preventDefault();
+        setAddress(e.target.value);
+    }
+
     return(
         <div>
+            <input
+                type="text"
+                name="address"
+                value={address}
+                onChange={changeAddress}
+            />
             <input
                 type="text"
                 name="latitude"
@@ -15,6 +31,7 @@ const Location = ({longitude, latitude, handleChange}) => {
                 value={longitude.toString() || ""}
                 onChange={handleChange}
             />
+            <MapComponent latitude={latitude} longitude={longitude}/>
         </div>
     )
 }

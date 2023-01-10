@@ -4,13 +4,13 @@ const Time = ({start, end, handleChange}) => {
     return(
         <div>
             <input
-                type="text"
+                type="datetime-local"
                 name="scheduled_time_start"
                 value={start || ""}
                 onChange={handleChange}
             />
             <input
-                type="text"
+                type="datetime-local"
                 name="scheduled_time_end"
                 value={end || ""}
                 onChange={handleChange}
