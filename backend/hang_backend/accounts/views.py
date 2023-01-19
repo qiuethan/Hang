@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_204_NO_CONTENT
 
 from common.util.update_db import udbgenerics, udbmixins
+from notifications.utils import update_db_send_notification
 from real_time_ws.utils import update_db_send_rtws_message
 from .models import EmailAuthToken, FriendRequest
 from .serializers import LoginSerializer, UserSerializer, RegisterSerializer, SendEmailSerializer, \
@@ -123,7 +124,7 @@ class ListCreateSentFriendRequestView(udbgenerics.UpdateDBListCreateAPIView):
         permissions.IsAuthenticated,
     ]
     serializer_class = FriendRequestSentSerializer
-    update_db_actions = [update_db_send_rtws_message]
+    update_db_actions = [update_db_send_rtws_message, update_db_send_notification]
     rtws_update_actions = ["friend_request"]
 
     def get_queryset(self):
@@ -131,6 +132,20 @@ class ListCreateSentFriendRequestView(udbgenerics.UpdateDBListCreateAPIView):
 
     def get_rtws_users(self, data):
         return {User.objects.get(id=data["from_user"]), User.objects.get(id=data["to_user"])}
+
+    def get_notification_messages(self, *serializers, current_user=None, request_type=None):
+        notifications = []
+        if request_type == "POST":
+            for serializer in serializers:
+                from_user = User.objects.get(id=serializer.data["from_user"])
+                to_user = User.objects.get(id=serializer.data["to_user"])
+                notifications.append({
+                    "user": to_user,
+                    "title": from_user.username,
+                    "description": f"{from_user.username} has sent you a friend request"
+                })
+        return notifications
+# TODO: current_user and request_type should be required fields
 
 
 class RetrieveDestroySentFriendRequestView(udbgenerics.UpdateDBRetrieveDestroyAPIView):
@@ -174,7 +189,7 @@ class RetrieveAcceptDenyReceivedFriendRequestView(udbgenerics.UpdateDBRetrieveUp
     }
     serializer_class = FriendRequestReceivedSerializer
     update_db_actions = [update_db_send_rtws_message]
-    rtws_update_actions = ["friend_request", "friends"]  # TODO: seperate accept + deny, comment all new code
+    rtws_update_actions = ["friend_request", "friends"]  # TODO: separate accept + deny, comment all new code
 
     def get_object(self):
         query = FriendRequest.objects.filter(from_user=self.kwargs["user_id"],
@@ -186,7 +201,8 @@ class RetrieveAcceptDenyReceivedFriendRequestView(udbgenerics.UpdateDBRetrieveUp
         instance = self.get_object()
         instance.from_user.userdetails.friends.add(instance.to_user)
         instance.to_user.userdetails.friends.add(instance.from_user)
-        self.perform_update_db_actions(self.serializer_class(instance))
+        self.perform_update_db_actions(self.serializer_class(instance), current_user=request.user,
+                                       request_type="DELETE")
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -209,13 +225,15 @@ class RemoveFriendsView(generics.GenericAPIView, udbmixins.UpdateDBGenericMixin)
         return self.request.user.userdetails.friends.all()
 
     def delete(self, request, *args, **kwargs):
-        self.perform_update_db_actions(self.get_serializer(self.get_object()), current_user=self.request.user)
+        self.perform_update_db_actions(self.get_serializer(self.get_object()), current_user=self.request.user,
+                                       request_type="DELETE")
         self.get_object().userdetails.friends.remove(self.request.user)
         self.request.user.userdetails.friends.remove(self.get_object())
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def get_rtws_users(self, data):
         return {User.objects.get(id=data["id"])}
+
 
 # TODO: add logic to friend block system
 class ListFriendsView(generics.ListAPIView):
@@ -253,7 +271,7 @@ class ListCreateBlockedUsersView(generics.ListAPIView, udbmixins.UpdateDBGeneric
         if self.request.user == blocked_user:
             raise exceptions.ParseError("Cannot block yourself.")
         self.request.user.userdetails.blocked_users.add(blocked_user)
-        self.perform_update_db_actions(current_user=self.request.user)
+        self.perform_update_db_actions(current_user=self.request.user, request_type="POST")
         return Response(status=HTTP_204_NO_CONTENT)
 
     def get_rtws_users(self, data):
@@ -276,7 +294,7 @@ class RemoveBlockedUsersView(generics.GenericAPIView, udbmixins.UpdateDBGenericM
 
     def delete(self, request, *args, **kwargs):
         self.request.user.userdetails.blocked_users.remove(self.get_object())
-        self.perform_update_db_actions(current_user=self.request.user)
+        self.perform_update_db_actions(current_user=self.request.user, request_type="DELETE")
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def get_rtws_users(self, data):

@@ -13,7 +13,7 @@ def send_rtws_message(user, content):
     )
 
 
-def update_db_send_rtws_message(mixin, *serializers, current_user=None):
+def update_db_send_rtws_message(mixin, *serializers, current_user=None, request_type=None):
     users = set()
     if current_user is not None:
         users.add(current_user)
