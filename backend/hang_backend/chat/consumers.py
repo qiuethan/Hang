@@ -214,11 +214,20 @@ class ReactionAction(ChatAction):
         await self.reply_to_sender(await dbsa(getattr)(serializer, "data"))
 
 
+class PingAction(ChatAction):
+    """ChatAction that allows a user to ping the websocket to prevent it from sleeping."""
+    name = "ping"
+    needs_authentication = True
+
+    async def action(self):
+        pass
+
+
 class ChatConsumer(AsyncWebsocketConsumer):
     """Websocket for Chat."""
     # ChatActions.
     chat_actions = [AuthenticateAction, SendMessageAction, LoadMessageAction, EditMessageAction, DeleteMessageAction,
-                    ReactionAction]
+                    ReactionAction, PingAction]
 
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)
