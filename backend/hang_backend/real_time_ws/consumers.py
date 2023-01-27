@@ -46,6 +46,14 @@ class RealTimeWSConsumer(AsyncWebsocketConsumer):
                     "message": "success",
                 }
             )
+        else:
+            await self.channel_layer.send(
+                self.channel_name,
+                {
+                    "type": "status",
+                    "message": "success",
+                }
+            )
 
     async def status(self, event):
         await self.send(text_data=json.dumps({
