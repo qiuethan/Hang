@@ -396,7 +396,7 @@ class FriendsTest(TestCase):
     def testListFriends(self):
         response = self.client.get("/v1/accounts/friends")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(json.loads(response.content), [dict_numbered_test_user(2)])
+        self.assertEqual(json.loads(response.content), [2])
 
     def testRemoveFriends(self):
         response = self.client.delete("/v1/accounts/friends/2")
@@ -419,7 +419,7 @@ class BlockedUsersTest(TestCase):
         self.user1.userdetails.blocked_users.add(self.user2)
         response = self.client.get("/v1/accounts/blocked_users")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(json.loads(response.content), [dict_numbered_test_user(2)])
+        self.assertEqual(json.loads(response.content), [2])
 
     def testAddBlockedUsers(self):
         response = self.client.post("/v1/accounts/blocked_users", {"id": 2})
