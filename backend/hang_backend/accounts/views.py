@@ -6,6 +6,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.status import HTTP_204_NO_CONTENT
 
+from common.util.generics.views import ListIDAPIView
 from common.util.update_db import udbgenerics, udbmixins
 from notifications.utils import update_db_send_notification
 from real_time_ws.utils import update_db_send_rtws_message
@@ -145,6 +146,8 @@ class ListCreateSentFriendRequestView(udbgenerics.UpdateDBListCreateAPIView):
                     "description": f"{from_user.username} has sent you a friend request"
                 })
         return notifications
+
+
 # TODO: current_user and request_type should be required fields
 
 
@@ -236,20 +239,31 @@ class RemoveFriendsView(generics.GenericAPIView, udbmixins.UpdateDBGenericMixin)
 
 
 # TODO: add logic to friend block system
-class ListFriendsView(generics.ListAPIView):
+class ListFriendsView(ListIDAPIView):
     """
     View that lists all a user's friends.
     """
     permission_classes = [
         permissions.IsAuthenticated,
     ]
-    serializer_class = UserSerializer
 
     def get_queryset(self):
         return self.request.user.userdetails.friends.all()
 
 
-class ListCreateBlockedUsersView(generics.ListAPIView, udbmixins.UpdateDBGenericMixin):
+class ListBlockedUsersView(ListIDAPIView):
+    """
+    View that lists all a user's friends.
+    """
+    permission_classes = [
+        permissions.IsAuthenticated,
+    ]
+
+    def get_queryset(self):
+        return self.request.user.userdetails.blocked_users.all()
+
+
+class ListCreateBlockedUsersView(ListIDAPIView, udbmixins.UpdateDBGenericMixin):
     """
     View that lists all the users that are blocked.
     """
