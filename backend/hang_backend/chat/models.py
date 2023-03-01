@@ -31,11 +31,17 @@ class MessageChannel(models.Model):
     """Model that represents a MessageChannel."""
     id = models.CharField(max_length=10, primary_key=True)
     channel_type = models.CharField(max_length=2, choices=(("DM", "Direct Message"), ("GC", "Group Chat")))
-    users = models.ManyToManyField(User, related_name="message_channels")
+    users = models.ManyToManyField(User, related_name="message_channels", through="MessageChannelUsers")
     created_at = models.DateTimeField(auto_now_add=True)
     message_last_sent = models.DateTimeField(auto_now_add=True)
 
     objects = MessageChannelManager()
+
+
+class MessageChannelUsers(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    message_channel = models.ForeignKey(MessageChannel, on_delete=models.CASCADE)
+    has_read = models.BooleanField(default=True)
 
 
 class DirectMessage(MessageChannel):
@@ -66,16 +72,45 @@ def generate_message_channel_id():
 
 
 class Message(models.Model):
-    """Model that represents a Message."""
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="messages", null=True)
+    """Model that represents a message."""
+    type = models.CharField(max_length=40)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    content = models.CharField(max_length=2000)
     message_channel = models.ForeignKey(MessageChannel, on_delete=models.CASCADE, related_name="messages")
+
+
+class UserMessage(Message):
+    """Model that represents a user-sent message."""
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="messages", null=True)
     reply = models.ForeignKey("self", on_delete=models.SET_NULL, related_name="replies", null=True)
+    content = models.CharField(max_length=2000)
+
+
+class SystemMessage(Message):
+    """Model that represents a system-sent message."""
+    pass
+
+
+class GroupChatNameChangedMessage(SystemMessage):
+    """Model that represents a system-sent message about the change in a GroupChat's name."""
+    new_name = models.CharField(max_length=50)
+
+
+class GroupChatUserAddedMessage(SystemMessage):
+    """Model that represents a system-sent message about the addition of a user to a GroupChat."""
+    adder = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="gc_user_added_msg_adder", null=True)
+    user_added = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="gc_user_added_msg_user_added",
+                                   null=True)
+
+
+class GroupChatUserRemovedMessage(SystemMessage):
+    """Model that represents a system-sent message about the removal of a user to a GroupChat."""
+    remover = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="gc_user_removed_msg_remover", null=True)
+    user_removed = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="gc_user_removed_msg_user_removed",
+                                     null=True)
 
 
 class Reaction(models.Model):
-    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name="reactions")
+    message = models.ForeignKey(UserMessage, on_delete=models.CASCADE, related_name="reactions")
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     emoji = models.CharField(max_length=2)

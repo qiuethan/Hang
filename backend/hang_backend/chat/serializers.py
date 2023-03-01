@@ -6,7 +6,8 @@ from rest_framework import serializers, validators
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.relations import PrimaryKeyRelatedField
 
-from .models import Message, MessageChannel, DirectMessage, GroupChat, Reaction
+from .models import UserMessage, MessageChannel, DirectMessage, GroupChat, Reaction, GroupChatNameChangedMessage, \
+    Message, GroupChatUserAddedMessage, GroupChatUserRemovedMessage
 
 
 class MessageChannelSerializer(serializers.ModelSerializer):
@@ -100,6 +101,19 @@ class GroupChatSerializer(MessageChannelSerializer):
             if not instance.users.filter(id=owner.id).exists():
                 raise serializers.ValidationError("Owner is not in the GC.")
 
+        # Send system messages.
+        new_name = validated_data.get("name", instance.name)
+        if instance.name != new_name:
+            GroupChatNameChangedMessage.objects.create(message_channel=instance, new_name=new_name)
+        new_users = validated_data.get("users", instance.users.all())
+        for user in new_users:
+            if user not in instance.users.all():
+                GroupChatUserAddedMessage.objects.create(message_channel=instance, adder=current_user, user_added=user)
+        for user in instance.users.all():
+            if user not in new_users:
+                GroupChatUserRemovedMessage.objects.create(message_channel=instance, remover=current_user,
+                                                           user_removed=user)
+
         # Update fields.
         instance.name = validated_data.get("name", instance.name)
         instance.owner = validated_data.get("owner", instance.owner)
@@ -123,17 +137,50 @@ class ReactionSerializer(serializers.ModelSerializer):
         read_only_fields = ("user", "emoji")
 
 
-class MessageSerializer(serializers.ModelSerializer):
+class MessageSerializer(serializers.Serializer):
+
+    def create(self, validated_data):
+        serializer = self.get_serializer(validated_data["type"])
+        ss = serializer(**validated_data)
+        ss.is_valid()
+        return ss.save()
+
+    def update(self, instance, validated_data):
+        pass
+
+    def validate(self, data):
+        if "type" not in data:
+            validators.ValidationError("'type' field not present.")
+        return data
+
+    @classmethod
+    def get_serializer(cls, _type):
+        if _type == "user_message":
+            return UserMessageSerializer
+        if _type == "group_chat_name_changed_message":
+            return GroupChatNameChangedMessageSerializer
+        if _type == "group_chat_user_added_message":
+            return GroupChatUserAddedMessageSerializer
+        if _type == "group_chat_user_removed_message":
+            return GroupChatUserRemovedMessageSerializer
+
+    def to_representation(self, instance):
+        serializer = self.get_serializer(instance.type)
+        return serializer(serializer.Meta.model.objects.get(pk=instance.pk), context=self.context).data
+
+
+class UserMessageSerializer(serializers.ModelSerializer):
     """Serializer for a message."""
+    type = serializers.CharField(default="user_message")
     user = PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
     message_channel = PrimaryKeyRelatedField(queryset=MessageChannel.objects.all())
-    reply = PrimaryKeyRelatedField(queryset=Message.objects.all(), allow_null=True)
+    reply = PrimaryKeyRelatedField(queryset=UserMessage.objects.all(), allow_null=True)
     reactions = ReactionSerializer(many=True, required=False)
 
     class Meta:
-        model = Message
-        fields = ("id", "user", "created_at", "updated_at", "content", "message_channel", "reply", "reactions")
-        read_only_fields = ("id", "user", "created_at", "updated_at", "message_channel", "reply", "reactions")
+        model = UserMessage
+        fields = ("type", "id", "user", "created_at", "updated_at", "content", "message_channel", "reply", "reactions")
+        read_only_fields = ("type", "id", "user", "created_at", "updated_at", "message_channel", "reply", "reactions")
 
     def create(self, validated_data):
         # Verifies that the MessageChannel exists.
@@ -146,8 +193,8 @@ class MessageSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Replied message does not exist.")
 
         # Creates and saves the message.
-        message = Message(user=self.context["user"], content=validated_data["content"],
-                          message_channel=validated_data["message_channel"], reply=validated_data["reply"])
+        message = UserMessage(user=self.context["user"], content=validated_data["content"],
+                              message_channel=validated_data["message_channel"], reply=validated_data["reply"])
         message.save()
 
         validated_data["message_channel"].message_last_sent = datetime.now()
@@ -162,6 +209,40 @@ class MessageSerializer(serializers.ModelSerializer):
         instance.content = validated_data.get("content", instance.content)
         instance.save()
         return instance
+
+
+class GroupChatNameChangedMessageSerializer(serializers.ModelSerializer):
+    type = serializers.CharField(default="group_chat_name_changed_message")
+    message_channel = PrimaryKeyRelatedField(queryset=MessageChannel.objects.all())
+
+    class Meta:
+        model = GroupChatNameChangedMessage
+        fields = ("type", "id", "created_at", "updated_at", "message_channel", "new_name")
+        read_only_fields = ("type", "id", "created_at", "updated_at", "message_channel", "new_name")
+
+
+class GroupChatUserAddedMessageSerializer(serializers.ModelSerializer):
+    type = serializers.CharField(default="group_chat_user_added_message")
+    message_channel = PrimaryKeyRelatedField(queryset=MessageChannel.objects.all())
+    adder = PrimaryKeyRelatedField(queryset=User.objects.all())
+    user_added = PrimaryKeyRelatedField(queryset=User.objects.all())
+
+    class Meta:
+        model = GroupChatNameChangedMessage
+        fields = ("type", "id", "created_at", "updated_at", "message_channel", "adder", "user_added")
+        read_only_fields = ("type", "id", "created_at", "updated_at", "message_channel", "adder", "user_added")
+
+
+class GroupChatUserRemovedMessageSerializer(serializers.ModelSerializer):
+    type = serializers.CharField(default="group_chat_user_removed_message")
+    message_channel = PrimaryKeyRelatedField(queryset=MessageChannel.objects.all())
+    remover = PrimaryKeyRelatedField(queryset=User.objects.all())
+    user_removed = PrimaryKeyRelatedField(queryset=User.objects.all())
+
+    class Meta:
+        model = GroupChatNameChangedMessage
+        fields = ("type", "id", "created_at", "updated_at", "message_channel", "remover", "user_removed")
+        read_only_fields = ("type", "id", "created_at", "updated_at", "message_channel", "remover", "user_removed")
 
 
 class AuthenticateWebsocketSerializer(serializers.Serializer):
