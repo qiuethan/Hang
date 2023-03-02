@@ -61,10 +61,6 @@ class FriendRequestReceivedSerializer(serializers.ModelSerializer):
 
 
 class FriendRequestSentSerializer(serializers.ModelSerializer):
-    """
-    Serializer for a friend request object. It should be used to serialize sent friend requests, as it does not show
-    whether the request has been declined.
-    """
     from_user = PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
     to_user = PrimaryKeyRelatedField(queryset=User.objects.all())
 
@@ -72,10 +68,9 @@ class FriendRequestSentSerializer(serializers.ModelSerializer):
         model = FriendRequest
         fields = ("from_user", "to_user")
 
-    def create(self, validated_data):
-        """Generates a friend request object."""
+    def validate(self, data):
         from_user = self.context["request"].user
-        to_user = validated_data["to_user"]
+        to_user = data["to_user"]
 
         if from_user == to_user:
             raise serializers.ValidationError("Cannot send a friend request to yourself.")
@@ -86,16 +81,15 @@ class FriendRequestSentSerializer(serializers.ModelSerializer):
         if FriendRequest.objects.filter(from_user=from_user, to_user=to_user).exists():
             raise serializers.ValidationError("Friend request already exists.")
 
-        # Checks for existing friend request -> if `to_user` has already sent a friend request to `from_user`.
         existing_friend_request = FriendRequest.objects.filter(from_user=to_user, to_user=from_user)
 
         if existing_friend_request.exists() and not existing_friend_request.get().declined:
             raise serializers.ValidationError("This user has already sent you a friend request.")
 
-        elif existing_friend_request.exists():
-            existing_friend_request.delete()
+        return data
 
-        friend_request = FriendRequest(from_user=from_user, to_user=to_user)
+    def create(self, validated_data):
+        friend_request = FriendRequest(from_user=self.context["request"].user, to_user=validated_data["to_user"])
         friend_request.save()
         return friend_request
 

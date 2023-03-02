@@ -134,7 +134,7 @@ class ListCreateSentFriendRequestView(udbgenerics.UpdateDBListCreateAPIView):
     def get_rtws_users(self, data):
         return {User.objects.get(id=data["from_user"]), User.objects.get(id=data["to_user"])}
 
-    def get_notification_messages(self, *serializers, current_user=None, request_type=None):
+    def get_notification_messages(self, *serializers, current_user, request_type):
         notifications = []
         if request_type == "POST":
             for serializer in serializers:
