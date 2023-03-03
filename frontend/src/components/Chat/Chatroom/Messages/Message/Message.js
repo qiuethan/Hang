@@ -13,11 +13,13 @@ const Message = ({ message }) => {
 
     const [user, setUser] = useState({});
 
+    console.log(useSelector((state) => state.users));
+
     useEffect(() => {
         const obj = users.find((user) => user.user.id === message.user)
         console.log(users);
         console.log(message.user);
-        console.log(obj);
+        console.log(obj)
         if(obj === undefined){
             console.log("Sent to Server");
             dispatch(getuser(message.user));

@@ -5,6 +5,7 @@ import dms from './dms';
 import groups from './groups';
 import friends from './friends';
 import websocket from './websocket';
+import rtws from './rtws';
 import friendrequests from './friendrequests';
 import hangs from './hangs'
 import blocked from './blocked';
@@ -20,4 +21,5 @@ export const reducers = combineReducers({
     hangs,
     blocked,
     users,
+    rtws,
 });

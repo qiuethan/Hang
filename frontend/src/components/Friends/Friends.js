@@ -14,7 +14,7 @@ const Friends = () => {
         dispatch(loadrecievedfriendrequests());
     }, [])
 
-    console.log(useSelector((state) => state));
+    console.log(useSelector((state) => state.friends));
 
     return(
         <div>

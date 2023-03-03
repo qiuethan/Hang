@@ -1,6 +1,8 @@
 import * as api from '../api/index.js';
 import { LOADFRIENDS, LOADRECEIVEDFRIENDREQUESTS, ACCEPTFRIENDREQUEST, DECLINEFRIENDREQUEST, REMOVEFRIEND, BLOCKFRIEND } from '../constants/actionTypes.js';
 
+import {getuserbyemail} from "./users";
+
 export const loadfriends = () => async(dispatch) => {
     try{
         const { data } = await api.loadfriends();
@@ -25,7 +27,8 @@ export const loadrecievedfriendrequests = () => async(dispatch) => {
 
 export const acceptfriendrequest = (user) => async(dispatch) => {
     try{
-        await api.acceptfriendrequest(user.id);
+        console.log(user.user.id);
+        await api.acceptfriendrequest(user.user.id);
 
         dispatch({ type: ACCEPTFRIENDREQUEST, payload: { user } });
     }
@@ -36,7 +39,7 @@ export const acceptfriendrequest = (user) => async(dispatch) => {
 
 export const declinefriendrequest = (user) => async(dispatch) => {
     try{
-        await api.declinefriendrequest(user.id);
+        await api.declinefriendrequest(user.user.id);
 
         dispatch({ type: DECLINEFRIENDREQUEST, payload: { user }})
     }
@@ -47,7 +50,7 @@ export const declinefriendrequest = (user) => async(dispatch) => {
 
 export const removefriend = (friend) => async(dispatch) => {
     try{
-        await api.removefriend(friend.id);
+        await api.removefriend(friend);
 
         dispatch({ type: REMOVEFRIEND, payload: { friend }})
     }
@@ -58,8 +61,8 @@ export const removefriend = (friend) => async(dispatch) => {
 
 export const blockfriend = (friend) => async(dispatch) => {
     try{
-        await api.blockfriend(friend.id);
-        await api.removefriend(friend.id);
+        await api.blockfriend(friend);
+        await api.removefriend(friend);
 
         dispatch({ type: REMOVEFRIEND, payload: { friend }})
         dispatch({ type: BLOCKFRIEND, payload: { friend }})
@@ -71,7 +74,9 @@ export const blockfriend = (friend) => async(dispatch) => {
 
 export const sendfriendrequest = (email) => async(dispatch) => {
     try{
-        await api.sendfriendrequest(email);
+        console.log(email);
+        const user = await dispatch(getuserbyemail(email));
+        await api.sendfriendrequest(user.user.id);
     }
     catch(error){
         console.log(error);

@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import {useDispatch, useSelector} from "react-redux";
+
+import {debounce} from "lodash";
+
+import Box from "@mui/material/Box";
+import CssBaseline from "@mui/material/CssBaseline";
+
+import {connectRTWS, pingRTWS} from "./actions/notifications";
 
 import './App.css';
 import Home from './components/Home/Home';
@@ -8,14 +16,39 @@ import Navbar from './components/Navbar/Navbar';
 import Chat from './components/Chat/Chat';
 import Verify from './components/Verify/Verify';
 import Friends from './components/Friends/Friends';
-
-import Box from "@mui/material/Box";
-import CssBaseline from "@mui/material/CssBaseline";
 import Hang from './components/Hang/Hang';
+
+
 
 const App = () => {
 
   const [currentPage, setCurrentPage] = useState();
+
+  const dispatch = useDispatch();
+
+  const connection = useSelector(state => state.rtws);
+
+  useEffect(() => {
+    dispatch(connectRTWS());
+    console.log(connection);
+  }, [])
+
+  setInterval(() => {
+    dispatch(pingRTWS)
+  }, 10000);
+
+  connection.onmessage = (message) => {
+    try{
+      const m = JSON.parse(message.data);
+      if(m.type === "status" && m.message === "success"){
+        console.log("True");
+      }
+    }
+    catch(error){
+      console.log(error);
+    }
+
+  }
 
   return (
     <BrowserRouter>
