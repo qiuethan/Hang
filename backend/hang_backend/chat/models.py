@@ -85,15 +85,30 @@ class UserMessage(Message):
     reply = models.ForeignKey("self", on_delete=models.SET_NULL, related_name="replies", null=True)
     content = models.CharField(max_length=2000)
 
+    def __init__(self, *args, **kwargs):
+        self._meta.get_field('type').default = "user_message"
+        super(UserMessage, self).__init__(*args, **kwargs)
+
 
 class SystemMessage(Message):
     """Model that represents a system-sent message."""
-    pass
+
+    @property
+    def content(self):
+        raise NotImplementedError
 
 
 class GroupChatNameChangedMessage(SystemMessage):
     """Model that represents a system-sent message about the change in a GroupChat's name."""
     new_name = models.CharField(max_length=50)
+
+    def __init__(self, *args, **kwargs):
+        self._meta.get_field('type').default = "group_chat_name_changed_message"
+        super(GroupChatNameChangedMessage, self).__init__(*args, **kwargs)
+
+    @property
+    def content(self):
+        return f"Group chat renamed to {self.new_name}"
 
 
 class GroupChatUserAddedMessage(SystemMessage):
@@ -102,12 +117,30 @@ class GroupChatUserAddedMessage(SystemMessage):
     user_added = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="gc_user_added_msg_user_added",
                                    null=True)
 
+    def __init__(self, *args, **kwargs):
+        self._meta.get_field('type').default = "group_chat_user_added_message"
+        super(GroupChatUserAddedMessage, self).__init__(*args, **kwargs)
+
+    @property
+    def content(self):
+        assert isinstance(self.message_channel, GroupChat)
+        return f"{self.adder.get_username()} has added {self.user_added.get_username()} to {self.message_channel.name}"
+
 
 class GroupChatUserRemovedMessage(SystemMessage):
     """Model that represents a system-sent message about the removal of a user to a GroupChat."""
     remover = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="gc_user_removed_msg_remover", null=True)
     user_removed = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="gc_user_removed_msg_user_removed",
                                      null=True)
+
+    def __init__(self, *args, **kwargs):
+        self._meta.get_field('type').default = "group_chat_user_removed_message"
+        super(GroupChatUserRemovedMessage, self).__init__(*args, **kwargs)
+
+    @property
+    def content(self):
+        assert isinstance(self.message_channel, GroupChat)
+        return f"{self.remover.get_username()} has removed {self.user_removed.get_username()} from {self.message_channel.name}"
 
 
 class Reaction(models.Model):

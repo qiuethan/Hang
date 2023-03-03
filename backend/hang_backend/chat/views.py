@@ -2,11 +2,9 @@ from django.contrib.auth.models import User
 from rest_framework import generics, permissions
 
 from common.util.update_db import udbgenerics
-from notifications.utils import update_db_send_notification
 from real_time_ws.utils import update_db_send_rtws_message
-from .models import DirectMessage, GroupChat
-from .serializers import DirectMessageSerializer, \
-    GroupChatSerializer
+from .models import DirectMessage, GroupChat, MessageChannelUsers
+from .serializers import DirectMessageSerializer, GroupChatSerializer, ReadMessageChannelSerializer
 
 
 class ListCreateDirectMessageView(udbgenerics.UpdateDBListCreateAPIView):
@@ -42,7 +40,7 @@ class ListCreateGroupChatView(udbgenerics.UpdateDBListCreateAPIView):
         permissions.IsAuthenticated
     ]
     serializer_class = GroupChatSerializer
-    update_db_actions = [update_db_send_rtws_message, update_db_send_notification]
+    update_db_actions = [update_db_send_rtws_message]
     rtws_update_actions = ["group_chat"]
 
     def get_queryset(self):
@@ -50,24 +48,6 @@ class ListCreateGroupChatView(udbgenerics.UpdateDBListCreateAPIView):
 
     def get_rtws_users(self, data):
         return {User.objects.get(id=user) for user in data["users"]}
-
-    def get_notification_messages(self, *serializers, current_user=None, request_type=None):
-        notifications = []
-        if request_type == "POST":
-            users = set()
-            group_chat_name = "placeholder_name"
-            for serializer in serializers:
-                for user in serializer.data["users"]:
-                    users.add(User.objects.get(id=user))
-                group_chat_name = serializer.data["name"]
-            users.remove(current_user)
-            for user in users:
-                notifications.append({
-                    "user": user,
-                    "title": current_user.username,
-                    "description": f"{current_user.username} has added you to \"{group_chat_name}\""
-                })
-            return notifications
 
 
 class RetrieveUpdateGroupChatView(udbgenerics.UpdateDBRetrieveUpdateAPIView):
@@ -84,3 +64,20 @@ class RetrieveUpdateGroupChatView(udbgenerics.UpdateDBRetrieveUpdateAPIView):
 
     def get_rtws_users(self, data):
         return {User.objects.get(id=user) for user in data["users"]}
+
+
+class ReadMessageChannelView(udbgenerics.UpdateDBUpdateAPIView):
+    """View that can retrieve/update/delete a GC by id."""
+    permission_classes = [
+        permissions.IsAuthenticated
+    ]
+    serializer_class = ReadMessageChannelSerializer
+    update_db_actions = [update_db_send_rtws_message]
+    rtws_update_actions = ["direct_message", "group_chat"]
+    lookup_field = "message_channel"
+
+    def get_queryset(self):
+        return MessageChannelUsers.objects.filter(user=self.request.user).all()
+
+    def get_rtws_users(self, data):
+        return {self.request.user}

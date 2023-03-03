@@ -13,7 +13,7 @@ from rest_framework.exceptions import ValidationError
 
 from .exceptions import ChatActionError
 from .models import UserMessage, MessageChannel, Reaction
-from .serializers import AuthenticateWebsocketSerializer, MessageSerializer
+from .serializers import AuthenticateWebsocketSerializer, MessageSerializer, UserMessageSerializer
 
 
 class ChatAction(abc.ABC):
@@ -116,8 +116,8 @@ class SendMessageAction(ChatAction):
 
     async def action(self):
         # Verifies the message.
-        serializer = MessageSerializer(data=self.data,
-                                       context={"user": self.chat_consumer.user, "type": "user_message"})
+        serializer = UserMessageSerializer(data=self.data,
+                                           context={"user": self.chat_consumer.user})
         await sync_to_async(serializer.is_valid)(raise_exception=True)
 
         # Saves the message.
@@ -163,9 +163,9 @@ class EditMessageAction(ChatAction):
 
     async def action(self):
         # Retrieves a message by id.
-        serializer = MessageSerializer(await dbsa(UserMessage.objects.get)(id=self.data["id"]),
-                                       data=self.data,
-                                       context={"user": self.chat_consumer.user}, partial=True)
+        serializer = UserMessageSerializer(await dbsa(UserMessage.objects.get)(id=self.data["id"]),
+                                           data=self.data,
+                                           context={"user": self.chat_consumer.user}, partial=True)
         await sync_to_async(serializer.is_valid)(raise_exception=True)
 
         # Re-saves the updated message.
@@ -219,7 +219,7 @@ class ReactionAction(ChatAction):
 
         await dbsa(message.refresh_from_db)()
         # Send messages.
-        serializer = MessageSerializer(message)
+        serializer = UserMessageSerializer(message)
         await self.reply_to_sender(await dbsa(getattr)(serializer, "data"))
 
 
