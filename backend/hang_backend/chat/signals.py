@@ -29,9 +29,9 @@ def message_post_save(sender, instance, created, **kwargs):
                                                          description=get_message_prefix(instance.content))
                 send_rtws_message(mcu.user, "direct_message")
             else:
-                assert isinstance(instance.message_channel, GroupChat)
                 Notification.objects.create_notification(user=mcu.user,
-                                                         title=instance.message_channel.name,
+                                                         title=GroupChat.objects.get(
+                                                             id=instance.message_channel_id).name,
                                                          description=get_message_prefix(instance.content))
                 send_rtws_message(mcu.user, "group_chat")
         mcu.has_read = False

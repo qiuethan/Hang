@@ -124,7 +124,7 @@ class GroupChatUserAddedMessage(SystemMessage):
     @property
     def content(self):
         assert isinstance(self.message_channel, GroupChat)
-        return f"{self.adder.get_username()} has added {self.user_added.get_username()} to {self.message_channel.name}"
+        return f"{self.adder.get_username()} has added {self.user_added.get_username()} to group chat {self.message_channel.name}"
 
 
 class GroupChatUserRemovedMessage(SystemMessage):
@@ -140,7 +140,7 @@ class GroupChatUserRemovedMessage(SystemMessage):
     @property
     def content(self):
         assert isinstance(self.message_channel, GroupChat)
-        return f"{self.remover.get_username()} has removed {self.user_removed.get_username()} from {self.message_channel.name}"
+        return f"{self.remover.get_username()} has removed {self.user_removed.get_username()} from group chat {self.message_channel.name}"
 
 
 class Reaction(models.Model):

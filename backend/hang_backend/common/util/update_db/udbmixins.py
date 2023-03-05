@@ -56,6 +56,8 @@ class UpdateDBUpdateModelMixin(UpdateDBGenericMixin):
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
+        initial = self.get_serializer(instance)
+        initial.data  # @property function
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
@@ -64,7 +66,7 @@ class UpdateDBUpdateModelMixin(UpdateDBGenericMixin):
             # If 'prefetch_related' has been applied to a queryset, we need to
             # forcibly invalidate the prefetch cache on the instance.
             instance._prefetched_objects_cache = {}
-        self.perform_update_db_actions(serializer, self.get_serializer(instance), current_user=request.user,
+        self.perform_update_db_actions(initial, serializer, current_user=request.user,
                                        request_type="PATCH")
         return Response(serializer.data)
 

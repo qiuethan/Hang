@@ -14,7 +14,11 @@ class HangEvent(models.Model):
     latitude = models.FloatField(default=None, null=True)
     budget = models.FloatField(default=None, null=True)
     attendees = models.ManyToManyField(User, related_name="hang_events")
-    needs = models.JSONField()
-    tasks = models.JSONField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class Task(models.Model):
+    event = models.ForeignKey(HangEvent, related_name="tasks", on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    completed = models.BooleanField(default=False)
