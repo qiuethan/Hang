@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
-from rest_framework import permissions, generics
+from rest_framework import permissions, generics, status
+from rest_framework.response import Response
 
 from common.util.update_db import udbgenerics
 from hang_event.models import Task
@@ -65,6 +66,12 @@ class RetrieveUpdateDestroyHangEventView(udbgenerics.UpdateDBRetrieveUpdateDestr
                     "description": f"{current_user} has added you to event {serializers[1].data['name']}"
                 })
         return notifications
+
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if self.request.user != instance.owner:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+        return super().delete(request, *args, **kwargs)
 
 
 class CreateTaskView(generics.CreateAPIView):
