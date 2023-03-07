@@ -1,14 +1,22 @@
-import React from "react";
+import React, { useState } from "react";
 
-const Picture = ({value, handleChange}) => {
+const Picture = ({picture, updatePicture}) => {
+
+    const handleImageChange = (e) => {
+        const selectedImage = e.target.files[0];
+        updatePicture(URL.createObjectURL(selectedImage));
+        console.log(picture);
+    }
+
     return (
         <div>
             <input
-                type="text"
+                type="file"
+                accept="image/*"
                 name="picture"
-                value={value || ""}
-                onChange={handleChange}
+                onChange={handleImageChange}
             />
+            {picture && <img src={picture} alt="Uploaded Image"/>}
         </div>
     )
 }

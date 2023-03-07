@@ -5,9 +5,9 @@ export default (friends = [], action) => {
         case LOADFRIENDS:
             return action.payload;
         case ACCEPTFRIENDREQUEST:
-            return [...friends, action.payload.user];    
+            return [...friends, action.payload.user.user.id];
         case REMOVEFRIEND:
-            return friends.filter((friend) => friend.id !== action.payload.friend.id);
+            return friends.filter((friend) => friend !== action.payload.friend);
         default: 
             return friends;
     }

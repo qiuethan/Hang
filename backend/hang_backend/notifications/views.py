@@ -4,6 +4,7 @@ from rest_framework.pagination import PageNumberPagination
 from common.util.update_db import udbgenerics
 from notifications.models import Notification
 from notifications.serializer import NotificationSerializer
+from real_time_ws.utils import update_db_send_rtws_message
 
 
 class RetrieveUpdateNotificationView(udbgenerics.UpdateDBRetrieveUpdateAPIView):
@@ -12,6 +13,7 @@ class RetrieveUpdateNotificationView(udbgenerics.UpdateDBRetrieveUpdateAPIView):
     ]
     queryset = Notification.objects.all()
     serializer_class = NotificationSerializer
+    update_db_actions = [update_db_send_rtws_message]
     rtws_update_actions = ["notification"]
 
     def get_queryset(self):

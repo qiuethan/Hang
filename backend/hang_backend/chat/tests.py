@@ -9,10 +9,10 @@ from knox.models import AuthToken
 from rest_framework.test import APIClient
 
 from accounts.models import UserDetails
-from accounts.tests import build_numbered_test_user
-from chat.models import MessageChannel, GroupChat, DirectMessage, UserMessage
+from accounts.test_views import build_numbered_test_user
+from chat.models import MessageChannel, GroupChat, DirectMessage, Message
 from chat.routing import websocket_urlpatterns
-from chat.serializers import UserMessageSerializer
+from chat.serializers import MessageSerializer
 
 
 class MessageChannelTest(TestCase):
@@ -159,7 +159,7 @@ class MessageChannelTest(TestCase):
         res_dict = json.loads(response.content)
         self.verifyGroupChat(res_dict)
         self.assertEqual(res_dict["owner"], 2)
-        self.assertEqual(res_dict["users"], [2, 1, 3])
+        self.assertEqual(res_dict["users"], [1, 2, 3])
 
     def testModifyGroupChatRemoveUserAsOwner(self):
         channel_id = MessageChannel.objects.create_group_chat(name="gc", owner=self.user1,
@@ -235,16 +235,19 @@ class ChatWebsocketTest(TestCase):
     def setUp(self):
         self.user1 = User.objects.create_user(username="test_user_1", email="test_user_1@gmail.com",
                                               password="test_user_1_password")
-        self.user1.userdetails = UserDetails.objects.create(is_verified=True)
+        self.user1.userdetails.is_verified = True
+        self.user1.userdetails.save()
         self.token1 = AuthToken.objects.create(self.user1)[1]
 
         self.user2 = User.objects.create_user(username="test_user_2", email="test_user_2@gmail.com",
                                               password="test_user_2_password")
-        self.user2.userdetails = UserDetails.objects.create(is_verified=True)
+        self.user2.userdetails.is_verified = True
+        self.user2.userdetails.save()
 
         self.user3 = User.objects.create_user(username="test_user_3", email="test_user_3@gmail.com",
                                               password="test_user_3_password")
-        self.user3.userdetails = UserDetails.objects.create(is_verified=True)
+        self.user3.userdetails.is_verified = True
+        self.user3.userdetails.save()
 
         self.channel1 = MessageChannel.objects.create_group_chat(name="gc", owner=self.user1,
                                                                  users=[self.user1, self.user2]).id
@@ -298,8 +301,8 @@ class ChatWebsocketTest(TestCase):
         })
 
         response = await self.communicator.receive_json_from()
-        self.assertEqual(await dbsa(UserMessage.objects.count)(), 1)
-        data = await dbsa(getattr)(UserMessageSerializer(await dbsa(UserMessage.objects.get)()), "data")
+        self.assertEqual(await dbsa(Message.objects.count)(), 1)
+        data = await dbsa(getattr)(MessageSerializer(await dbsa(Message.objects.get)()), "data")
         self.verify_message(data)
         self.assertEqual(response, {'action': "send_message", "content": data})
         await self.verify_success()
@@ -313,7 +316,7 @@ class ChatWebsocketTest(TestCase):
             "content": "test_message"
         })
         await self.verify_failure()
-        self.assertEqual(await dbsa(UserMessage.objects.count)(), 0)
+        self.assertEqual(await dbsa(Message.objects.count)(), 0)
 
     async def testSendMessageOver2000Characters(self):
         await self.connectAndAuthenticate()
@@ -324,15 +327,15 @@ class ChatWebsocketTest(TestCase):
             "content": "a" * 2001
         })
         await self.verify_failure()
-        self.assertEqual(await dbsa(UserMessage.objects.count)(), 0)
+        self.assertEqual(await dbsa(Message.objects.count)(), 0)
 
     async def testLoadMessage(self):
         await self.connectAndAuthenticate()
 
-        await dbsa(UserMessage.objects.create)(user=self.user1, message_channel_id=self.channel1, content="test_message1")
-        await dbsa(UserMessage.objects.create)(user=self.user1, message_channel_id=self.channel1, content="test_message2")
-        await dbsa(UserMessage.objects.create)(user=self.user2, message_channel_id=self.channel2, content="test_message3")
-        await dbsa(UserMessage.objects.create)(user=self.user2, message_channel_id=self.channel2, content="test_message4")
+        await dbsa(Message.objects.create)(user=self.user1, message_channel_id=self.channel1, content="test_message1")
+        await dbsa(Message.objects.create)(user=self.user1, message_channel_id=self.channel1, content="test_message2")
+        await dbsa(Message.objects.create)(user=self.user2, message_channel_id=self.channel2, content="test_message3")
+        await dbsa(Message.objects.create)(user=self.user2, message_channel_id=self.channel2, content="test_message4")
 
         await self.send_message("load_message", {
             "message_channel": self.channel1
@@ -349,10 +352,10 @@ class ChatWebsocketTest(TestCase):
     async def testLoadMessageWithMessageId(self):
         await self.connectAndAuthenticate()
 
-        await dbsa(UserMessage.objects.create)(user=self.user1, message_channel_id=self.channel1, content="test_message1")
-        await dbsa(UserMessage.objects.create)(user=self.user1, message_channel_id=self.channel1, content="test_message2")
-        await dbsa(UserMessage.objects.create)(user=self.user2, message_channel_id=self.channel2, content="test_message3")
-        await dbsa(UserMessage.objects.create)(user=self.user2, message_channel_id=self.channel2, content="test_message4")
+        await dbsa(Message.objects.create)(user=self.user1, message_channel_id=self.channel1, content="test_message1")
+        await dbsa(Message.objects.create)(user=self.user1, message_channel_id=self.channel1, content="test_message2")
+        await dbsa(Message.objects.create)(user=self.user2, message_channel_id=self.channel2, content="test_message3")
+        await dbsa(Message.objects.create)(user=self.user2, message_channel_id=self.channel2, content="test_message4")
 
         await self.send_message("load_message", {
             "message_channel": self.channel1,
@@ -370,8 +373,8 @@ class ChatWebsocketTest(TestCase):
         await self.connectAndAuthenticate()
 
         for _ in range(30):
-            await dbsa(UserMessage.objects.create)(user=self.user1, message_channel_id=self.channel1,
-                                                   content="test_message")
+            await dbsa(Message.objects.create)(user=self.user1, message_channel_id=self.channel1,
+                                               content="test_message")
 
         await self.send_message("load_message", {
             "message_channel": self.channel1
@@ -389,7 +392,7 @@ class ChatWebsocketTest(TestCase):
     async def testEditMessage(self):
         await self.connectAndAuthenticate()
 
-        await dbsa(UserMessage.objects.create)(user=self.user1, message_channel_id=self.channel1, content="test_message1")
+        await dbsa(Message.objects.create)(user=self.user1, message_channel_id=self.channel1, content="test_message1")
 
         await self.send_message("edit_message", {
             "id": 1,
@@ -399,14 +402,14 @@ class ChatWebsocketTest(TestCase):
         response = await self.communicator.receive_json_from()
         self.assertEqual(response["action"], "edit_message")
         self.verify_message(response["content"])
-        data = await dbsa(getattr)(UserMessageSerializer(await dbsa(UserMessage.objects.get)()), "data")
+        data = await dbsa(getattr)(MessageSerializer(await dbsa(Message.objects.get)()), "data")
         self.assertEqual(data["content"], "a" * 2000)
         await self.verify_success()
 
     async def testEditMessageOver2000Characters(self):
         await self.connectAndAuthenticate()
 
-        await dbsa(UserMessage.objects.create)(user=self.user1, message_channel_id=self.channel1, content="test_message1")
+        await dbsa(Message.objects.create)(user=self.user1, message_channel_id=self.channel1, content="test_message1")
 
         await self.send_message("edit_message", {
             "id": 1,
@@ -417,7 +420,7 @@ class ChatWebsocketTest(TestCase):
     async def testEditMessageInvalidPermissions(self):
         await self.connectAndAuthenticate()
 
-        await dbsa(UserMessage.objects.create)(user=self.user2, message_channel_id=self.channel1, content="test_message1")
+        await dbsa(Message.objects.create)(user=self.user2, message_channel_id=self.channel1, content="test_message1")
 
         await self.send_message("edit_message", {
             "id": 1,
@@ -428,7 +431,7 @@ class ChatWebsocketTest(TestCase):
     async def testDeleteMessage(self):
         await self.connectAndAuthenticate()
 
-        await dbsa(UserMessage.objects.create)(user=self.user1, message_channel_id=self.channel1, content="test_message1")
+        await dbsa(Message.objects.create)(user=self.user1, message_channel_id=self.channel1, content="test_message1")
 
         await self.send_message("delete_message", {
             "id": 1,
@@ -442,7 +445,7 @@ class ChatWebsocketTest(TestCase):
     async def testDeleteMessageInvalidPermissions(self):
         await self.connectAndAuthenticate()
 
-        await dbsa(UserMessage.objects.create)(user=self.user2, message_channel_id=self.channel1, content="test_message1")
+        await dbsa(Message.objects.create)(user=self.user2, message_channel_id=self.channel1, content="test_message1")
 
         await self.send_message("delete_message", {
             "id": 1,

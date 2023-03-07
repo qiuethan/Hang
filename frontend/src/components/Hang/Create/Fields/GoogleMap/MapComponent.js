@@ -7,18 +7,22 @@ const containerStyle = {
     height: '400px'
 };
 
-const MapComponent = ({latitude, longitude}) => {
+const MapComponent = ({latitude, longitude, updateLocation }) => {
+
+    const handleClick = (e) => {
+        updateLocation(e.latLng.lat(), e.latLng.lng());
+    };
 
     return(
-        <LoadScript googleMapsApiKey="AIzaSyDnfmoE9jAHUxXhTvytcPBjQTntcOBKzwQ">
-            <GoogleMap
+        <GoogleMap
                 mapContainerStyle={containerStyle}
                 center={{lat: +latitude, lng: +longitude}}
                 zoom={16}
+                onClick={handleClick}
             >
                 <Marker position={{lat: +latitude, lng: +longitude}}/>
-            </GoogleMap>
-        </LoadScript>
+        </GoogleMap>
+
     );
 }
 

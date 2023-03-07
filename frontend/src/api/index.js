@@ -25,6 +25,7 @@ export const loadgroups = () => API.get('/v1/chat/group_chat');
 //Users
 export const getuser = (id) => API.get(`/v1/accounts/user/id/${id}`);
 export const getuserbyusername = (username) => API.get(`/v1/accounts/user/username/${username}`)
+export const getuserbyemail = (email) => API.get(`/v1/accounts/user/email/${email}`)
 
 //Friends
 export const loadfriends = () => API.get('/v1/accounts/friends');
@@ -35,8 +36,8 @@ export const blockfriend = (id) => API.post(`v1/accounts/blocked_users`, {id: id
 export const loadrecievedfriendrequests = () => API.get('/v1/accounts/received_friend_request');
 export const acceptfriendrequest = (id) => API.delete(`/v1/accounts/received_friend_request/${id}`);
 export const declinefriendrequest = (id) => API.patch(`/v1/accounts/received_friend_request/${id}`);
-export const sendfriendrequest = (email) => API.post(`/v1/accounts/sent_friend_request`, {to_user: { email: email }})
+export const sendfriendrequest = (id) => API.post(`/v1/accounts/sent_friend_request`, {to_user: id})
  
 //Hang Requests
-export const createhangevent = (inputs) => API.post('/v1/hang_event/hang_event', inputs);
+export const createhangevent = (inputs) => API.post('/v1/hang_evens/hang_event', inputs);
 export const gethangevents = () => API.get('/v1/hang_event/hang_event');

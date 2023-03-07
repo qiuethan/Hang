@@ -4,7 +4,7 @@ import { sendfriendrequest } from "../../../actions/friends";
 
 const Request = () => {
 
-    const [email, setEmail] = useState();
+    const [email, setEmail] = useState("");
 
     const dispatch = useDispatch();
 

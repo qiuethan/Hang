@@ -6,10 +6,12 @@ const Friendlist = () => {
 
     const friends = useSelector(state => state.friends);
 
+    console.log(friends);
+
     return(
         friends.length === 0 ? <div/> : <div>
             {friends.map((friend) => (
-                <Friend key={friend.id} friend={friend}/>
+                <Friend key={friend} friend={friend}/>
             ))}
         </div>
     );
