@@ -9,6 +9,7 @@ class NotificationManager(models.Manager):
         notification = Notification.objects.create(user=user, title=title, description=description)
         notification.save()
         send_rtws_message(user, "notification")
+        return notification
 
 
 class Notification(models.Model):

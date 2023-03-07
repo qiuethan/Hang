@@ -1,5 +1,9 @@
 import abc
 import json
+import sys
+import traceback
+
+import emoji
 
 from asgiref.sync import sync_to_async
 from channels.db import database_sync_to_async as dbsa
@@ -8,8 +12,8 @@ from django.contrib.auth.models import User
 from rest_framework.exceptions import ValidationError
 
 from .exceptions import ChatActionError
-from .models import Message, MessageChannel, Reaction
-from .serializers import AuthenticateWebsocketSerializer, MessageSerializer
+from .models import UserMessage, MessageChannel, Reaction
+from .serializers import AuthenticateWebsocketSerializer, MessageSerializer, UserMessageSerializer
 
 
 class ChatAction(abc.ABC):
@@ -112,7 +116,8 @@ class SendMessageAction(ChatAction):
 
     async def action(self):
         # Verifies the message.
-        serializer = MessageSerializer(data=self.data, context={"user": self.chat_consumer.user})
+        serializer = UserMessageSerializer(data=self.data,
+                                           context={"user": self.chat_consumer.user})
         await sync_to_async(serializer.is_valid)(raise_exception=True)
 
         # Saves the message.
@@ -158,9 +163,9 @@ class EditMessageAction(ChatAction):
 
     async def action(self):
         # Retrieves a message by id.
-        serializer = MessageSerializer(await dbsa(Message.objects.get)(id=self.data["id"]),
-                                       data=self.data,
-                                       context={"user": self.chat_consumer.user}, partial=True)
+        serializer = UserMessageSerializer(await dbsa(UserMessage.objects.get)(id=self.data["id"]),
+                                           data=self.data,
+                                           context={"user": self.chat_consumer.user}, partial=True)
         await sync_to_async(serializer.is_valid)(raise_exception=True)
 
         # Re-saves the updated message.
@@ -192,25 +197,29 @@ class ReactionAction(ChatAction):
     needs_authentication = True
 
     async def action(self):
-        message = await dbsa(Message.objects.get)(id=self.data["id"])
+        message = await dbsa(UserMessage.objects.get)(id=self.data["id"])
 
         # Checks if user can see message.
         message_channel_id = (await sync_to_async(getattr)(message, "message_channel")).id
         if not await dbsa(self.chat_consumer.user.message_channels.filter(id=message_channel_id).exists)():
             raise ValidationError("Message does not exist.")
 
+        # Ensure that emojis are valid.
+        if not all(map(emoji.is_emoji, self.data["emoji"])):
+            raise ValidationError("Reactions must be valid emojis.")
+
         # Delete all user's reactions.
         await dbsa(message.reactions.filter(user=self.chat_consumer.user).delete)()
 
-        for emoji in self.data["emoji"]:
-            # TODO: implement check for proper emoji
-            reaction = Reaction(user=self.chat_consumer.user, emoji=emoji, message=message)
+        # Add reactions.
+        for e in self.data["emoji"]:
+            reaction = Reaction(user=self.chat_consumer.user, emoji=e, message=message)
             await dbsa(reaction.save)()
             await dbsa(message.reactions.add)(reaction)
 
         await dbsa(message.refresh_from_db)()
         # Send messages.
-        serializer = MessageSerializer(message)
+        serializer = UserMessageSerializer(message)
         await self.reply_to_sender(await dbsa(getattr)(serializer, "data"))
 
 
@@ -256,7 +265,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await action(self, data["content"]).run()
         except (Exception,) as e:
             # Otherwise throw a generic error.
-            # traceback.print_exception(*sys.exc_info())
+            traceback.print_exception(*sys.exc_info())
             await self.channel_layer.send(
                 self.channel_name,
                 {

@@ -148,9 +148,6 @@ class ListCreateSentFriendRequestView(udbgenerics.UpdateDBListCreateAPIView):
         return notifications
 
 
-# TODO: current_user and request_type should be required fields
-
-
 class RetrieveDestroySentFriendRequestView(udbgenerics.UpdateDBRetrieveDestroyAPIView):
     """
     View that retrieves / deletes a friend request by ID.
@@ -195,7 +192,7 @@ class RetrieveAcceptDenyReceivedFriendRequestView(udbgenerics.UpdateDBRetrieveUp
     rtws_update_actions = ["friend_request", "friends"]  # TODO: separate accept + deny, comment all new code
 
     def get_object(self):
-        query = FriendRequest.objects.filter(from_user=self.kwargs["user_id"],
+        query = FriendRequest.objects.filter(from_user_id=self.kwargs["user_id"],
                                              to_user=self.request.user,
                                              declined=False)
         return get_object_or_404(query)
