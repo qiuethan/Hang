@@ -67,5 +67,6 @@ class RealTimeWSConsumer(AsyncWebsocketConsumer):
 
     async def update(self, event):
         await self.send(text_data=json.dumps({
+            "type": "update",
             "content": event["content"],
         }))
