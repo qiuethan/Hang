@@ -21,6 +21,7 @@ class UserDetails(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
     profile_picture = models.CharField(max_length=200, default="default profile pic change this later")  # TODO: CHANGE
     is_verified = models.BooleanField(default=False)  # Shows whether the user has been verified by email.
+    about_me = models.TextField(default="")
 
     friends = models.ManyToManyField(User, related_name="+")
     blocked_users = models.ManyToManyField(User, related_name="+")

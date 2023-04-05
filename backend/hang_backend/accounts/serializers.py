@@ -39,7 +39,7 @@ class UserDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserDetails
-        fields = ("user", "profile_picture", "is_verified")
+        fields = ("user", "profile_picture", "is_verified", "about_me")
 
 
 class FriendRequestReceivedSerializer(serializers.ModelSerializer):
