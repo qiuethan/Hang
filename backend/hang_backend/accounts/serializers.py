@@ -1,8 +1,10 @@
 import hashlib
 import random
 import string
+import urllib.parse
 from datetime import datetime, timezone, timedelta
 
+import requests
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
@@ -122,7 +124,6 @@ class LoginSerializer(serializers.Serializer):
 
     def validate(self, data):
         user = authenticate(**data)
-
         if not user or not user.is_active:
             raise serializers.ValidationError("Incorrect Credentials.")
 
@@ -136,6 +137,24 @@ class LoginSerializer(serializers.Serializer):
 
     def update(self, instance, validated_data):
         raise NotImplementedError
+
+
+class LoginWithGoogleSerializer(serializers.Serializer):
+    code = serializers.CharField()
+
+    def create(self, validated_data):
+        code = urllib.parse.unquote(validated_data.get('code'))
+        url = 'https://oauth2.googleapis.com/token'
+        data = {
+            'code': code,
+            'client_id': '110686712608-j4udo8p9sckujpgurj9s14ep5jui8tmu.apps.googleusercontent.com',
+            'client_secret': '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',
+            'redirect_uri': 'http://localhost',
+            'access_type': 'offline',
+            'grant_type': 'authorization_code',
+        }
+        response = requests.post(url, data=data)
+        return response.json()
 
 
 class SendEmailSerializer(serializers.Serializer):

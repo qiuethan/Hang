@@ -231,8 +231,8 @@ class GroupChatNameChangedMessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GroupChatNameChangedMessage
-        fields = ("type", "id", "created_at", "updated_at", "message_channel", "new_name")
-        read_only_fields = ("type", "id", "created_at", "updated_at", "message_channel", "new_name")
+        fields = ("type", "id", "created_at", "updated_at", "message_channel", "new_name",  "content")
+        read_only_fields = ("type", "id", "created_at", "updated_at", "message_channel", "new_name", "content")
 
 
 class GroupChatUserAddedMessageSerializer(serializers.ModelSerializer):
@@ -242,8 +242,8 @@ class GroupChatUserAddedMessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GroupChatUserAddedMessage
-        fields = ("type", "id", "created_at", "updated_at", "message_channel", "adder", "user_added")
-        read_only_fields = ("type", "id", "created_at", "updated_at", "message_channel", "adder", "user_added")
+        fields = ("type", "id", "created_at", "updated_at", "message_channel", "adder", "user_added", "content")
+        read_only_fields = ("type", "id", "created_at", "updated_at", "message_channel", "adder", "user_added", "content")
 
 
 class GroupChatUserRemovedMessageSerializer(serializers.ModelSerializer):
@@ -253,8 +253,8 @@ class GroupChatUserRemovedMessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GroupChatUserRemovedMessage
-        fields = ("type", "id", "created_at", "updated_at", "message_channel", "remover", "user_removed")
-        read_only_fields = ("type", "id", "created_at", "updated_at", "message_channel", "remover", "user_removed")
+        fields = ("type", "id", "created_at", "updated_at", "message_channel", "remover", "user_removed", "content")
+        read_only_fields = ("type", "id", "created_at", "updated_at", "message_channel", "remover", "user_removed", "content")
 
 
 class AuthenticateWebsocketSerializer(serializers.Serializer):

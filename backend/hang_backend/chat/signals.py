@@ -25,7 +25,8 @@ def message_post_save(sender, instance, created, **kwargs):
         if mcu.has_read:
             if instance.message_channel.channel_type == "DM":
                 Notification.objects.create_notification(user=mcu.user,
-                                                         title=instance.message_channel.users.exclude(mcu.user.id),
+                                                         title=instance.message_channel.users.exclude(
+                                                             id=mcu.user.id).get().username,
                                                          description=get_message_prefix(instance.content))
                 send_rtws_message(mcu.user, "direct_message")
             else:

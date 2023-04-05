@@ -7,7 +7,7 @@ from .views import (
     ListCreateSentFriendRequestView, RetrieveDestroySentFriendRequestView,
     ListReceivedFriendRequestView, RetrieveAcceptDenyReceivedFriendRequestView,
     RemoveFriendsView, RemoveBlockedUsersView, RetrieveUserViewID,
-    RetrieveUserViewEmail, RetrieveUserViewUsername
+    RetrieveUserViewEmail, RetrieveUserViewUsername, LoginWithGoogleView
 )
 
 app_name = "accounts"
@@ -15,6 +15,7 @@ app_name = "accounts"
 urlpatterns = [
     path("register", RegisterView.as_view(), name="register"),
     path("login", LoginView.as_view(), name="login"),
+    path("login_with_google", LoginWithGoogleView.as_view(), name="login_with_google"),
     path("logout", knox_views.LogoutView.as_view(), name="logout"),
     path("user/id/<str:pk>", RetrieveUserViewID.as_view(), name="retrieve_user_id"),
     path("user/email/<str:email>", RetrieveUserViewEmail.as_view(), name="retrieve_user_email"),
