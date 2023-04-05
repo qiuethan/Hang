@@ -1,4 +1,5 @@
 import hashlib
+import json
 import random
 import string
 import urllib.parse
@@ -142,19 +143,47 @@ class LoginSerializer(serializers.Serializer):
 class LoginWithGoogleSerializer(serializers.Serializer):
     code = serializers.CharField()
 
-    def create(self, validated_data):
+    def validate(self, validated_data):
         code = urllib.parse.unquote(validated_data.get('code'))
         url = 'https://oauth2.googleapis.com/token'
         data = {
             'code': code,
-            'client_id': '110686712608-j4udo8p9sckujpgurj9s14ep5jui8tmu.apps.googleusercontent.com',
+            'client_id': '110686712608-j4udo8p9sckujpgurj9s14ep5jui8tmu.apps.googleusercontent.com', # CHANGE
             'client_secret': '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',
-            'redirect_uri': 'http://localhost',
+            'redirect_uri': 'http://localhost:3000',
             'access_type': 'offline',
             'grant_type': 'authorization_code',
         }
-        response = requests.post(url, data=data)
-        return response.json()
+
+        try:
+            response = requests.post(url, data=data)
+            response_json = response.json()
+            access_token = response_json.get('access_token')
+
+            if not access_token:
+                raise serializers.ValidationError("Access token not received")
+
+            url = f'https://www.googleapis.com/oauth2/v3/userinfo?access_token={access_token}'
+            response = requests.get(url)
+            response_json = response.json()
+            email = response_json.get('email')
+
+            if not email:
+                raise serializers.ValidationError("Email not received")
+
+            if not User.objects.filter(email=email).exists():
+                raise serializers.ValidationError("User doesn't exist")
+
+            return User.objects.get(email=email)
+
+        except (json.JSONDecodeError, serializers.ValidationError) as error:
+            raise serializers.ValidationError(str(error))
+
+    def create(self, validated_data):
+        raise NotImplementedError
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError
 
 
 class SendEmailSerializer(serializers.Serializer):

@@ -49,20 +49,7 @@ class LoginWithGoogleView(views.APIView):
     def post(self, request):
         serializer = LoginWithGoogleSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        data = serializer.save()
-        # # Load the Google OAuth2 backend and strategy
-        # try:
-        #     backend = load_backend(load_strategy(request), 'google-oauth2', redirect_uri=None)
-        # except MissingBackend:
-        #     return Response({'error': 'Invalid social authentication backend.'}, status=400)
-        #
-        # # Authenticate the user using Google OAuth2
-        # user = None
-        # try:
-        #     user = backend.do_auth(data.get("access_token"))
-        # except Exception as e:
-        #     return Response({'error': str(e)}, status=400)
-
+        user = serializer.validated_data
         return JsonResponse({
             "user": UserSerializer(user).data,
             "token": AuthToken.objects.create(user)[1]
