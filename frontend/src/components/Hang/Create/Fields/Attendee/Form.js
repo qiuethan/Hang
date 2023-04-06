@@ -2,7 +2,7 @@ import React, {useState} from 'react';
 import { useDispatch } from 'react-redux';
 import {getuserbyusername} from "../../../../../actions/users";
 
-const Form = ({updateAttendee}) => {
+const Form = ({updateAttendee, fields}) => {
 
     const [username, setUsername] = useState("");
     const dispatch = useDispatch();
@@ -17,7 +17,9 @@ const Form = ({updateAttendee}) => {
         dispatch(getuserbyusername(username)).then((response) => {
             try{
                 if(response !== undefined){
-                    updateAttendee(response);
+                    if(!fields.attendees.includes(response.user.id)){
+                        updateAttendee(response);
+                    }
                     setUsername("");
                 }
             }

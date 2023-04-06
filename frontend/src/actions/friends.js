@@ -1,5 +1,5 @@
 import * as api from '../api/index.js';
-import { LOADFRIENDS, LOADRECEIVEDFRIENDREQUESTS, ACCEPTFRIENDREQUEST, DECLINEFRIENDREQUEST, REMOVEFRIEND, BLOCKFRIEND } from '../constants/actionTypes.js';
+import { LOADFRIENDS, LOADRECEIVEDFRIENDREQUESTS, ACCEPTFRIENDREQUEST, DECLINEFRIENDREQUEST, REMOVEFRIEND, BLOCKFRIEND, LOADSENTFRIENDREQUESTS, DELETESENTFRIENDREQUEST, LOADBLOCKEDUSERS, UNBLOCKUSER } from '../constants/actionTypes.js';
 
 import {getuserbyemail} from "./users";
 
@@ -77,6 +77,46 @@ export const sendfriendrequest = (email) => async(dispatch) => {
         console.log(email);
         const user = await dispatch(getuserbyemail(email));
         await api.sendfriendrequest(user.user.id);
+    }
+    catch(error){
+        console.log(error);
+    }
+}
+
+export const loadsentfriendrequests = () => async(dispatch) => {
+    try{
+        const { data } = await api.loadsentfriendrequests();
+        dispatch({type : LOADSENTFRIENDREQUESTS, payload: data});
+    }
+    catch(error){
+        console.log(error);
+    }
+}
+
+export const loadblockedusers = () => async(dispatch) => {
+    try{
+        const { data } = await api.loadblockedusers();
+        dispatch({type: LOADBLOCKEDUSERS, payload: data})
+    }
+    catch(error){
+        console.log(error);
+    }
+}
+
+export const unblockeduser = (id) => async(dispatch) => {
+    try{
+        await api.unblockuser(id);
+        dispatch({type: UNBLOCKUSER, payload: {id}})
+    }
+    catch(error){
+        console.log(error);
+    }
+}
+
+export const deletesentfriendrequest = (id) => async(dispatch) => {
+    try{
+        await api.deletesentfriendrequest(id);
+        dispatch({type: DELETESENTFRIENDREQUEST, payload: {id}})
     }
     catch(error){
         console.log(error);

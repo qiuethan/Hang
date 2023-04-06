@@ -1,12 +1,11 @@
 import React from "react";
 import { useState, useEffect } from "react";
-import { ReactDOM } from "react";
-import './Auth.css';
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from 'react-router-dom';
-import { GoogleLogin } from 'react-google-login';
 
 import { login, sendemail, signup } from "../../actions/login.js";
+
+import Google from './Google/Google';
 
 const initialState = {username: "", email: "", password: ""};
 
@@ -146,11 +145,17 @@ const Auth = ({currentPage, setCurrentPage}) => {
                 )
             }
 
+
+
             <button type="submit">{isSignup ? 'Sign Up' : "Login"}</button>
             </form>
             <button onClick={switchMode}>
                 {isSignup ? 'Already have an account? Log in!' : "Don't have an account? Sign Up!"}
             </button>
+
+            {!isSignup && (
+                <Google/>
+            )}
         </div>
     );
 

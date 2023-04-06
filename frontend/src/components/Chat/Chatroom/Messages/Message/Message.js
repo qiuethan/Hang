@@ -16,16 +16,18 @@ const Message = ({ message }) => {
     console.log(useSelector((state) => state.users));
 
     useEffect(() => {
-        const obj = users.find((user) => user.user.id === message.user)
-        console.log(users);
-        console.log(message.user);
-        console.log(obj)
-        if(obj === undefined){
-            console.log("Sent to Server");
-            dispatch(getuser(message.user));
-        }
-        else{
-            setUser(obj);
+        if(message.type == "user_message"){
+            const obj = users.find((user) => user.user.id === message.user)
+            console.log(users);
+            console.log(message.user);
+            console.log(obj)
+            if(obj === undefined){
+                console.log("Sent to Server");
+                dispatch(getuser(message.user));
+            }
+            else{
+                setUser(obj);
+            }
         }
     }, [useSelector((state) => state.users)])
     console.log(user);
@@ -33,9 +35,11 @@ const Message = ({ message }) => {
     try{
         return(
             <div>
-                <div>
-                    {user.user.username}
-                </div>
+                {message.type === "user_message" && (
+                    <div>
+                        {user.user.username}
+                    </div>
+                )}
                 <div>
                     {message.content}
                 </div>

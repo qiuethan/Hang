@@ -21,6 +21,7 @@ const Request = () => {
 
     return(
         <form onSubmit={handleSubmit}>
+            <label for="email">Send Friend Request:</label>
             <input
                 type="text"
                 name="email"

@@ -20,6 +20,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import ChatIcon from '@mui/icons-material/Chat';
 import PeopleIcon from '@mui/icons-material/People';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import CreateIcon from '@mui/icons-material/Create';
 
 import logo from '../../images/logo.svg';
 
@@ -116,9 +117,20 @@ const Navbar = ({ setCurrentPage }) => {
         history("/chat");
         setCurrentPage("chat");
     }
+
+    const create = () => {
+        history("/hang/create");
+        setCurrentPage("create");
+    }
+
     const friends = () => {
         history("/friends");
         setCurrentPage("friends");
+    }
+
+    const profile = () => {
+        history("/profile");
+        setCurrentPage("profile");
     }
 
     const theme = useTheme();
@@ -169,7 +181,29 @@ const Navbar = ({ setCurrentPage }) => {
               <ListItemText primary={"Home"} sx={{ opacity: open ? 1 : 0}}/>
             </ListItemButton>
           </ListItem>
-          
+            {user !== null &&
+                <ListItem key={"create"} disablePadding sx={{display: "block"}}>
+                    <ListItemButton
+                        sx={{
+                            minHeight: 48,
+                            justifyContent: open ? "initial" : "center",
+                            px: 2.5
+                        }}
+                        onClick={create}
+                    >
+                        <ListItemIcon
+                            sx={{
+                                minWidth: 0,
+                                mr: open ? 3 : "auto",
+                                justifyContent: "center"
+                            }}
+                        >
+                            <CreateIcon/>
+                        </ListItemIcon>
+                        <ListItemText primary={"Create Hang"} sx={{ opacity: open ? 1 : 0}}/>
+                    </ListItemButton>
+                </ListItem>
+            }
           {user !== null &&
             (
               <ListItem key={"chat"} disablePadding sx={{display: "block"}}>
@@ -218,6 +252,7 @@ const Navbar = ({ setCurrentPage }) => {
               </ListItemButton>
             </ListItem>
           }
+
           {user !== null &&
             <ListItem key={"account"} disablePadding sx={{display: "block", position: height >= 264 ? "absolute" : "relative", bottom: 0}}>
               <ListItemButton
@@ -226,7 +261,7 @@ const Navbar = ({ setCurrentPage }) => {
                   justifyContent: open ? "initial" : "center",
                   px: 2.5
                 }}
-                onClick={friends}
+                onClick={profile}
               >
                 <ListItemIcon
                   sx={{
