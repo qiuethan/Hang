@@ -11,7 +11,7 @@ class FriendRequest(models.Model):
 
 class EmailAuthToken(models.Model):
     """Model that represents an email authentication token. Used to verify a user's account."""
-    id = models.CharField(max_length=64, primary_key=True) # Token is stored as SHA256 hash.
+    id = models.CharField(max_length=64, primary_key=True)  # Token is stored as SHA256 hash.
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 

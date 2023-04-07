@@ -148,8 +148,8 @@ class LoginWithGoogleSerializer(serializers.Serializer):
         url = 'https://oauth2.googleapis.com/token'
         data = {
             'code': code,
-            'client_id': '110686712608-j4udo8p9sckujpgurj9s14ep5jui8tmu.apps.googleusercontent.com', # CHANGE
-            'client_secret': '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',
+            'client_id': settings.GOOGLE_CLIENT_ID,
+            'client_secret': settings.GOOGLE_CLIENT_SECRET,
             'redirect_uri': 'http://localhost:3000/auth',
             'access_type': 'offline',
             'grant_type': 'authorization_code',

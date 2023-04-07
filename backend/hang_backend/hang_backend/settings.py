@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'channels',
 
     'accounts',
+    'calendars',
     'chat',
     'hang_event',
     'notifications',
@@ -174,10 +175,12 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'hangtesthehehehaw@gmail.com'
 EMAIL_HOST_PASSWORD = 'tevnrgicquklgafh'
-# EMAIL_HOST_PASSWORD = '-Mv.wUDJAP5XW45'
 
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels.layers.InMemoryChannelLayer',
     },
 }
+
+GOOGLE_CLIENT_ID = "110686712608-j4udo8p9sckujpgurj9s14ep5jui8tmu.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET = "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" # Change
