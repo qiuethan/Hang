@@ -43,3 +43,14 @@ export const logout = (token) => async(dispatch) => {
         console.log(error);
     }
 }
+
+export const googlelogin = (code) => async(dispatch) => {
+    try{
+        console.log(code);
+        const { data } = await api.googlelogin(code);
+        dispatch({type: LOGIN, data})
+    }
+    catch(error){
+        console.log(error);
+    }
+}

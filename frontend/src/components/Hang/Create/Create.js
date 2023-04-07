@@ -60,7 +60,7 @@ const Create = () => {
             <Picture picture={fields.picture} updatePicture={updatePicture}/>
             <Time start={fields.scheduled_time_start} end={fields.scheduled_time_end} handleChange={handleChange}/>
             <Location longitude={fields.longitude} latitude={fields.latitude} updateLocation={updateLocation}/>
-            <Attendees attendees={attendees} updateAttendee={updateAttendee}/>
+            <Attendees attendees={attendees} updateAttendee={updateAttendee} fields={fields}/>
             <button onClick={handleSubmit}>Submit</button>
         </div>
     )

@@ -52,9 +52,6 @@ const Messages = ({ client, currentRoom, clientOpened }) => {
                     console.log(messageObject);
                     setMessages([messageObject.content, ...messages])
                 }
-                else{
-                    
-                }
             }
         }
     }

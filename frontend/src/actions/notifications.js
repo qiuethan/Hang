@@ -1,35 +1,55 @@
-import {connection} from '../api/ws';
-import {CONNECTRTWS} from "../constants/actionTypes";
+import { w3cwebsocket as W3CWebSocket } from "websocket";
+import * as api from "../api/index.js";
+import {CONNECTRTWS, GETUNREADNOTIFICATIONS} from "../constants/actionTypes";
 
-export const connectRTWS = () => (dispatch) => {
+export const getUnreadNotifications = () => async(dispatch) => {
     try{
-        try{
-            connection.send(JSON.stringify({
-                action: "authenticate",
-                content: {
-                    token: JSON.parse(localStorage.getItem('profile')).token
-                }
-            }));
-        }
-        catch(error){
-            console.log(error);
-        }
-
-        dispatch({ type: CONNECTRTWS, payload: connection});
+        const {data} = await api.getunreadnotifications();
+        console.log(data);
+        dispatch({type: GETUNREADNOTIFICATIONS, payload: data});
     }
-    catch (error){
+    catch(error){
         console.log(error);
     }
 }
 
-export const pingRTWS = (dispatch) => {
+const connect = new Promise(function(success, failure) {
     try{
-        connection.send(JSON.stringify({
-            action: "ping",
-            content: {}
-        }))
+        let connection = JSON.parse(localStorage.getItem('profile')) !== null ? new W3CWebSocket(`ws://localhost:8000/ws/real_time_ws/${JSON.parse(localStorage.getItem('profile')).user.username}/`) : null;
+        success(connection);
     }
-    catch (error){
-        console.log(error)
+    catch(error){
+        failure();
+    }
+});
+
+export const connectRTWS = () => (dispatch) => {
+    try {
+
+        connect.then(
+            function (connection) {
+                try {
+                    connection.send(JSON.stringify({
+                        action: "authenticate",
+                        content: {
+                            token: JSON.parse(localStorage.getItem('profile')).token
+                        }
+                    }));
+                } catch (error) {
+                    console.log(error);
+                }
+
+                dispatch({type: CONNECTRTWS, payload: connection});
+
+                return "Success";
+            },
+            function (error) {
+                console.log(error);
+            }
+        );
+    }
+    catch(error){
+        console.log(error);
     }
 }
+
