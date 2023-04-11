@@ -13,6 +13,7 @@ from django.core.mail import send_mail
 from rest_framework import serializers, validators
 from rest_framework.relations import PrimaryKeyRelatedField
 
+from calendars.models import GoogleCalendarAccessToken
 from hang_backend import settings
 from .models import EmailAuthToken, FriendRequest, UserDetails
 
@@ -159,6 +160,7 @@ class LoginWithGoogleSerializer(serializers.Serializer):
             response = requests.post(url, data=data)
             response_json = response.json()
             access_token = response_json.get('access_token')
+            refresh_token = response_json.get('refresh_token')
 
             if not access_token:
                 raise serializers.ValidationError("Access token not received")
@@ -174,7 +176,20 @@ class LoginWithGoogleSerializer(serializers.Serializer):
             if not User.objects.filter(email=email).exists():
                 raise serializers.ValidationError("User doesn't exist")
 
-            return User.objects.get(email=email)
+            user = User.objects.get(email=email)
+
+            if GoogleCalendarAccessToken.objects.filter(user=user).exists():
+                google_token = GoogleCalendarAccessToken.objects.get(user=user)
+                google_token.access_token = access_token
+                google_token.refresh_token = refresh_token
+                google_token.last_generated = datetime.now()
+            else:
+                google_token = GoogleCalendarAccessToken.objects.create(
+                    user=user, access_token=access_token, refresh_token=refresh_token)
+
+            google_token.save()
+
+            return user
 
         except (json.JSONDecodeError, serializers.ValidationError) as error:
             raise serializers.ValidationError(str(error))

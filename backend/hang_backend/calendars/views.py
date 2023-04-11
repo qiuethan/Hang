@@ -29,10 +29,17 @@ class ManualTimeRangeCreateView(udbgenerics.UpdateDBCreateAPIView):
     update_db_actions = [update_db_send_rtws_message]
     rtws_update_actions = ["calendars"]
 
+    # TODO:
+    # - Make signin not necessary
+    # - Repeating time ranges
+    # - Add Hang Events to this calendar
+    # - Add Hang Events to Google Calendar
+    # - Add method to edit user profile
+    # - Algorithms
+    # - Add to Hang though link
     def get_serializer_context(self):
-        user_id = self.kwargs['user_id']
         try:
-            calendar = ManualCalendar.objects.get(user__id=user_id)
+            calendar = ManualCalendar.objects.get(user=self.request.user)
         except ManualCalendar.DoesNotExist:
             raise NotFound("User not found.")
 
@@ -40,15 +47,6 @@ class ManualTimeRangeCreateView(udbgenerics.UpdateDBCreateAPIView):
 
     def get_rtws_users(self, data):
         return [self.request.user]
-
-
-class GoogleCalendarAccessTokenCreateView(views.APIView):
-
-    def post(self, request):
-        serializer = GoogleCalendarAccessTokenSerializer(data=request.data, context={"request": request})
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(['GET'])
@@ -71,6 +69,7 @@ class GoogleCalendarSyncView(views.APIView):
                 calendar_data_list = serializer.validated_data['calendar_data']
                 user = request.user
                 access_token = GoogleCalendarAccessToken.objects.get(user=user).access_token
+
                 imported_calendar = ImportedCalendar.objects.get(user=user)
 
                 # Fetch free/busy times
@@ -115,7 +114,12 @@ class GoogleCalendarSyncView(views.APIView):
                         name=cal_data['name']
                     )
 
+                qs = ImportedTimeRange.objects.filter(calendar=imported_calendar).all()
+                for time_range in qs:
+                    if time_range.end_time < datetime.now(timezone.utc):
+                        time_ranges.append(time_range)
                 time_ranges = sorted(time_ranges, key=lambda x: x.start_time)
+
                 if len(time_ranges) <= 1:
                     ImportedTimeRange.objects.filter(calendar=imported_calendar).delete()
                     ImportedTimeRange.objects.bulk_create(time_ranges)
