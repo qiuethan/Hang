@@ -327,3 +327,35 @@ class FreeTimeRangesView(APIView):
         # Serialize the free time slots
         serializer = TimeRangeSerializer([{"start_time": e[0], "end_time": e[1]} for e in free_time_slots], many=True)
         return Response(serializer.data)
+
+
+class UsersFreeDuringRangeView(APIView):
+    def get(self, request):
+        user_ids = request.query_params.getlist('user_ids', [])
+        start_time = request.query_params.get('start_time', None)
+        end_time = request.query_params.get('end_time', None)
+
+        if start_time and end_time:
+            start_time = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
+            end_time = datetime.fromisoformat(end_time.replace("Z", "+00:00"))
+        else:
+            return Response({"error": "Both start_time and end_time must be provided."}, status=400)
+
+        for user_id in user_ids:
+            if not User.objects.filter(id=user_id).exists():
+                return Response("User doesn't exist.", status=400)
+            if user_id != str(request.user.id) and User.objects.get(
+                    id=user_id) not in request.user.userdetails.friends.all():
+                return Response("Invalid Permissions", status=status.HTTP_400_BAD_REQUEST)
+
+        free_users = []
+        for user_id in user_ids:
+            ranges = get_user_busy_ranges(user_id)
+            is_free = True
+            for r in ranges:
+                if start_time < r[1] and r[0] < end_time:
+                    is_free = False
+            if is_free:
+                free_users.append(user_id)
+
+        return Response(free_users)
