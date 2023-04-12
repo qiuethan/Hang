@@ -190,6 +190,59 @@ class CustomDateBasedPagination(BasePagination):
         return Response(response_data)
 
 
+def get_user_busy_ranges(user_id):
+    if not User.objects.filter(pk=user_id).exists():
+        return []
+
+    user = User.objects.get(pk=user_id)
+
+    manual_time_ranges = ManualTimeRange.objects.filter(calendar__user=user)
+    imported_time_ranges = ImportedTimeRange.objects.filter(calendar__user=user)
+
+    busy_ranges = [(r.start_time, r.end_time) for r in imported_time_ranges]
+    busy_ranges.extend([(r.start_time, r.end_time) for r in manual_time_ranges.filter(type="busy")])
+    busy_ranges.extend([(e.scheduled_time_start, e.scheduled_time_end) for e in
+                        HangEvent.objects.filter(attendees=user_id).all()])
+
+    free_ranges = [(r.start_time, r.end_time) for r in manual_time_ranges.filter(type="free")]
+
+    busy_ranges = sorted(busy_ranges, key=lambda x: x[0])
+    free_ranges = sorted(free_ranges, key=lambda x: x[0])
+
+    merged_busy_ranges = []
+    for start, end in busy_ranges:
+        if not merged_busy_ranges or merged_busy_ranges[-1][1] < start:
+            merged_busy_ranges.append((start, end))
+        else:
+            merged_busy_ranges[-1] = (merged_busy_ranges[-1][0], max(merged_busy_ranges[-1][1], end))
+
+    merged_ranges = []
+    j = 0
+    free_end = None
+    for i in range(len(merged_busy_ranges)):
+        start, end = merged_busy_ranges[i]
+        while j < len(free_ranges) and free_ranges[j][0] < end:
+            if free_end is not None:
+                start = max(start, free_end)
+            if start >= end:
+                break
+            if start < free_ranges[j][1]:
+                if start < free_ranges[j][0]:
+                    merged_ranges.append((start, free_ranges[j][0]))
+                start = free_ranges[j][1]
+            if free_end is None:
+                free_end = free_ranges[j][1]
+            else:
+                free_end = max(free_end, free_ranges[j][1])
+            j += 1
+        if free_end is not None:
+            start = max(start, free_end)
+        if start < end:
+            merged_ranges.append((start, end))
+
+    return merged_ranges
+
+
 class BusyTimeRangesView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -209,49 +262,7 @@ class BusyTimeRangesView(APIView):
         if user != request.user and user not in request.user.userdetails.friends.all():
             return Response("Invalid Permissions", status=status.HTTP_400_BAD_REQUEST)
 
-        manual_time_ranges = ManualTimeRange.objects.filter(calendar__user=user)
-        imported_time_ranges = ImportedTimeRange.objects.filter(calendar__user=user)
-
-        busy_ranges = [(r.start_time, r.end_time) for r in imported_time_ranges]
-        busy_ranges.extend([(r.start_time, r.end_time) for r in manual_time_ranges.filter(type="busy")])
-        busy_ranges.extend([(e.scheduled_time_start, e.scheduled_time_end) for e in
-                            HangEvent.objects.filter(attendees=request.user).all()])
-
-        free_ranges = [(r.start_time, r.end_time) for r in manual_time_ranges.filter(type="free")]
-
-        busy_ranges = sorted(busy_ranges, key=lambda x: x[0])
-        free_ranges = sorted(free_ranges, key=lambda x: x[0])
-
-        merged_busy_ranges = []
-        for start, end in busy_ranges:
-            if not merged_busy_ranges or merged_busy_ranges[-1][1] < start:
-                merged_busy_ranges.append((start, end))
-            else:
-                merged_busy_ranges[-1] = (merged_busy_ranges[-1][0], max(merged_busy_ranges[-1][1], end))
-
-        merged_ranges = []
-        j = 0
-        free_end = None
-        for i in range(len(merged_busy_ranges)):
-            start, end = merged_busy_ranges[i]
-            while j < len(free_ranges) and free_ranges[j][0] < end:
-                if free_end is not None:
-                    start = max(start, free_end)
-                if start >= end:
-                    break
-                if start < free_ranges[j][1]:
-                    if start < free_ranges[j][0]:
-                        merged_ranges.append((start, free_ranges[j][0]))
-                    start = free_ranges[j][1]
-                if free_end is None:
-                    free_end = free_ranges[j][1]
-                else:
-                    free_end = max(free_end, free_ranges[j][1])
-                j += 1
-            if free_end is not None:
-                start = max(start, free_end)
-            if start < end:
-                merged_ranges.append((start, end))
+        merged_ranges = get_user_busy_ranges(user_id)
 
         serializer = TimeRangeSerializer([{"start_time": e[0], "end_time": e[1]} for e in merged_ranges], many=True)
 
@@ -259,3 +270,60 @@ class BusyTimeRangesView(APIView):
         paginator.start_time = start_time
         page = paginator.paginate_queryset(serializer.data, request)
         return paginator.get_paginated_response(page)
+
+
+class FreeTimeRangesView(APIView):
+    def get(self, request):
+        user_ids = request.query_params.getlist('user_ids', [])
+        start_time = request.query_params.get('start_time', None)
+        end_time = request.query_params.get('end_time', None)
+
+        if start_time and end_time:
+            start_time = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
+            end_time = datetime.fromisoformat(end_time.replace("Z", "+00:00"))
+            time_difference = end_time - start_time
+            max_difference = timedelta(days=35)
+
+            if time_difference > max_difference:
+                return Response(
+                    {"error": "The time range between start_time and end_time cannot be more than a month."},
+                    status=400)
+        else:
+            return Response({"error": "Both start_time and end_time must be provided."}, status=400)
+
+        for user_id in user_ids:
+            if not User.objects.filter(id=user_id).exists():
+                return Response("User doesn't exist.", status=400)
+            if user_id != str(request.user.id) and User.objects.get(
+                    id=user_id) not in request.user.userdetails.friends.all():
+                return Response("Invalid Permissions", status=status.HTTP_400_BAD_REQUEST)
+
+        busy_ranges = []
+        for user_id in user_ids:
+            ranges = get_user_busy_ranges(user_id)
+            for r in ranges:
+                if r[0] < end_time and r[1] > start_time:
+                    busy_ranges.append(r)
+
+        busy_ranges = sorted(busy_ranges)
+
+        free_time_slots = []
+        if busy_ranges:
+            # Find time slots between the busy slots
+            for i in range(len(busy_ranges) - 1):
+                if busy_ranges[i][1] < busy_ranges[i + 1][0]:
+                    free_time_slots.append((busy_ranges[i][1], busy_ranges[i + 1][0]))
+
+            # Check if there's a free slot before the first busy slot and after the last busy slot
+            if start_time < busy_ranges[0][0]:
+                free_time_slots.insert(0, (start_time, busy_ranges[0][0]))
+            if end_time > busy_ranges[-1][1]:
+                free_time_slots.append((busy_ranges[-1][1], end_time))
+
+        elif start_time < end_time:
+            # If there are no busy slots, the entire given period is free
+            free_time_slots.append((start_time, end_time))
+
+        # Serialize the free time slots
+        serializer = TimeRangeSerializer([{"start_time": e[0], "end_time": e[1]} for e in free_time_slots], many=True)
+        return Response(serializer.data)
