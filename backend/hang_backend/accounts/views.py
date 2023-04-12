@@ -10,7 +10,7 @@ from common.util.generics.views import ListIDAPIView
 from common.util.update_db import udbgenerics, udbmixins
 from notifications.utils import update_db_send_notification
 from real_time_ws.utils import update_db_send_rtws_message
-from .models import EmailAuthToken, FriendRequest
+from .models import EmailAuthToken, FriendRequest, UserDetails
 from .serializers import LoginSerializer, UserSerializer, RegisterSerializer, SendEmailSerializer, \
     VerifyEmailSerializer, FriendRequestReceivedSerializer, FriendRequestSentSerializer, UserDetailsSerializer, \
     LoginWithGoogleSerializer
@@ -326,3 +326,37 @@ class RemoveBlockedUsersView(generics.GenericAPIView, udbmixins.UpdateDBGenericM
 
     def get_rtws_users(self, data):
         return {User.objects.get(id=data["id"])}
+
+
+class UpdateProfilePictureView(generics.UpdateAPIView):
+    queryset = UserDetails.objects.all()
+    serializer_class = UserDetailsSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'user__username'
+
+    def get_object(self):
+        return self.request.user.userdetails
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.profile_picture = request.data.get("profile_picture")
+        instance.save()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+
+class UpdateAboutMeView(generics.UpdateAPIView):
+    queryset = UserDetails.objects.all()
+    serializer_class = UserDetailsSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'user__username'
+
+    def get_object(self):
+        return self.request.user.userdetails
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.about_me = request.data.get("about_me")
+        instance.save()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)

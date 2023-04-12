@@ -1,10 +1,6 @@
-import json
-import urllib.parse
-
 import requests
 from rest_framework import serializers
 
-from hang_backend import settings
 from .models import ManualTimeRange, GoogleCalendarAccessToken, ImportedCalendar, GoogleCalendarCalendars, \
     ImportedTimeRange
 

@@ -7,7 +7,7 @@ from .views import (
     ListCreateSentFriendRequestView, RetrieveDestroySentFriendRequestView,
     ListReceivedFriendRequestView, RetrieveAcceptDenyReceivedFriendRequestView,
     RemoveFriendsView, RemoveBlockedUsersView, RetrieveUserViewID,
-    RetrieveUserViewEmail, RetrieveUserViewUsername, LoginWithGoogleView
+    RetrieveUserViewEmail, RetrieveUserViewUsername, LoginWithGoogleView, UpdateAboutMeView, UpdateProfilePictureView
 )
 
 app_name = "accounts"
@@ -20,6 +20,8 @@ urlpatterns = [
     path("user/id/<str:pk>", RetrieveUserViewID.as_view(), name="retrieve_user_id"),
     path("user/email/<str:email>", RetrieveUserViewEmail.as_view(), name="retrieve_user_email"),
     path("user/username/<str:username>", RetrieveUserViewUsername.as_view(), name="retrieve_user_username"),
+    path('user/update_profile_picture/', UpdateProfilePictureView.as_view(), name='update_profile_picture'),
+    path('user/update_about_me/', UpdateAboutMeView.as_view(), name='update_about_me'),
     path("current_user", RetrieveCurrentUserView.as_view(), name="retrieve_current_user"),
     path("send_email", SendVerificationEmailView.as_view(), name="send_verification_email"),
     path("verify_email", VerifyEmailVerificationTokenView.as_view(), name="verify_email_token"),

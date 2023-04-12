@@ -9,12 +9,13 @@ from rest_framework import serializers, views, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import get_object_or_404
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.pagination import BasePagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from common.util.update_db import udbgenerics
+from hang_event.models import HangEvent
 from real_time_ws.utils import update_db_send_rtws_message, send_rtws_message
 from .models import ManualCalendar, ManualTimeRange, GoogleCalendarAccessToken, ImportedCalendar, ImportedTimeRange, \
     GoogleCalendarCalendars
@@ -22,6 +23,12 @@ from .serializers import ManualTimeRangeSerializer, GoogleCalendarAccessTokenSer
     GoogleCalendarCalendarsListSerializer, TimeRangeSerializer
 
 
+# TODO:
+# - Repeating time ranges
+# - Add Hang Events to Google Calendar
+# - Algorithms
+# - Add to Hang though link
+# - API methods: given a list of users, give free times and given a free time give a list of free users
 class ManualTimeRangeCreateView(udbgenerics.UpdateDBCreateAPIView):
     queryset = ManualTimeRange.objects.all()
     serializer_class = ManualTimeRangeSerializer
@@ -29,14 +36,6 @@ class ManualTimeRangeCreateView(udbgenerics.UpdateDBCreateAPIView):
     update_db_actions = [update_db_send_rtws_message]
     rtws_update_actions = ["calendars"]
 
-    # TODO:
-    # - Make signin not necessary
-    # - Repeating time ranges
-    # - Add Hang Events to this calendar
-    # - Add Hang Events to Google Calendar
-    # - Add method to edit user profile
-    # - Algorithms
-    # - Add to Hang though link
     def get_serializer_context(self):
         try:
             calendar = ManualCalendar.objects.get(user=self.request.user)
@@ -150,20 +149,73 @@ class GoogleCalendarSyncView(views.APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class CustomDateBasedPagination(BasePagination):
+    page_size = 50
+
+    def paginate_queryset(self, queryset, request, view=None):
+        # Sort the queryset by start_time
+        self.request = request
+        queryset = sorted(queryset, key=lambda x: parse(x['start_time']))
+
+        start_index = 0
+        for idx, item in enumerate(queryset):
+            item_start_time = parse(item['start_time'])
+            if item_start_time >= self.start_time:
+                start_index = idx
+                break
+
+        paginated_data = queryset[start_index: start_index + self.page_size]
+        self.has_next_page = len(queryset) > start_index + self.page_size
+        self.has_previous_page = start_index > 0
+        self.previous_start_date = queryset[max(0, start_index - self.page_size - 1)][
+            'start_time'] if self.has_previous_page else None
+        self.next_start_date = queryset[start_index + self.page_size]['start_time'] if self.has_next_page else None
+        return paginated_data
+
+    def get_paginated_response(self, data):
+        response_data = {
+            'results': data,
+        }
+
+        if self.next_start_date:
+            response_data['next'] = self.next_start_date
+        else:
+            response_data['next'] = None
+
+        if self.previous_start_date:
+            response_data['prev'] = self.previous_start_date
+        else:
+            response_data['prev'] = None
+
+        return Response(response_data)
+
+
 class BusyTimeRangesView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, user_id, format=None):
+        start_time = request.query_params.get('start_time')
+        if start_time:
+            try:
+                start_time = parse(start_time).replace(tzinfo=timezone.utc)
+            except ValueError:
+                return Response("Invalid datetime format. Use ISO format (e.g., '2023-05-01T12:00:00Z').",
+                                status=status.HTTP_400_BAD_REQUEST)
+        else:
+            start_time = timezone.now()
+
         user = get_object_or_404(User, pk=user_id)
 
         if user != request.user and user not in request.user.userdetails.friends.all():
             return Response("Invalid Permissions", status=status.HTTP_400_BAD_REQUEST)
 
-        manual_time_ranges = ManualTimeRange.objects.filter(calendar__user=user, end_time__gt=timezone.now())
-        imported_time_ranges = ImportedTimeRange.objects.filter(calendar__user=user, end_time__gt=timezone.now())
+        manual_time_ranges = ManualTimeRange.objects.filter(calendar__user=user)
+        imported_time_ranges = ImportedTimeRange.objects.filter(calendar__user=user)
 
         busy_ranges = [(r.start_time, r.end_time) for r in imported_time_ranges]
         busy_ranges.extend([(r.start_time, r.end_time) for r in manual_time_ranges.filter(type="busy")])
+        busy_ranges.extend([(e.scheduled_time_start, e.scheduled_time_end) for e in
+                            HangEvent.objects.filter(attendees=request.user).all()])
 
         free_ranges = [(r.start_time, r.end_time) for r in manual_time_ranges.filter(type="free")]
 
@@ -203,7 +255,7 @@ class BusyTimeRangesView(APIView):
 
         serializer = TimeRangeSerializer([{"start_time": e[0], "end_time": e[1]} for e in merged_ranges], many=True)
 
-        paginator = PageNumberPagination()
-        paginator.page_size = 50
+        paginator = CustomDateBasedPagination()
+        paginator.start_time = start_time
         page = paginator.paginate_queryset(serializer.data, request)
         return paginator.get_paginated_response(page)
