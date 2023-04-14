@@ -35,7 +35,7 @@ class HangEventSerializer(serializers.ModelSerializer):
         model = HangEvent
         fields = (
             'id', 'name', 'owner', 'picture', 'description', 'scheduled_time_start', 'scheduled_time_end', 'longitude',
-            'latitude', 'budget', 'attendees', 'tasks', 'created_at', 'updated_at')
+            'latitude', 'address', 'budget', 'attendees', 'tasks', 'created_at', 'updated_at')
 
     def update(self, instance, validated_data):
         current_user = self.context["request"].user

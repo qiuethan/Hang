@@ -12,10 +12,12 @@ class HangEvent(models.Model):
     scheduled_time_end = models.DateTimeField()
     longitude = models.FloatField(default=None, null=True)
     latitude = models.FloatField(default=None, null=True)
+    address = models.TextField()
     budget = models.FloatField(default=None, null=True)
     attendees = models.ManyToManyField(User, related_name="hang_events")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    google_calendar_event_id = models.CharField(max_length=256, default=None, null=True)
 
 
 class Task(models.Model):

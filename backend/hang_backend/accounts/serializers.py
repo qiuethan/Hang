@@ -168,6 +168,7 @@ class LoginWithGoogleSerializer(serializers.Serializer):
             url = f'https://www.googleapis.com/oauth2/v3/userinfo?access_token={access_token}'
             response = requests.get(url)
             response_json = response.json()
+            print(response_json)
             email = response_json.get('email')
 
             if not email:

@@ -9,3 +9,6 @@ django-allauth==0.51.0
 daphne==3.0.2
 emoji
 python-dateutil
+google-auth
+google-auth-oauthlib
+google-auth-httplib2

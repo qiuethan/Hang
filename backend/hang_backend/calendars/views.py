@@ -25,10 +25,7 @@ from .serializers import ManualTimeRangeSerializer, GoogleCalendarAccessTokenSer
 
 # TODO:
 # - Repeating time ranges
-# - Add Hang Events to Google Calendar
-# - Algorithms
 # - Add to Hang though link
-# - API methods: given a list of users, give free times and given a free time give a list of free users
 class ManualTimeRangeCreateView(udbgenerics.UpdateDBCreateAPIView):
     queryset = ManualTimeRange.objects.all()
     serializer_class = ManualTimeRangeSerializer
@@ -67,7 +64,8 @@ class GoogleCalendarSyncView(views.APIView):
             try:
                 calendar_data_list = serializer.validated_data['calendar_data']
                 user = request.user
-                access_token = GoogleCalendarAccessToken.objects.get(user=user).access_token
+                access_token_obj = GoogleCalendarAccessToken.objects.get(user=user)
+                access_token_obj.refresh_access_token()
 
                 imported_calendar = ImportedCalendar.objects.get(user=user)
 
@@ -79,7 +77,7 @@ class GoogleCalendarSyncView(views.APIView):
                     time_max = (datetime.utcnow() + timedelta(days=(i + 1) * 60)).replace(
                         microsecond=0).isoformat() + "Z"
                     headers = {
-                        'Authorization': f'Bearer {access_token}',
+                        'Authorization': f'Bearer {access_token_obj.access_token}',
                         'Content-Type': 'application/json'
                     }
                     data = {
