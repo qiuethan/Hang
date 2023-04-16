@@ -6,8 +6,10 @@ from rest_framework import serializers, validators
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.relations import PrimaryKeyRelatedField
 
+from hang_event.models import HangEvent
 from .models import UserMessage, MessageChannel, DirectMessage, GroupChat, Reaction, GroupChatNameChangedMessage, \
-    GroupChatUserAddedMessage, GroupChatUserRemovedMessage, MessageChannelUsers
+    GroupChatUserAddedMessage, GroupChatUserRemovedMessage, MessageChannelUsers, HangEventUserAddedMessage, \
+    HangEventUpdatedMessage, HangEventUserRemovedMessage
 
 
 class MessageChannelSerializer(serializers.ModelSerializer):
@@ -179,6 +181,12 @@ class MessageSerializer(serializers.Serializer):
             return GroupChatUserAddedMessageSerializer
         if _type == "group_chat_user_removed_message":
             return GroupChatUserRemovedMessageSerializer
+        if _type == "hang_event_updated_message":
+            return HangEventUpdatedMessageSerializer
+        if _type == "hang_event_user_added_message":
+            return HangEventUserAddedMessageSerializer
+        if _type == "hang_event_user_removed_message":
+            return HangEventUserRemovedMessageSerializer
 
     def to_representation(self, instance):
         serializer = self.get_serializer(instance.type)
@@ -231,7 +239,7 @@ class GroupChatNameChangedMessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GroupChatNameChangedMessage
-        fields = ("type", "id", "created_at", "updated_at", "message_channel", "new_name",  "content")
+        fields = ("type", "id", "created_at", "updated_at", "message_channel", "new_name", "content")
         read_only_fields = ("type", "id", "created_at", "updated_at", "message_channel", "new_name", "content")
 
 
@@ -243,7 +251,8 @@ class GroupChatUserAddedMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = GroupChatUserAddedMessage
         fields = ("type", "id", "created_at", "updated_at", "message_channel", "adder", "user_added", "content")
-        read_only_fields = ("type", "id", "created_at", "updated_at", "message_channel", "adder", "user_added", "content")
+        read_only_fields = (
+            "type", "id", "created_at", "updated_at", "message_channel", "adder", "user_added", "content")
 
 
 class GroupChatUserRemovedMessageSerializer(serializers.ModelSerializer):
@@ -254,7 +263,41 @@ class GroupChatUserRemovedMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = GroupChatUserRemovedMessage
         fields = ("type", "id", "created_at", "updated_at", "message_channel", "remover", "user_removed", "content")
-        read_only_fields = ("type", "id", "created_at", "updated_at", "message_channel", "remover", "user_removed", "content")
+        read_only_fields = (
+            "type", "id", "created_at", "updated_at", "message_channel", "remover", "user_removed", "content")
+
+
+class HangEventUpdatedMessageSerializer(serializers.ModelSerializer):
+    hang_event = serializers.PrimaryKeyRelatedField(queryset=HangEvent.objects.all())
+
+    class Meta:
+        model = HangEventUpdatedMessage
+        fields = (
+            "type", "id", "created_at", "updated_at", "hang_event", "updated_field", "old_value", "new_value",
+            "content")
+        read_only_fields = (
+            "type", "id", "created_at", "updated_at", "hang_event", "updated_field", "old_value", "new_value",
+            "content")
+
+
+class HangEventUserAddedMessageSerializer(serializers.ModelSerializer):
+    hang_event = serializers.PrimaryKeyRelatedField(queryset=HangEvent.objects.all())
+    user_added = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+
+    class Meta:
+        model = HangEventUserAddedMessage
+        fields = ("type", "id", "created_at", "updated_at", "hang_event", "user_added", "content")
+        read_only_fields = ("type", "id", "created_at", "updated_at", "hang_event", "user_added", "content")
+
+
+class HangEventUserRemovedMessageSerializer(serializers.ModelSerializer):
+    hang_event = serializers.PrimaryKeyRelatedField(queryset=HangEvent.objects.all())
+    user_removed = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+
+    class Meta:
+        model = HangEventUserRemovedMessage
+        fields = ("type", "id", "created_at", "updated_at", "hang_event", "user_removed", "content")
+        read_only_fields = ("type", "id", "created_at", "updated_at", "hang_event", "user_removed", "content")
 
 
 class AuthenticateWebsocketSerializer(serializers.Serializer):

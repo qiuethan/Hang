@@ -2,6 +2,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from chat.models import Message, UserMessage, MessageChannelUsers, GroupChat
+from hang_event.models import HangEvent
 from notifications.models import Notification
 from real_time_ws.utils import send_rtws_message
 
@@ -29,11 +30,17 @@ def message_post_save(sender, instance, created, **kwargs):
                                                              id=mcu.user.id).get().username,
                                                          description=get_message_prefix(instance.content))
                 send_rtws_message(mcu.user, "direct_message")
-            else:
+            elif instance.message_channel.channel_type == "GC":
                 Notification.objects.create_notification(user=mcu.user,
                                                          title=GroupChat.objects.get(
                                                              id=instance.message_channel_id).name,
                                                          description=get_message_prefix(instance.content))
                 send_rtws_message(mcu.user, "group_chat")
+            else:
+                Notification.objects.create_notification(user=mcu.user,
+                                                         title=HangEvent.objects.get(
+                                                             message_channel_id=instance.message_channel_id).name,
+                                                         description=get_message_prefix(instance.content))
+                send_rtws_message(mcu.user, "hang_event")
         mcu.has_read = False
         mcu.save()

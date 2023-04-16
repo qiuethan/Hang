@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib.auth.models import User
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
@@ -27,7 +29,7 @@ class ListCreateHangEventView(udbgenerics.UpdateDBListCreateAPIView):
     rtws_update_actions = ["hang_event"]
 
     def get_queryset(self):
-        return self.request.user.hang_events.all()
+        return self.request.user.hang_events.filter(archived=False).all()
 
     def get_rtws_users(self, data):
         return {User.objects.get(id=user) for user in data["attendees"]}
@@ -57,7 +59,7 @@ class RetrieveUpdateDestroyHangEventView(udbgenerics.UpdateDBRetrieveUpdateDestr
     rtws_update_actions = ["hang_event"]
 
     def get_queryset(self):
-        return self.request.user.hang_events.all()
+        return self.request.user.hang_events.filter(archived=False).all()
 
     def get_rtws_users(self, data):
         return {User.objects.get(id=user) for user in data["attendees"]}
@@ -82,6 +84,70 @@ class RetrieveUpdateDestroyHangEventView(udbgenerics.UpdateDBRetrieveUpdateDestr
         return super().delete(request, *args, **kwargs)
 
 
+class JoinHangEventView(generics.GenericAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = HangEventSerializer
+
+    def post(self, request, *args, **kwargs):
+        invitation_code = request.data.get("invitation_code")
+        if not invitation_code:
+            return Response({"error": "Missing invitation code"}, status=status.HTTP_400_BAD_REQUEST)
+
+        hang_event = get_object_or_404(HangEvent, invitation_code=invitation_code)
+
+        if hang_event.archived:
+            return Response({"error": "This HangEvent has been archived"},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        if request.user in hang_event.attendees.all():
+            return Response({"error": "You are already an attendee of this HangEvent"},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        hang_event.attendees.add(request.user)
+        hang_event.save()
+        serializer = self.get_serializer(hang_event)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class GenerateNewInvitationCodeView(generics.GenericAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_object(self):
+        queryset = self.request.user.hang_events_owned.filter(archived=False).all()
+        return get_object_or_404(queryset, id=self.kwargs.get('pk'))
+
+    def post(self, request, *args, **kwargs):
+        hang_event = self.get_object()
+
+        if request.user != hang_event.owner:
+            return Response({"error": "Permission Denied"}, status=status.HTTP_403_FORBIDDEN)
+
+        new_invitation_code = str(uuid.uuid4())[:10]
+        while HangEvent.objects.filter(invitation_code=new_invitation_code).exists():
+            new_invitation_code = str(uuid.uuid4())[:10]
+
+        hang_event.invitation_code = new_invitation_code
+        hang_event.save()
+        return Response({"invitation_code": hang_event.invitation_code}, status=status.HTTP_200_OK)
+
+
+class GetInvitationCodeView(generics.GenericAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = HangEventSerializer
+
+    def get_object(self):
+        queryset = self.request.user.hang_events_owned.filter(archived=False).all()
+        return get_object_or_404(queryset, id=self.kwargs.get('pk'))
+
+    def get(self, request, *args, **kwargs):
+        hang_event = self.get_object()
+
+        if request.user != hang_event.owner:
+            return Response({"error": "Permission Denied"}, status=status.HTTP_403_FORBIDDEN)
+
+        return Response({"invitation_code": hang_event.invitation_code}, status=status.HTTP_200_OK)
+
+
 class CreateTaskView(generics.CreateAPIView):
     permission_classes = {
         permissions.IsAuthenticated,
@@ -96,7 +162,7 @@ class RetrieveUpdateDestroyTaskView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = TaskSerializer
 
     def get_queryset(self):
-        return Task.objects.filter(event__attendees__username=self.request.user.username).all()
+        return Task.objects.filter(event__attendees__username=self.request.user.username, event__archived=False).all()
 
 
 class AddHangEventToGoogleCalendarView(APIView):
@@ -105,6 +171,10 @@ class AddHangEventToGoogleCalendarView(APIView):
     def post(self, request, pk):
         hang_event = get_object_or_404(HangEvent, id=pk)
         user = request.user
+
+        if hang_event.archived:
+            return Response({"error": "You are already an attendee of this HangEvent"},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         # Check if the user is the owner of the HangEvent
         if hang_event.owner != user:
@@ -159,3 +229,36 @@ class AddHangEventToGoogleCalendarView(APIView):
         hang_event.save()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ArchiveHangEventView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk, format=None):
+        hang_event = HangEvent.objects.filter(archived=False).get(pk=pk)
+        if request.user != hang_event.owner:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+        hang_event.archived = True
+        hang_event.save()
+        return Response(status=status.HTTP_200_OK)
+
+
+class UnarchiveHangEventView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk, format=None):
+        hang_event = HangEvent.objects.filter(archived=True).get(pk=pk)
+        if request.user != hang_event.owner:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+        hang_event.archived = False
+        hang_event.save()
+        return Response(status=status.HTTP_200_OK)
+
+
+class ListArchivedHangEventView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        archived_hang_events = HangEvent.objects.filter(attendees=request.user, archived=True)
+        serializer = HangEventSerializer(archived_hang_events, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

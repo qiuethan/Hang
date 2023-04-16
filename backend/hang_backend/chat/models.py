@@ -26,11 +26,19 @@ class MessageChannelManager(models.Manager):
         group_chat.users.add(*users)
         return group_chat
 
+    def create_hang_event_message_channel(self, hang_event):
+        hang_event_message_channel = HangEventMessageChannel(id=generate_message_channel_id(), channel_type="HE")
+        hang_event_message_channel.save()
+
+        hang_event_message_channel.users.set(hang_event.attendees.all())
+        return hang_event_message_channel
+
 
 class MessageChannel(models.Model):
     """Model that represents a MessageChannel."""
     id = models.CharField(max_length=10, primary_key=True)
-    channel_type = models.CharField(max_length=2, choices=(("DM", "Direct Message"), ("GC", "Group Chat")))
+    channel_type = models.CharField(max_length=2,
+                                    choices=(("DM", "Direct Message"), ("GC", "Group Chat"), ("HE", "Hang Event")))
     users = models.ManyToManyField(User, related_name="message_channels", through="MessageChannelUsers")
     created_at = models.DateTimeField(auto_now_add=True)
     message_last_sent = models.DateTimeField(auto_now_add=True)
@@ -56,6 +64,11 @@ class GroupChat(MessageChannel):
     """Model that represents a GC."""
     name = models.CharField(max_length=75)
     owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name="message_channels_owned", null=True)
+
+
+class HangEventMessageChannel(MessageChannel):
+    """Model that represents a HangEventMessageChannel."""
+    pass
 
 
 def generate_random_string():
@@ -145,7 +158,53 @@ class GroupChatUserRemovedMessage(SystemMessage):
         return f"{self.remover.username} has removed {self.user_removed.username} from group chat {group_chat.get().name}"
 
 
+class HangEventUpdatedMessage(SystemMessage):
+    """Model that represents a system-sent message about the update of a HangEvent."""
+    hang_event = models.ForeignKey("hang_event.HangEvent", on_delete=models.CASCADE)
+    updated_field = models.CharField(max_length=100)
+    old_value = models.TextField()
+    new_value = models.TextField()
+
+    def __init__(self, *args, **kwargs):
+        self._meta.get_field('type').default = "hang_event_updated_message"
+        super(HangEventUpdatedMessage, self).__init__(*args, **kwargs)
+
+    @property
+    def content(self):
+        return f"Hang event {self.hang_event.name} updated: {self.updated_field} changed from {self.old_value} to {self.new_value}"
+
+
+class HangEventUserAddedMessage(SystemMessage):
+    """Model that represents a system-sent message about the addition of a user to a HangEvent."""
+    hang_event = models.ForeignKey("hang_event.HangEvent", on_delete=models.CASCADE)
+    user_added = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="he_user_added_msg_user_added",
+                                   null=True)
+
+    def __init__(self, *args, **kwargs):
+        self._meta.get_field('type').default = "hang_event_user_added_message"
+        super(HangEventUserAddedMessage, self).__init__(*args, **kwargs)
+
+    @property
+    def content(self):
+        return f"{self.user_added.username} has joined the Hang event {self.hang_event.name}"
+
+
+class HangEventUserRemovedMessage(SystemMessage):
+    """Model that represents a system-sent message about the removal of a user from a HangEvent."""
+    hang_event = models.ForeignKey("hang_event.HangEvent", on_delete=models.CASCADE)
+    user_removed = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="he_user_removed_msg_user_removed",
+                                     null=True)
+
+    def __init__(self, *args, **kwargs):
+        self._meta.get_field('type').default = "hang_event_user_removed_message"
+        super(HangEventUserRemovedMessage, self).__init__(*args, **kwargs)
+
+    @property
+    def content(self):
+        return f"{self.user_removed.username} has left the Hang event {self.hang_event.name}"
+
+
 class Reaction(models.Model):
-    message = models.ForeignKey(UserMessage, on_delete=models.CASCADE, related_name="reactions")
+    message = models.ForeignKey("hang_event.HangEvent", on_delete=models.CASCADE, related_name="reactions")
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     emoji = models.CharField(max_length=2)

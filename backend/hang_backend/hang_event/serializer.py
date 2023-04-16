@@ -11,6 +11,11 @@ class TaskSerializer(serializers.ModelSerializer):
         fields = ('id', 'event', 'name', 'completed')
         read_only_fields = ("id", "event")
 
+    def validate_event(self, value):
+        if value.archived:
+            raise serializers.ValidationError("Cannot create a Task for an archived HangEvent.")
+        return value
+
 
 class HangEventSerializer(serializers.ModelSerializer):
     tasks = TaskSerializer(many=True, read_only=True)
@@ -35,7 +40,26 @@ class HangEventSerializer(serializers.ModelSerializer):
         model = HangEvent
         fields = (
             'id', 'name', 'owner', 'picture', 'description', 'scheduled_time_start', 'scheduled_time_end', 'longitude',
-            'latitude', 'address', 'budget', 'attendees', 'tasks', 'created_at', 'updated_at')
+            'latitude', 'address', 'budget', 'attendees', 'tasks', 'created_at', 'updated_at', 'message_channel')
+        read_only_fields = (
+            'message_channel',
+        )
+
+    def create(self, validated_data):
+        current_user = self.context["request"].user
+
+        # Set the owner as the current user
+        validated_data["owner"] = current_user
+
+        del validated_data["attendees"]
+
+        # Create the HangEvent instance
+        hang_event = HangEvent.objects.create(**validated_data)
+
+        # Restrict attendees to only the current user
+        hang_event.attendees.set([current_user])
+
+        return hang_event
 
     def update(self, instance, validated_data):
         current_user = self.context["request"].user
@@ -54,8 +78,9 @@ class HangEventSerializer(serializers.ModelSerializer):
             if current_user in attendees:
                 new_attendees.remove(current_user)
 
-            if len(curr_attendees.intersection(new_attendees)) != len(curr_attendees) and \
-                    instance.owner.id != current_user.id:
+            if len(curr_attendees.union(new_attendees)) != len(curr_attendees) or (
+                    len(curr_attendees.intersection(new_attendees)) != len(curr_attendees) and
+                    instance.owner.id != current_user.id):
                 raise serializers.ValidationError("Permission Denied.")
 
         if "owner" in validated_data:
