@@ -24,8 +24,8 @@ from .serializers import ManualTimeRangeSerializer, GoogleCalendarAccessTokenSer
 
 
 # TODO:
-# - Repeating time ranges
-# - Add to Hang though link
+# Repeating time ranges
+# Friend Request Logic
 class ManualTimeRangeCreateView(udbgenerics.UpdateDBCreateAPIView):
     queryset = ManualTimeRange.objects.all()
     serializer_class = ManualTimeRangeSerializer
