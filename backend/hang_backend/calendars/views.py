@@ -5,7 +5,7 @@ import requests
 from dateutil.parser import parse
 from django.contrib.auth.models import User
 from django.utils import timezone
-from rest_framework import serializers, views, status
+from rest_framework import serializers, views, status, generics
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import get_object_or_404
@@ -18,9 +18,9 @@ from common.util.update_db import udbgenerics
 from hang_event.models import HangEvent
 from real_time_ws.utils import update_db_send_rtws_message, send_rtws_message
 from .models import ManualCalendar, ManualTimeRange, GoogleCalendarAccessToken, ImportedCalendar, ImportedTimeRange, \
-    GoogleCalendarCalendars
+    GoogleCalendarCalendars, RepeatingTimeRange
 from .serializers import ManualTimeRangeSerializer, GoogleCalendarAccessTokenSerializer, \
-    GoogleCalendarCalendarsListSerializer, TimeRangeSerializer
+    GoogleCalendarCalendarsListSerializer, TimeRangeSerializer, RepeatingTimeRangeSerializer
 
 
 # TODO:
@@ -188,19 +188,56 @@ class CustomDateBasedPagination(BasePagination):
         return Response(response_data)
 
 
-def get_user_busy_ranges(user_id):
+def decompress_repeating_time_range(repeating_time_range, decompress_start_time):
+    start_time = repeating_time_range.start_time
+    end_time = repeating_time_range.end_time
+    repeat_interval = repeating_time_range.repeat_interval
+    repeat_count = repeating_time_range.repeat_count
+
+    if repeat_count == -1:
+        # Calculate the number of intervals needed to reach decompress_start_time
+        intervals_to_reach_start = max(0, (decompress_start_time - start_time).days // (7 * repeat_interval))
+        start_time += timedelta(weeks=intervals_to_reach_start * repeat_interval)
+        end_time += timedelta(weeks=intervals_to_reach_start * repeat_interval)
+    else:
+        # Calculate the final range start_time and end_time
+        final_start_time = start_time + timedelta(weeks=repeat_interval * (repeat_count - 1))
+        final_end_time = end_time + timedelta(weeks=repeat_interval * (repeat_count - 1))
+
+        # If decompress_start_time is after the final range, return an empty list
+        if decompress_start_time > final_end_time:
+            return []
+
+    decompressed_ranges = []
+    while len(decompressed_ranges) < 60:
+        if start_time >= decompress_start_time:
+            decompressed_ranges.append((start_time, end_time))
+
+        start_time += timedelta(weeks=repeat_interval)
+        end_time += timedelta(weeks=repeat_interval)
+
+        if repeat_count != -1 and start_time > final_end_time:
+            break
+
+    return decompressed_ranges
+
+
+def get_user_busy_ranges(user_id, start_time):
     if not User.objects.filter(pk=user_id).exists():
         return []
 
     user = User.objects.get(pk=user_id)
 
     manual_time_ranges = ManualTimeRange.objects.filter(calendar__user=user)
+    repeating_time_ranges = RepeatingTimeRange.objects.filter(calendar__user=user)
     imported_time_ranges = ImportedTimeRange.objects.filter(calendar__user=user)
 
     busy_ranges = [(r.start_time, r.end_time) for r in imported_time_ranges]
     busy_ranges.extend([(r.start_time, r.end_time) for r in manual_time_ranges.filter(type="busy")])
     busy_ranges.extend([(e.scheduled_time_start, e.scheduled_time_end) for e in
                         HangEvent.objects.filter(attendees=user_id).all()])
+    for r in repeating_time_ranges:
+        busy_ranges.extend(decompress_repeating_time_range(r, start_time))
 
     free_ranges = [(r.start_time, r.end_time) for r in manual_time_ranges.filter(type="free")]
 
@@ -260,7 +297,7 @@ class BusyTimeRangesView(APIView):
         if user != request.user and user not in request.user.userdetails.friends.all():
             return Response("Invalid Permissions", status=status.HTTP_400_BAD_REQUEST)
 
-        merged_ranges = get_user_busy_ranges(user_id)
+        merged_ranges = get_user_busy_ranges(user_id, start_time)
 
         serializer = TimeRangeSerializer([{"start_time": e[0], "end_time": e[1]} for e in merged_ranges], many=True)
 
@@ -298,7 +335,7 @@ class FreeTimeRangesView(APIView):
 
         busy_ranges = []
         for user_id in user_ids:
-            ranges = get_user_busy_ranges(user_id)
+            ranges = get_user_busy_ranges(user_id, start_time)
             for r in ranges:
                 if r[0] < end_time and r[1] > start_time:
                     busy_ranges.append(r)
@@ -336,6 +373,12 @@ class UsersFreeDuringRangeView(APIView):
         if start_time and end_time:
             start_time = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
             end_time = datetime.fromisoformat(end_time.replace("Z", "+00:00"))
+            time_difference = end_time - start_time
+            max_difference = timedelta(days=35)
+            if time_difference > max_difference:
+                return Response(
+                    {"error": "The time range between start_time and end_time cannot be more than a month."},
+                    status=400)
         else:
             return Response({"error": "Both start_time and end_time must be provided."}, status=400)
 
@@ -348,7 +391,7 @@ class UsersFreeDuringRangeView(APIView):
 
         free_users = []
         for user_id in user_ids:
-            ranges = get_user_busy_ranges(user_id)
+            ranges = get_user_busy_ranges(user_id, start_time)
             is_free = True
             for r in ranges:
                 if start_time < r[1] and r[0] < end_time:
@@ -357,3 +400,23 @@ class UsersFreeDuringRangeView(APIView):
                 free_users.append(user_id)
 
         return Response(free_users)
+
+
+class RepeatingTimeRangeListCreateView(generics.ListCreateAPIView):
+    serializer_class = RepeatingTimeRangeSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return RepeatingTimeRange.objects.filter(calendar__user=self.request.user)
+
+    def perform_create(self, serializer):
+        calendar = get_object_or_404(ManualCalendar, user=self.request.user)
+        serializer.save(manual_calendar=calendar)
+
+
+class RepeatingTimeRangeRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = RepeatingTimeRangeSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return RepeatingTimeRange.objects.filter(calendar__user=self.request.user)

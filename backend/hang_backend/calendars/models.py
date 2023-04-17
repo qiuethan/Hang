@@ -61,6 +61,14 @@ class ManualTimeRange(models.Model):
     end_time = models.DateTimeField()
 
 
+class RepeatingTimeRange(models.Model):
+    calendar = models.ForeignKey(ManualCalendar, on_delete=models.CASCADE)
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    repeat_interval = models.IntegerField()  # Repeat every x weeks
+    repeat_count = models.IntegerField()  # Number of times the event repeats
+
+
 class ImportedTimeRange(models.Model):
     calendar = models.ForeignKey(ImportedCalendar, on_delete=models.CASCADE)
     start_time = models.DateTimeField()

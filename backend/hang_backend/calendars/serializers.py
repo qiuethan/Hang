@@ -2,7 +2,7 @@ import requests
 from rest_framework import serializers
 
 from .models import ManualTimeRange, GoogleCalendarAccessToken, ImportedCalendar, GoogleCalendarCalendars, \
-    ImportedTimeRange
+    ImportedTimeRange, RepeatingTimeRange, ManualCalendar
 
 
 class ManualTimeRangeSerializer(serializers.ModelSerializer):
@@ -109,3 +109,27 @@ class TimeRangeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ImportedTimeRange
         fields = ['start_time', 'end_time']
+
+
+class RepeatingTimeRangeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RepeatingTimeRange
+        fields = ("id", "start_time", "end_time", "repeat_interval", "repeat_count")
+        read_only_fields = ("id",)
+
+    def create(self, validated_data):
+        start_time = validated_data.get('start_time')
+        end_time = validated_data.get('end_time')
+        repeat_interval = validated_data.get('repeat_interval')
+        repeat_count = validated_data.get('repeat_count')
+
+        repeating_time_range = RepeatingTimeRange(
+            calendar=ManualCalendar.objects.get(user=self.context["request"].user),
+            start_time=start_time,
+            end_time=end_time,
+            repeat_interval=repeat_interval,
+            repeat_count=repeat_count
+        )
+
+        repeating_time_range.save()
+        return repeating_time_range
