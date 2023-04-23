@@ -151,7 +151,7 @@ class LoginWithGoogleSerializer(serializers.Serializer):
             'code': code,
             'client_id': settings.GOOGLE_CLIENT_ID,
             'client_secret': settings.GOOGLE_CLIENT_SECRET,
-            'redirect_uri': 'http://localhost:3000/auth',
+            'redirect_uri': 'http://localhost:3000/profile',
             'access_type': 'offline',
             'grant_type': 'authorization_code',
         }
@@ -168,7 +168,6 @@ class LoginWithGoogleSerializer(serializers.Serializer):
             url = f'https://www.googleapis.com/oauth2/v3/userinfo?access_token={access_token}'
             response = requests.get(url)
             response_json = response.json()
-            print(response_json)
             email = response_json.get('email')
 
             if not email:
