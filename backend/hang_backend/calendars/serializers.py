@@ -1,8 +1,9 @@
 import requests
 from rest_framework import serializers
 
-from .models import ManualTimeRange, GoogleCalendarAccessToken, ImportedCalendar, GoogleCalendarCalendars, \
+from .models import ManualTimeRange, ImportedCalendar, GoogleCalendarCalendars, \
     ImportedTimeRange, RepeatingTimeRange, ManualCalendar
+from accounts.models import GoogleAuthenticationToken
 
 
 class ManualTimeRangeSerializer(serializers.ModelSerializer):
@@ -57,16 +58,16 @@ class ManualTimeRangeSerializer(serializers.ModelSerializer):
 
 class GoogleCalendarAccessTokenSerializer(serializers.ModelSerializer):
     class Meta:
-        model = GoogleCalendarAccessToken
+        model = GoogleAuthenticationToken
         fields = '__all__'
         read_only_fields = ('access_token', 'user')
 
     @staticmethod
     def fetch_calendar_data(user):
         try:
-            access_token = GoogleCalendarAccessToken.objects.get(user=user)
+            access_token = GoogleAuthenticationToken.objects.get(user=user)
             access_token.refresh_access_token()
-        except GoogleCalendarAccessToken.DoesNotExist:
+        except GoogleAuthenticationToken.DoesNotExist:
             raise serializers.ValidationError("Access token not found for the current user.")
 
         url = f'https://www.googleapis.com/calendar/v3/users/me/calendarList?access_token={access_token.access_token}'

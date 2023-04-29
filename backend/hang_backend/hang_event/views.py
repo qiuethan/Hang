@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from calendars.models import GoogleCalendarAccessToken
+from accounts.models import GoogleAuthenticationToken
 from common.util.update_db import udbgenerics
 from hang_backend import settings
 from hang_event.models import Task, HangEvent
@@ -187,7 +187,7 @@ class AddHangEventToGoogleCalendarView(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
         # Get the user's Google Calendar access token
-        google_calendar_access_token = get_object_or_404(GoogleCalendarAccessToken, user=user)
+        google_calendar_access_token = get_object_or_404(GoogleAuthenticationToken, user=user)
         google_calendar_access_token.refresh_access_token()
 
         # Create a Google Calendar event

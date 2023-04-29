@@ -17,15 +17,13 @@ from rest_framework.views import APIView
 from common.util.update_db import udbgenerics
 from hang_event.models import HangEvent
 from real_time_ws.utils import update_db_send_rtws_message, send_rtws_message
-from .models import ManualCalendar, ManualTimeRange, GoogleCalendarAccessToken, ImportedCalendar, ImportedTimeRange, \
+from .models import ManualCalendar, ManualTimeRange, ImportedCalendar, ImportedTimeRange, \
     GoogleCalendarCalendars, RepeatingTimeRange
+from accounts.models import GoogleAuthenticationToken
 from .serializers import ManualTimeRangeSerializer, GoogleCalendarAccessTokenSerializer, \
     GoogleCalendarCalendarsListSerializer, TimeRangeSerializer, RepeatingTimeRangeSerializer
 
 
-# TODO:
-# Repeating time ranges
-# Friend Request Logic
 class ManualTimeRangeCreateView(udbgenerics.UpdateDBCreateAPIView):
     queryset = ManualTimeRange.objects.all()
     serializer_class = ManualTimeRangeSerializer
@@ -64,7 +62,7 @@ class GoogleCalendarSyncView(views.APIView):
             try:
                 calendar_data_list = serializer.validated_data['calendar_data']
                 user = request.user
-                access_token_obj = GoogleCalendarAccessToken.objects.get(user=user)
+                access_token_obj = GoogleAuthenticationToken.objects.get(user=user)
                 access_token_obj.refresh_access_token()
 
                 imported_calendar = ImportedCalendar.objects.get(user=user)

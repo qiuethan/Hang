@@ -1,362 +1,166 @@
 from django.contrib.auth.models import User
 from django.http import JsonResponse
 from knox.models import AuthToken
-from rest_framework import generics, permissions, status, views, exceptions
+from rest_framework import generics, permissions, status, views, viewsets, mixins
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.status import HTTP_204_NO_CONTENT
+from rest_framework.views import APIView
 
-from common.util.generics.views import ListIDAPIView
-from common.util.update_db import udbgenerics, udbmixins
-from notifications.utils import update_db_send_notification
-from real_time_ws.utils import update_db_send_rtws_message
-from .models import EmailAuthToken, FriendRequest, UserDetails
+from common.util.generics.mixins import ListIDModelMixin
+from .models import EmailAuthToken, FriendRequest, UserDetails, GoogleAuthenticationToken
 from .serializers import LoginSerializer, UserSerializer, RegisterSerializer, SendEmailSerializer, \
-    VerifyEmailSerializer, FriendRequestReceivedSerializer, FriendRequestSentSerializer, UserDetailsSerializer, \
+    FriendRequestReceivedSerializer, FriendRequestSentSerializer, UserDetailsSerializer, \
     LoginWithGoogleSerializer
 
 
-class RegisterView(views.APIView):
-    """View to register a user."""
-
-    def post(self, request):
-        serializer = RegisterSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        return JsonResponse({
-            "user": UserSerializer(user).data
-        }, safe=False)
+class RegisterView(generics.CreateAPIView):
+    serializer_class = RegisterSerializer
+    queryset = User.objects.all()
 
 
 class LoginView(views.APIView):
-    """View to log a user in."""
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data
+        user = serializer.validated_data["user"]
         return JsonResponse({
             "user": UserSerializer(user).data,
             "token": AuthToken.objects.create(user)[1]
         })
 
 
+class RetrieveAuthorizationURLView(APIView):
+    def get(self, request, *args, **kwargs):
+        redirect_uri = request.build_absolute_uri('http://localhost:3000/profile')
+        authorization_url = GoogleAuthenticationToken.get_authorization_url(redirect_uri)
+        return Response({"authorization_url": authorization_url}, status=status.HTTP_200_OK)
+
+
 class LoginWithGoogleView(views.APIView):
-    """
-    Authenticates users using Google OAuth2.
-    """
 
     def post(self, request):
         serializer = LoginWithGoogleSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data
+        user = serializer.save()
         return JsonResponse({
             "user": UserSerializer(user).data,
             "token": AuthToken.objects.create(user)[1]
         })
 
 
-class RetrieveUserViewID(generics.RetrieveAPIView):
-    """View to retrieve a user by ID."""
-    permission_classes = [
-        permissions.IsAuthenticated,
-    ]
+class RetrieveUserView(generics.RetrieveAPIView):
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = UserDetailsSerializer
     queryset = User.objects.all()
+    lookup_field = None
 
     def get_object(self):
-        return super(RetrieveUserViewID, self).get_object().userdetails
+        if not self.lookup_field == "me":
+            return self.request.user.userdetails
+
+        lookup_value = self.kwargs.get("lookup_value")
+
+        queryset = self.filter_queryset(self.get_queryset())
+        filter_kwargs = {self.lookup_field: lookup_value}
+        obj = generics.get_object_or_404(queryset, **filter_kwargs)
+        self.check_object_permissions(self.request, obj)
+
+        return obj.userdetails
 
 
-class RetrieveUserViewEmail(generics.RetrieveAPIView):
-    """View to retrieve a user by ID."""
-    permission_classes = [
-        permissions.IsAuthenticated,
-    ]
-    serializer_class = UserDetailsSerializer
-    queryset = User.objects.all()
-    lookup_field = "email"
+class EmailVerificationTokenViewSet(viewsets.GenericViewSet):
+    serializer_class = SendEmailSerializer
 
-    def get_object(self):
-        return super(RetrieveUserViewEmail, self).get_object().userdetails
-
-
-class RetrieveUserViewUsername(generics.RetrieveAPIView):
-    """View to retrieve a user by ID."""
-    permission_classes = [
-        permissions.IsAuthenticated,
-    ]
-    serializer_class = UserDetailsSerializer
-    queryset = User.objects.all()
-    lookup_field = "username"
-
-    def get_object(self):
-        return super(RetrieveUserViewUsername, self).get_object().userdetails
-
-
-class RetrieveCurrentUserView(generics.RetrieveAPIView):
-    """View that returns the currently logged-in user."""
-    permission_classes = [
-        permissions.IsAuthenticated,
-    ]
-    serializer_class = UserDetailsSerializer
-
-    def get_object(self):
-        return self.request.user.userdetails
-
-
-class SendVerificationEmailView(views.APIView):
-    """View that send a verification email if the current user's account has not been verified."""
-
-    def post(self, request):
+    def create(self, request, *args, **kwargs):
         serializer = SendEmailSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-class VerifyEmailVerificationTokenView(views.APIView):
-    """View that takes a user's verification token and verifies them."""
-
-    def patch(self, request):
-        serializer = VerifyEmailSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        # Updates user's profile.
-        user = serializer.validated_data
-        user.userdetails.is_verified = True
-        user.userdetails.save()
-
-        # Deletes EmailAuthToken.
-        EmailAuthToken.objects.filter(user=user).delete()
-
+    def destroy(self, request, *args, **kwargs):
+        token = get_object_or_404(EmailAuthToken.objects.filter(token=EmailAuthToken.hash_token(self.kwargs["pk"])))
+        token.verify()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class ListCreateSentFriendRequestView(udbgenerics.UpdateDBListCreateAPIView):
-    """
-    View that can list a user's friend requests and can create new friend requests.
-    """
-    permission_classes = [
-        permissions.IsAuthenticated,
-    ]
+class SentFriendRequestViewSet(mixins.CreateModelMixin,
+                               mixins.RetrieveModelMixin,
+                               mixins.DestroyModelMixin,
+                               mixins.ListModelMixin,
+                               viewsets.GenericViewSet):
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = FriendRequestSentSerializer
-    update_db_actions = [update_db_send_rtws_message, update_db_send_notification]
-    rtws_update_actions = ["friend_request"]
 
     def get_queryset(self):
         return FriendRequest.objects.filter(from_user=self.request.user).all()
 
-    def get_rtws_users(self, data):
-        return {User.objects.get(id=data["from_user"]), User.objects.get(id=data["to_user"])}
-
-    def get_notification_messages(self, *serializers, current_user, request_type):
-        notifications = []
-        if request_type == "POST":
-            for serializer in serializers:
-                from_user = User.objects.get(id=serializer.data["from_user"])
-                to_user = User.objects.get(id=serializer.data["to_user"])
-                notifications.append({
-                    "user": to_user,
-                    "title": from_user.username,
-                    "description": f"{from_user.username} has sent you a friend request"
-                })
-        return notifications
-
-
-class RetrieveDestroySentFriendRequestView(udbgenerics.UpdateDBRetrieveDestroyAPIView):
-    """
-    View that retrieves / deletes a friend request by ID.
-    """
-    permission_classes = [
-        permissions.IsAuthenticated,
-    ]
-    serializer_class = FriendRequestSentSerializer
-    update_db_actions = [update_db_send_rtws_message]
-    rtws_update_actions = ["friend_request"]
-
     def get_object(self):
-        query = FriendRequest.objects.filter(from_user=self.request.user, to_user=self.kwargs["user_id"])
+        query = FriendRequest.objects.filter(from_user=self.request.user,
+                                             to_user=self.kwargs["pk"])
         return get_object_or_404(query)
 
-    def get_rtws_users(self, data):
-        return {User.objects.get(id=data["from_user"]), User.objects.get(id=data["to_user"])}
 
-
-class ListReceivedFriendRequestView(generics.ListAPIView):
-    """
-    View that lists all friend requests that have been received by the user.
-    """
-    permission_classes = {
-        permissions.IsAuthenticated,
-    }
+class ReceivedFriendRequestViewSet(mixins.ListModelMixin,
+                                   mixins.RetrieveModelMixin,
+                                   viewsets.GenericViewSet):
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = FriendRequestReceivedSerializer
 
     def get_queryset(self):
         return FriendRequest.objects.filter(to_user=self.request.user).all()
 
-
-class RetrieveAcceptDenyReceivedFriendRequestView(udbgenerics.UpdateDBRetrieveUpdateAPIView):
-    """
-    View that can retrieve, accept, or deny a friend request that a user a received.
-    """
-    permission_classes = {
-        permissions.IsAuthenticated,
-    }
-    serializer_class = FriendRequestReceivedSerializer
-    update_db_actions = [update_db_send_rtws_message]
-    rtws_update_actions = ["friend_request", "friends"]  # TODO: separate accept + deny, comment all new code
-
     def get_object(self):
-        query = FriendRequest.objects.filter(from_user_id=self.kwargs["user_id"],
+        query = FriendRequest.objects.filter(from_user_id=self.kwargs["pk"],
                                              to_user=self.request.user,
                                              declined=False)
         return get_object_or_404(query)
 
-    def delete(self, request, *args, **kwargs):
+    def update(self, request, *args, **kwargs):
         instance = self.get_object()
-        instance.from_user.userdetails.friends.add(instance.to_user)
-        instance.to_user.userdetails.friends.add(instance.from_user)
-        self.perform_update_db_actions(self.serializer_class(instance), current_user=request.user,
-                                       request_type="DELETE")
-        instance.delete()
+        instance.decline_friend_request()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def get_rtws_users(self, data):
-        return {User.objects.get(id=data["from_user"]), User.objects.get(id=data["to_user"])}
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.accept_friend_request()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class RemoveFriendsView(generics.GenericAPIView, udbmixins.UpdateDBGenericMixin):
-    """
-    View that allows a user to remove friends.
-    """
-    permission_classes = [
-        permissions.IsAuthenticated,
-    ]
+class FriendsViewSet(ListIDModelMixin, viewsets.GenericViewSet):
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = UserSerializer
-    update_db_actions = [update_db_send_rtws_message]
-    rtws_update_actions = ["friends"]
 
     def get_queryset(self):
         return self.request.user.userdetails.friends.all()
 
-    def delete(self, request, *args, **kwargs):
-        self.perform_update_db_actions(self.get_serializer(self.get_object()), current_user=self.request.user,
-                                       request_type="DELETE")
-        self.get_object().userdetails.friends.remove(self.request.user)
-        self.request.user.userdetails.friends.remove(self.get_object())
+    def destroy(self, request, *args, **kwargs):
+        self.request.user.userdetails.remove_friend(self.get_object())
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def get_rtws_users(self, data):
-        return {User.objects.get(id=data["id"])}
 
-
-# TODO: add logic to friend block system
-class ListFriendsView(ListIDAPIView):
-    """
-    View that lists all a user's friends.
-    """
-    permission_classes = [
-        permissions.IsAuthenticated,
-    ]
-
-    def get_queryset(self):
-        return self.request.user.userdetails.friends.all()
-
-
-class ListBlockedUsersView(ListIDAPIView):
-    """
-    View that lists all a user's friends.
-    """
-    permission_classes = [
-        permissions.IsAuthenticated,
-    ]
-
-    def get_queryset(self):
-        return self.request.user.userdetails.blocked_users.all()
-
-
-class ListCreateBlockedUsersView(ListIDAPIView, udbmixins.UpdateDBGenericMixin):
-    """
-    View that lists all the users that are blocked.
-    """
-    permission_classes = [
-        permissions.IsAuthenticated,
-    ]
+class BlockedUsersViewSet(ListIDModelMixin, viewsets.GenericViewSet):
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = UserSerializer
-    update_db_actions = [update_db_send_rtws_message]
-    rtws_update_actions = ["blocked_users"]
 
     def get_queryset(self):
         return self.request.user.userdetails.blocked_users.all()
 
-    def post(self, request):
-        serializer = UserSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        blocked_user = serializer.validated_data
-        if self.request.user == blocked_user:
-            raise exceptions.ParseError("Cannot block yourself.")
-        self.request.user.userdetails.blocked_users.add(blocked_user)
-        self.perform_update_db_actions(current_user=self.request.user, request_type="POST")
+    def create(self, request, *args, **kwargs):
+        query = User.objects.filter(id=request.data["id"])
+        self.request.user.userdetails.block_user(get_object_or_404(query))
         return Response(status=HTTP_204_NO_CONTENT)
 
-    def get_rtws_users(self, data):
-        return {User.objects.get(id=data["id"])}
-
-
-class RemoveBlockedUsersView(generics.GenericAPIView, udbmixins.UpdateDBGenericMixin):
-    """
-    View that allows a user to unblock another user.
-    """
-    permission_classes = [
-        permissions.IsAuthenticated,
-    ]
-    serializer_class = UserSerializer
-    update_db_actions = [update_db_send_rtws_message]
-    rtws_update_actions = ["blocked_users"]
-
-    def get_queryset(self):
-        return self.request.user.userdetails.blocked_users.all()
-
-    def delete(self, request, *args, **kwargs):
-        self.request.user.userdetails.blocked_users.remove(self.get_object())
-        self.perform_update_db_actions(current_user=self.request.user, request_type="DELETE")
+    def destroy(self, request, *args, **kwargs):
+        self.request.user.userdetails.unblock_user(self.get_object())
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def get_rtws_users(self, data):
-        return {User.objects.get(id=data["id"])}
 
-
-class UpdateProfilePictureView(generics.UpdateAPIView):
+class UserDetailsView(generics.RetrieveAPIView, generics.UpdateAPIView):
     queryset = UserDetails.objects.all()
     serializer_class = UserDetailsSerializer
     permission_classes = [permissions.IsAuthenticated]
-    lookup_field = 'user__username'
 
     def get_object(self):
         return self.request.user.userdetails
-
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        instance.profile_picture = request.data.get("profile_picture")
-        instance.save()
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
-
-
-class UpdateAboutMeView(generics.UpdateAPIView):
-    queryset = UserDetails.objects.all()
-    serializer_class = UserDetailsSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    lookup_field = 'user__username'
-
-    def get_object(self):
-        return self.request.user.userdetails
-
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        instance.about_me = request.data.get("about_me")
-        instance.save()
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)

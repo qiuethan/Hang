@@ -5,7 +5,7 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-from calendars.models import GoogleCalendarAccessToken
+from accounts.models import GoogleAuthenticationToken
 from hang_backend import settings
 from .models import HangEvent
 
@@ -25,8 +25,8 @@ def update_google_calendar_event(sender, instance, **kwargs):
 
     # Prepare the Google Calendar API client
     try:
-        google_calendar_access_token = GoogleCalendarAccessToken.objects.get(user=old_instance.owner)
-    except GoogleCalendarAccessToken.DoesNotExist:
+        google_calendar_access_token = GoogleAuthenticationToken.objects.get(user=old_instance.owner)
+    except GoogleAuthenticationToken.DoesNotExist:
         instance.google_calendar_event_id = None
         return
 
@@ -49,8 +49,8 @@ def update_google_calendar_event(sender, instance, **kwargs):
 
     # If the new owner doesn't have a GoogleCalendarAccessToken, exit
     try:
-        google_calendar_access_token = GoogleCalendarAccessToken.objects.get(user=instance.owner)
-    except GoogleCalendarAccessToken.DoesNotExist:
+        google_calendar_access_token = GoogleAuthenticationToken.objects.get(user=instance.owner)
+    except GoogleAuthenticationToken.DoesNotExist:
         return
 
     credentials = Credentials.from_authorized_user_info(info={

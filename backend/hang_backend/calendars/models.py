@@ -1,10 +1,5 @@
-from datetime import datetime, timezone
-
-import requests
 from django.contrib.auth.models import User
 from django.db import models
-
-from hang_backend import settings
 
 
 class ManualCalendar(models.Model):
@@ -13,39 +8,6 @@ class ManualCalendar(models.Model):
 
 class ImportedCalendar(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
-
-
-class GoogleCalendarAccessToken(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    access_token = models.CharField(max_length=512)
-    refresh_token = models.CharField(max_length=1024)
-    last_generated = models.DateTimeField(default=datetime.now)
-
-    def needs_refresh(self):
-        refresh_threshold = 3600  # Set the time threshold for refreshing the token (in seconds)
-        elapsed_time = (datetime.now(timezone.utc) - self.last_generated).total_seconds()
-        return elapsed_time >= refresh_threshold
-
-    def refresh_access_token(self):
-        if self.needs_refresh():
-            # Make a request to Google API to refresh the access token
-            url = 'https://oauth2.googleapis.com/token'
-            data = {
-                'refresh_token': self.refresh_token,
-                'client_id': settings.GOOGLE_CLIENT_ID,
-                'client_secret': settings.GOOGLE_CLIENT_SECRET,
-                'grant_type': 'refresh_token',
-            }
-            response = requests.post(url, data=data)
-            response_json = response.json()
-            access_token = response_json.get('access_token')
-
-            if access_token:
-                self.access_token = access_token
-                self.last_generated = datetime.now()
-                self.save()
-            else:
-                raise ValueError("Failed to refresh the access token")
 
 
 class GoogleCalendarCalendars(models.Model):
