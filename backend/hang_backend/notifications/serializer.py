@@ -7,9 +7,8 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = ('id', 'title', 'description', 'timestamp', 'user', 'read')
-        read_only_fields = ('id', 'title', 'description', 'timestamp', 'user')
+        read_only_fields = ('id', 'title', 'description', 'timestamp', 'user', 'read')
 
     def update(self, instance, validated_data):
-        instance.read = True
-        instance.save()
+        instance.set_as_read()
         return instance

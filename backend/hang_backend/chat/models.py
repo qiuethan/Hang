@@ -10,7 +10,8 @@ class MessageChannelManager(models.Manager):
     """Manager for MessageChannels that allows for the creation of DirectMessages and GroupChats."""
 
     def create_direct_message(self, user1, user2):
-        direct_message = DirectMessage(id=generate_message_channel_id(), channel_type="DM")
+        direct_message = DirectMessage(id=MessageChannelManager.generate_message_channel_id(),
+                                       channel_type="DM")
         direct_message.save()
 
         direct_message.users.add(user1)
@@ -18,7 +19,9 @@ class MessageChannelManager(models.Manager):
         return direct_message
 
     def create_group_chat(self, name, owner, users):
-        group_chat = GroupChat(id=generate_message_channel_id(), name=name, owner=owner,
+        group_chat = GroupChat(id=MessageChannelManager.generate_message_channel_id(),
+                               name=name,
+                               owner=owner,
                                channel_type="GC")
         group_chat.save()
 
@@ -27,11 +30,25 @@ class MessageChannelManager(models.Manager):
         return group_chat
 
     def create_hang_event_message_channel(self, hang_event):
-        hang_event_message_channel = HangEventMessageChannel(id=generate_message_channel_id(), channel_type="HE")
+        hang_event_message_channel = HangEventMessageChannel(id=MessageChannelManager.generate_message_channel_id(),
+                                                             channel_type="HE")
         hang_event_message_channel.save()
 
         hang_event_message_channel.users.set(hang_event.attendees.all())
         return hang_event_message_channel
+
+    @staticmethod
+    def generate_random_string():
+        """Utility method to generate a random string."""
+        return "".join([random.choice(string.ascii_letters) for _ in range(10)])
+
+    @staticmethod
+    def generate_message_channel_id():
+        """Utility method to generate a random id for a MessageChannel."""
+        message_channel_id = MessageChannelManager.generate_random_string()
+        while MessageChannel.objects.filter(id=message_channel_id).exists():
+            message_channel_id = MessageChannelManager.generate_random_string()
+        return message_channel_id
 
 
 class MessageChannel(models.Model):
@@ -45,6 +62,27 @@ class MessageChannel(models.Model):
 
     objects = MessageChannelManager()
 
+    def has_read_message_channel(self, user):
+        mc_users = MessageChannelUsers.objects.filter(message_channel=self, user=user)
+        if not mc_users.exists():
+            raise exceptions.ValidationError("MessageChannelUsers does not exist")
+        obj = mc_users.get()
+        return obj.has_read
+
+    def read_message_channel(self, user):
+        mc_users = MessageChannelUsers.objects.filter(message_channel=self, user=user)
+        if not mc_users.exists():
+            raise exceptions.ValidationError("MessageChannelUsers does not exist")
+        obj = mc_users.get()
+        obj.has_read = True
+        obj.save()
+
+    def contains_user(self, user):
+        return self.users.contains(user)
+
+    def contains_message(self, message):
+        return self == message.message_channel
+
 
 class MessageChannelUsers(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -55,33 +93,47 @@ class MessageChannelUsers(models.Model):
 class DirectMessage(MessageChannel):
     """Model that represents a DM."""
 
-    def clean(self):
-        if self.users.count() != 2:
-            raise exceptions.ValidationError("A DM can only contain two users.")
-
 
 class GroupChat(MessageChannel):
-    """Model that represents a GC."""
+    """Model that represents a Group Chat."""
     name = models.CharField(max_length=75)
     owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name="message_channels_owned", null=True)
+
+    def update_users(self, current_user, new_users):
+        existing_users = set(self.users.all())
+        new_users = set(new_users)
+
+        added_users = new_users - existing_users
+        removed_users = existing_users - new_users
+
+        for user in added_users:
+            SystemMessage.objects.create(message_channel=self,
+                                         content=f"{current_user.username} has added {user.username} to group chat {self.name}")
+
+        for user in removed_users:
+            SystemMessage.objects.create(message_channel=self,
+                                         content=f"{current_user.username} has removed {user.username} from group chat {self.name}")
+
+        self.users.set(new_users)
+
+    def update_owner(self, current_user, new_owner):
+        if self.owner != new_owner:
+            SystemMessage.objects.create(message_channel=self,
+                                         content=f"{current_user.username} has transferred ownership to {new_owner.username}")
+            self.owner = new_owner
+            self.save()
+
+    def update_name(self, current_user, new_name):
+        if self.name != new_name:
+            SystemMessage.objects.create(message_channel=self,
+                                         content=f"{current_user.username} has renamed the group chat to to {new_name}")
+            self.name = new_name
+            self.save()
 
 
 class HangEventMessageChannel(MessageChannel):
     """Model that represents a HangEventMessageChannel."""
     pass
-
-
-def generate_random_string():
-    """Utility method to generate a random string."""
-    return "".join([random.choice(string.ascii_letters) for _ in range(10)])
-
-
-def generate_message_channel_id():
-    """Utility method to generate a random id for a MessageChannel."""
-    message_channel_id = generate_random_string()
-    while MessageChannel.objects.filter(id=message_channel_id).exists():
-        message_channel_id = generate_random_string()
-    return message_channel_id
 
 
 class Message(models.Model):
@@ -105,103 +157,11 @@ class UserMessage(Message):
 
 class SystemMessage(Message):
     """Model that represents a system-sent message."""
-
-    @property
-    def content(self):
-        raise NotImplementedError
-
-
-class GroupChatNameChangedMessage(SystemMessage):
-    """Model that represents a system-sent message about the change in a GroupChat's name."""
-    new_name = models.CharField(max_length=50)
+    content = models.CharField(max_length=2000)
 
     def __init__(self, *args, **kwargs):
-        self._meta.get_field('type').default = "group_chat_name_changed_message"
-        super(GroupChatNameChangedMessage, self).__init__(*args, **kwargs)
-
-    @property
-    def content(self):
-        return f"Group chat renamed to {self.new_name}"
-
-
-class GroupChatUserAddedMessage(SystemMessage):
-    """Model that represents a system-sent message about the addition of a user to a GroupChat."""
-    adder = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="gc_user_added_msg_adder", null=True)
-    user_added = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="gc_user_added_msg_user_added",
-                                   null=True)
-
-    def __init__(self, *args, **kwargs):
-        self._meta.get_field('type').default = "group_chat_user_added_message"
-        super(GroupChatUserAddedMessage, self).__init__(*args, **kwargs)
-
-    @property
-    def content(self):
-        group_chat = GroupChat.objects.filter(id=self.message_channel_id)
-        assert (group_chat.exists())
-        return f"{self.adder.username} has added {self.user_added.username} to group chat {group_chat.get().name}"
-
-
-class GroupChatUserRemovedMessage(SystemMessage):
-    """Model that represents a system-sent message about the removal of a user to a GroupChat."""
-    remover = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="gc_user_removed_msg_remover", null=True)
-    user_removed = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="gc_user_removed_msg_user_removed",
-                                     null=True)
-
-    def __init__(self, *args, **kwargs):
-        self._meta.get_field('type').default = "group_chat_user_removed_message"
-        super(GroupChatUserRemovedMessage, self).__init__(*args, **kwargs)
-
-    @property
-    def content(self):
-        group_chat = GroupChat.objects.filter(id=self.message_channel_id)
-        assert (group_chat.exists())
-        return f"{self.remover.username} has removed {self.user_removed.username} from group chat {group_chat.get().name}"
-
-
-class HangEventUpdatedMessage(SystemMessage):
-    """Model that represents a system-sent message about the update of a HangEvent."""
-    hang_event = models.ForeignKey("hang_event.HangEvent", on_delete=models.CASCADE)
-    updated_field = models.CharField(max_length=100)
-    old_value = models.TextField()
-    new_value = models.TextField()
-
-    def __init__(self, *args, **kwargs):
-        self._meta.get_field('type').default = "hang_event_updated_message"
-        super(HangEventUpdatedMessage, self).__init__(*args, **kwargs)
-
-    @property
-    def content(self):
-        return f"Hang event {self.hang_event.name} updated: {self.updated_field} changed from {self.old_value} to {self.new_value}"
-
-
-class HangEventUserAddedMessage(SystemMessage):
-    """Model that represents a system-sent message about the addition of a user to a HangEvent."""
-    hang_event = models.ForeignKey("hang_event.HangEvent", on_delete=models.CASCADE)
-    user_added = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="he_user_added_msg_user_added",
-                                   null=True)
-
-    def __init__(self, *args, **kwargs):
-        self._meta.get_field('type').default = "hang_event_user_added_message"
-        super(HangEventUserAddedMessage, self).__init__(*args, **kwargs)
-
-    @property
-    def content(self):
-        return f"{self.user_added.username} has joined the Hang event {self.hang_event.name}"
-
-
-class HangEventUserRemovedMessage(SystemMessage):
-    """Model that represents a system-sent message about the removal of a user from a HangEvent."""
-    hang_event = models.ForeignKey("hang_event.HangEvent", on_delete=models.CASCADE)
-    user_removed = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="he_user_removed_msg_user_removed",
-                                     null=True)
-
-    def __init__(self, *args, **kwargs):
-        self._meta.get_field('type').default = "hang_event_user_removed_message"
-        super(HangEventUserRemovedMessage, self).__init__(*args, **kwargs)
-
-    @property
-    def content(self):
-        return f"{self.user_removed.username} has left the Hang event {self.hang_event.name}"
+        self._meta.get_field('type').default = "system_message"
+        super(SystemMessage, self).__init__(*args, **kwargs)
 
 
 class Reaction(models.Model):

@@ -25,19 +25,19 @@ def message_post_save(sender, instance, created, **kwargs):
             continue
         if mcu.has_read:
             if instance.message_channel.channel_type == "DM":
-                Notification.objects.create_notification(user=mcu.user,
+                Notification.create_notification(user=mcu.user,
                                                          title=instance.message_channel.users.exclude(
                                                              id=mcu.user.id).get().username,
                                                          description=get_message_prefix(instance.content))
                 send_rtws_message(mcu.user, "direct_message")
             elif instance.message_channel.channel_type == "GC":
-                Notification.objects.create_notification(user=mcu.user,
+                Notification.create_notification(user=mcu.user,
                                                          title=GroupChat.objects.get(
                                                              id=instance.message_channel_id).name,
                                                          description=get_message_prefix(instance.content))
                 send_rtws_message(mcu.user, "group_chat")
             else:
-                Notification.objects.create_notification(user=mcu.user,
+                Notification.create_notification(user=mcu.user,
                                                          title=HangEvent.objects.get(
                                                              message_channel_id=instance.message_channel_id).name,
                                                          description=get_message_prefix(instance.content))

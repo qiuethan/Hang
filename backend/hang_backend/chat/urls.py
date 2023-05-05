@@ -1,14 +1,18 @@
 from django.urls import path
+from rest_framework.routers import DefaultRouter
 
-from . import views
+from chat.views import ReadMessageChannelView, \
+    DirectMessageViewSet, GroupChatViewSet
 
 app_name = "chats"
 
+router = DefaultRouter()
+router.register(r'direct_message', DirectMessageViewSet, basename='direct_message')
+router.register(r'group_chat', GroupChatViewSet, basename='group_chat')
+
 # Register URLs.
 urlpatterns = [
-    path("direct_message", views.ListCreateDirectMessageView.as_view(), name="DirectMessage"),
-    path("direct_message/<str:pk>", views.RetrieveDirectMessageView.as_view(), name="DirectMessage"),
-    path("group_chat", views.ListCreateGroupChatView.as_view(), name="GroupChat"),
-    path("group_chat/<str:pk>", views.RetrieveUpdateGroupChatView.as_view(), name="GroupChat"),
-    path("read_group_chat/<str:message_channel>", views.ReadMessageChannelView.as_view(), name="ReadGroupChat"),
+    path("message_channel/<str:pk>/read/", ReadMessageChannelView.as_view(), name="ReadMessageChannel"),
 ]
+
+urlpatterns += router.urls

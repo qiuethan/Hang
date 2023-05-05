@@ -10,6 +10,7 @@ media
 *.bak
 
 .idea/
+*.iml
 
 # If you are using PyCharm # 
 # User-specific stuff

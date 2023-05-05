@@ -67,21 +67,6 @@ class FriendRequest(models.Model):
         friend_request.save()
         return friend_request
 
-    @staticmethod
-    def validate_friend_request(from_user, to_user):
-        if from_user == to_user:
-            raise ValidationError("Cannot send a friend request to yourself.")
-
-        if from_user.userdetails.friends.filter(id=to_user.id).exists():
-            raise ValidationError("User is already a friend.")
-
-        if FriendRequest.objects.filter(from_user=from_user, to_user=to_user).exists():
-            raise ValidationError("Friend request already exists.")
-
-        existing_friend_request = FriendRequest.objects.filter(from_user=to_user, to_user=from_user)
-        if existing_friend_request.exists() and not existing_friend_request.get().declined:
-            raise ValidationError("This user has already sent you a friend request.")
-
     def accept_friend_request(self):
         self.from_user.userdetails.add_friend(self.to_user)
         self.delete()
@@ -89,8 +74,6 @@ class FriendRequest(models.Model):
     def decline_friend_request(self):
         self.declined = True
         self.save()
-
-
 class UserDetails(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
     profile_picture = models.CharField(max_length=200, default="default profile pic change this later")

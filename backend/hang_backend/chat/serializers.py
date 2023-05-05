@@ -1,15 +1,13 @@
 from datetime import datetime
 
 from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
 from knox.auth import TokenAuthentication
 from rest_framework import serializers, validators
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.relations import PrimaryKeyRelatedField
 
-from hang_event.models import HangEvent
-from .models import UserMessage, MessageChannel, DirectMessage, GroupChat, Reaction, GroupChatNameChangedMessage, \
-    GroupChatUserAddedMessage, GroupChatUserRemovedMessage, MessageChannelUsers, HangEventUserAddedMessage, \
-    HangEventUpdatedMessage, HangEventUserRemovedMessage
+from .models import UserMessage, MessageChannel, DirectMessage, GroupChat, Reaction, SystemMessage
 
 
 class MessageChannelSerializer(serializers.ModelSerializer):
@@ -31,127 +29,112 @@ class DirectMessageSerializer(MessageChannelSerializer):
         fields = MessageChannelSerializer.Meta.fields + ["users", "created_at", "has_read"]
         read_only_fields = ["id", "channel_type", "created_at", "has_read"]
 
+    def get_has_read(self, obj):
+        return obj.has_read_message_channel(self.context["request"].user)
+
     def create(self, validated_data):
+        users = validated_data["users"]
+        return MessageChannel.objects.create_direct_message(users[0], users[1])
+
+    def validate(self, data):
         current_user = self.context["request"].user
-        users = list(set(validated_data["users"]))
+        users = data["users"]
 
         # Verifies data.
         if current_user not in users:
-            raise validators.ValidationError("The creation of a DM must include the current user.")
+            raise serializers.ValidationError("The creation of a DM must include the current user.")
         if len(users) != 2:
-            raise validators.ValidationError("A DM must have exactly 2 people.")
+            raise serializers.ValidationError("A DM must have exactly 2 people.")
 
         to_user = users[0] if users[1] == current_user else users[1]
         if current_user.message_channels.filter(channel_type="DM").filter(users=to_user).exists():
-            raise validators.ValidationError("DM already exists.")
+            raise serializers.ValidationError("DM already exists.")
 
-        # Creates MessageChannel from data.
-        return MessageChannel.objects.create_direct_message(current_user, to_user)
-
-    def update(self, instance, validated_data):
-        raise NotImplementedError
-
-    def get_has_read(self, obj):
-        current_user = self.context["request"].user
-        return MessageChannelUsers.objects.get(user_id=current_user.id, message_channel_id=obj.id).has_read
+        return data
 
 
 class GroupChatSerializer(MessageChannelSerializer):
-    """Serializer for GC."""
-    owner = PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
-    users = PrimaryKeyRelatedField(queryset=User.objects.all(), many=True)
+    """Serializer for Group Chat."""
+    owner = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
+    users = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True)
     channel_type = serializers.CharField(required=False)
     has_read = serializers.SerializerMethodField(read_only=True)
 
     class Meta(MessageChannelSerializer.Meta):
         model = GroupChat
         fields = MessageChannelSerializer.Meta.fields + ["name", "owner", "users", "created_at", "has_read"]
-        read_only_fields = ["id", "channel_type" "created_at", "has_read"]
+        read_only_fields = ["id", "channel_type", "created_at", "has_read"]
+
+    def get_has_read(self, obj):
+        return obj.has_read_message_channel(self.context["request"].user)
 
     def create(self, validated_data):
         current_user = self.context["request"].user
-        users = list(set(validated_data["users"]))
+        users = validated_data["users"]
 
-        # Validates data.
         if current_user not in users:
-            raise validators.ValidationError("The creation of a DM must include the current user.")
+            raise validators.ValidationError("The creation of a group chat must include the current user.")
 
-        # Creates GC and saves it.
         return MessageChannel.objects.create_group_chat(name=validated_data["name"], owner=current_user, users=users)
+
+    def validate_users(self, new_users):
+        if self.instance:
+            current_user = self.context["request"].user
+            users = set(self.instance.users.all())
+            new_users = set(new_users.copy())
+
+            users.remove(current_user)
+            new_users.discard(current_user)
+
+            if len(users.intersection(new_users)) != len(users) and self.instance.owner.id != current_user.id:
+                raise serializers.ValidationError("Permission Denied.")
+
+        return new_users
+
+    def validate_owner(self, new_owner):
+        current_user = self.context["request"].user
+        instance = self.instance
+
+        if instance.owner != new_owner and current_user != instance.owner:
+            raise serializers.ValidationError("Permission Denied.")
+        if not instance.users.filter(id=new_owner.id).exists():
+            raise serializers.ValidationError("Owner is not in the group chat.")
+        return new_owner
+
+    def validate_name(self, new_name):
+        if self.instance and self.instance.name == new_name:
+            raise serializers.ValidationError("New name must be different from the current name.")
+        return new_name
 
     def update(self, instance, validated_data):
         current_user = self.context["request"].user
 
-        # Verifies if the user is in GC.
-        if not instance.users.filter(id=current_user.id).exists():
-            raise serializers.ValidationError("Permission Denied.")
-
         if "users" in validated_data:
-            # User can only add more users / leave a GC; owner can remove user.
-            users = validated_data["users"]
-            curr_users = set(instance.users.all())
-            new_users = set(users.copy())
-
-            curr_users.remove(current_user)
-            if current_user in users:
-                new_users.remove(current_user)
-
-            if len(curr_users.intersection(new_users)) != len(curr_users) and \
-                    instance.owner.id != current_user.id:
-                raise serializers.ValidationError("Permission Denied.")
+            instance.update_users(current_user, validated_data["users"])
 
         if "owner" in validated_data:
-            # Only owner can transfer ownership.
-            owner = validated_data["owner"]
-            if instance.owner != owner and current_user != instance.owner:
-                raise serializers.ValidationError("Permission Denied.")
-            if not instance.users.filter(id=owner.id).exists():
-                raise serializers.ValidationError("Owner is not in the GC.")
+            instance.update_owner(current_user, validated_data["owner"])
 
-        # Send system messages.
-        new_name = validated_data.get("name", instance.name)
-        if instance.name != new_name:
-            GroupChatNameChangedMessage.objects.create(message_channel=instance, new_name=new_name)
-        new_users = validated_data.get("users", instance.users.all())
-        for user in new_users:
-            if user not in instance.users.all():
-                GroupChatUserAddedMessage.objects.create(message_channel=instance, adder=current_user, user_added=user)
-        for user in instance.users.all():
-            if user not in new_users:
-                GroupChatUserRemovedMessage.objects.create(message_channel=instance, remover=current_user,
-                                                           user_removed=user)
+        if "name" in validated_data:
+            instance.update_name(current_user, validated_data["name"])
 
-        # Update fields.
-        instance.name = validated_data.get("name", instance.name)
-        instance.owner = validated_data.get("owner", instance.owner)
-        instance.users.set(validated_data.get("users", instance.users.all()))
-
-        # Transfer ownership if the owner leaves.
-        if not instance.users.filter(id=instance.owner.id).exists():
-            if instance.users.exists():
-                instance.owner = instance.users.first()
-            else:
-                instance.owner = None
-
-        instance.save()
         return instance
-
-    def get_has_read(self, obj):
-        current_user = self.context["request"].user
-        qs = MessageChannelUsers.objects.filter(user_id=current_user.id, message_channel_id=obj.id)
-        return qs.get().has_read if qs.count() else True
 
 
 class ReadMessageChannelSerializer(serializers.ModelSerializer):
+    has_read = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
-        model = MessageChannelUsers
-        fields = ('user', 'message_channel', 'has_read',)
-        read_only_fields = ('user', 'message_channel',)
+        model = MessageChannel
+        fields = ["id", "channel_type", "users", "created_at", "message_last_sent", "has_read"]
+        read_only_fields = ["id", "channel_type", "users", "created_at", "message_last_sent", "has_read"]
 
     def update(self, instance, validated_data):
-        instance.has_read = True
-        instance.save()
+        instance.read_message_channel(self.context["request"].user)
         return instance
+
+    def get_has_read(self, obj):
+        return obj.has_read_message_channel(self.context["request"].user)
 
 
 class ReactionSerializer(serializers.ModelSerializer):
@@ -162,31 +145,13 @@ class ReactionSerializer(serializers.ModelSerializer):
 
 
 class MessageSerializer(serializers.Serializer):
-    def create(self, validated_data):
-        raise NotImplementedError
-
-    def update(self, instance, validated_data):
-        raise NotImplementedError
-
-    def validate(self, data):
-        raise NotImplementedError
 
     @classmethod
     def get_serializer(cls, _type):
         if _type == "user_message":
             return UserMessageSerializer
-        if _type == "group_chat_name_changed_message":
-            return GroupChatNameChangedMessageSerializer
-        if _type == "group_chat_user_added_message":
-            return GroupChatUserAddedMessageSerializer
-        if _type == "group_chat_user_removed_message":
-            return GroupChatUserRemovedMessageSerializer
-        if _type == "hang_event_updated_message":
-            return HangEventUpdatedMessageSerializer
-        if _type == "hang_event_user_added_message":
-            return HangEventUserAddedMessageSerializer
-        if _type == "hang_event_user_removed_message":
-            return HangEventUserRemovedMessageSerializer
+        if _type == "system_message":
+            return SystemMessageSerializer
 
     def to_representation(self, instance):
         serializer = self.get_serializer(instance.type)
@@ -203,101 +168,46 @@ class UserMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserMessage
         fields = ("type", "id", "user", "created_at", "updated_at", "content", "message_channel", "reply", "reactions")
-        read_only_fields = ("type", "id", "user", "created_at", "updated_at", "message_channel", "reply", "reactions")
+        read_only_fields = ("type", "id", "user", "created_at", "updated_at", "reactions")
+
+    def validate_user(self, instance):
+        if instance.user.username != self.context["user"].username:
+            raise serializers.ValidationError("Message does not exist.")
+
+    def validate_message_channel(self, value):
+        try:
+            value.users.get(username=self.context["user"].username)
+        except ObjectDoesNotExist:
+            raise serializers.ValidationError("Message channel does not exist.")
+        return value
+
+    def validate_reply(self, value):
+        message_channel = self.initial_data.get("message_channel")
+        if value is not None and value.message_channel_id != message_channel:
+            raise serializers.ValidationError("Replied message does not exist.")
+        return value
 
     def create(self, validated_data):
-        # Verifies that the MessageChannel exists.
-        if not validated_data["message_channel"].users.filter(username=self.context["user"].username).exists():
-            raise serializers.ValidationError("Message channel does not exist.")
-
-        # Verifies that the Message that is being replied exists in the current message channel or is null.
-        if validated_data["reply"] is not None and \
-                validated_data["reply"].message_channel != validated_data["message_channel"]:
-            raise serializers.ValidationError("Replied message does not exist.")
-
-        # Creates and saves the message.
-        message = UserMessage(user=self.context["user"], content=validated_data["content"],
-                              message_channel=validated_data["message_channel"], reply=validated_data["reply"])
-        message.save()
-
+        message = UserMessage.objects.create(user=self.context["user"], **validated_data)
         validated_data["message_channel"].message_last_sent = datetime.now()
         validated_data["message_channel"].save()
-
         return message
 
     def update(self, instance, validated_data):
-        """Updates and existing message."""
-        if instance.user.username != self.context["user"].username:
-            raise serializers.ValidationError("Message does not exist.")
+        self.validate_user(instance)
         instance.content = validated_data.get("content", instance.content)
         instance.save()
         return instance
 
 
-class GroupChatNameChangedMessageSerializer(serializers.ModelSerializer):
+class SystemMessageSerializer(serializers.ModelSerializer):
     message_channel = PrimaryKeyRelatedField(queryset=MessageChannel.objects.all())
+    reactions = ReactionSerializer(many=True, required=False)
 
     class Meta:
-        model = GroupChatNameChangedMessage
-        fields = ("type", "id", "created_at", "updated_at", "message_channel", "new_name", "content")
-        read_only_fields = ("type", "id", "created_at", "updated_at", "message_channel", "new_name", "content")
-
-
-class GroupChatUserAddedMessageSerializer(serializers.ModelSerializer):
-    message_channel = PrimaryKeyRelatedField(queryset=MessageChannel.objects.all())
-    adder = PrimaryKeyRelatedField(queryset=User.objects.all())
-    user_added = PrimaryKeyRelatedField(queryset=User.objects.all())
-
-    class Meta:
-        model = GroupChatUserAddedMessage
-        fields = ("type", "id", "created_at", "updated_at", "message_channel", "adder", "user_added", "content")
-        read_only_fields = (
-            "type", "id", "created_at", "updated_at", "message_channel", "adder", "user_added", "content")
-
-
-class GroupChatUserRemovedMessageSerializer(serializers.ModelSerializer):
-    message_channel = PrimaryKeyRelatedField(queryset=MessageChannel.objects.all())
-    remover = PrimaryKeyRelatedField(queryset=User.objects.all())
-    user_removed = PrimaryKeyRelatedField(queryset=User.objects.all())
-
-    class Meta:
-        model = GroupChatUserRemovedMessage
-        fields = ("type", "id", "created_at", "updated_at", "message_channel", "remover", "user_removed", "content")
-        read_only_fields = (
-            "type", "id", "created_at", "updated_at", "message_channel", "remover", "user_removed", "content")
-
-
-class HangEventUpdatedMessageSerializer(serializers.ModelSerializer):
-    hang_event = serializers.PrimaryKeyRelatedField(queryset=HangEvent.objects.all())
-
-    class Meta:
-        model = HangEventUpdatedMessage
-        fields = (
-            "type", "id", "created_at", "updated_at", "hang_event", "updated_field", "old_value", "new_value",
-            "content")
-        read_only_fields = (
-            "type", "id", "created_at", "updated_at", "hang_event", "updated_field", "old_value", "new_value",
-            "content")
-
-
-class HangEventUserAddedMessageSerializer(serializers.ModelSerializer):
-    hang_event = serializers.PrimaryKeyRelatedField(queryset=HangEvent.objects.all())
-    user_added = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-
-    class Meta:
-        model = HangEventUserAddedMessage
-        fields = ("type", "id", "created_at", "updated_at", "hang_event", "user_added", "content")
-        read_only_fields = ("type", "id", "created_at", "updated_at", "hang_event", "user_added", "content")
-
-
-class HangEventUserRemovedMessageSerializer(serializers.ModelSerializer):
-    hang_event = serializers.PrimaryKeyRelatedField(queryset=HangEvent.objects.all())
-    user_removed = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-
-    class Meta:
-        model = HangEventUserRemovedMessage
-        fields = ("type", "id", "created_at", "updated_at", "hang_event", "user_removed", "content")
-        read_only_fields = ("type", "id", "created_at", "updated_at", "hang_event", "user_removed", "content")
+        model = SystemMessage
+        fields = ("type", "id", "created_at", "updated_at", "content", "message_channel", "reactions")
+        read_only_fields = ("type", "id", "created_at", "updated_at", "message_channel", "reactions")
 
 
 class AuthenticateWebsocketSerializer(serializers.Serializer):
@@ -316,27 +226,3 @@ class AuthenticateWebsocketSerializer(serializers.Serializer):
         if data["token"].username != self.context["user"].username:
             raise serializers.ValidationError("Token does not match user.")
         return data["token"]
-
-    def create(self, validated_data):
-        raise NotImplementedError
-
-    def update(self, instance, validated_data):
-        raise NotImplementedError
-
-
-class LoadMessageSerializer(serializers.Serializer):
-    """Serializer for LoadMessage ChatAction."""
-    user = PrimaryKeyRelatedField(queryset=User.objects.all())
-    message_channel = PrimaryKeyRelatedField(queryset=MessageChannel.objects.all())
-    message_id = serializers.IntegerField(default=None)
-
-    def validate(self, data):
-        if not data["message_channel"].users.filter(username=data["user"].username).exists():
-            raise serializers.ValidationError("Permission denied.")
-        return data
-
-    def create(self, validated_data):
-        raise NotImplementedError
-
-    def update(self, instance, validated_data):
-        raise NotImplementedError

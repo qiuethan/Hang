@@ -5,8 +5,7 @@ from django.db import models
 from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 
-from chat.models import MessageChannel, HangEventMessageChannel, HangEventUpdatedMessage, HangEventUserAddedMessage, \
-    HangEventUserRemovedMessage
+from chat.models import MessageChannel, HangEventMessageChannel, SystemMessage
 
 
 def generate_unique_invitation_code():
@@ -77,13 +76,8 @@ def send_hang_event_updated_message(sender, instance, created, **kwargs):
             old_value = getattr(instance, f"_old_{field.name}")
             new_value = getattr(instance, field.name)
             if old_value != new_value:
-                HangEventUpdatedMessage.objects.create(
-                    hang_event=instance,
-                    updated_field=field.name,
-                    old_value=str(old_value),
-                    new_value=str(new_value),
-                    message_channel=instance.message_channel
-                )
+                SystemMessage.objects.create(message_channel=instance.message_channel,
+                                             content=f"Hang event {instance.name} updated: {field.name} changed from {str(old_value)} to {str(new_value)}")
                 setattr(instance, f"_old_{field.name}", new_value)
 
 
@@ -94,8 +88,6 @@ def send_hang_event_user_added_or_removed_message(sender, instance, action, pk_s
         for user_pk in pk_set:
             user = User.objects.get(pk=user_pk)
             if action == "post_add":
-                HangEventUserAddedMessage.objects.create(hang_event=instance, user_added=user,
-                                                         message_channel=instance.message_channel)
+                SystemMessage.objects.create(f"{user.username} has joined the Hang event {instance.name}")
             else:
-                HangEventUserRemovedMessage.objects.create(hang_event=instance, user_removed=user,
-                                                           message_channel=instance.message_channel)
+                SystemMessage.objects.create(f"{user.username} has left the Hang event {instance.name}")

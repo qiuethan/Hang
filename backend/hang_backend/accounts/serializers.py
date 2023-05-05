@@ -40,13 +40,28 @@ class FriendRequestSentSerializer(serializers.ModelSerializer):
         fields = ("from_user", "to_user")
         read_only_fields = ("from_user",)
 
-    def validate(self, data):
-        FriendRequest.validate_friend_request(from_user=self.context["request"].user, to_user=data["to_user"])
-        return data
-
     def create(self, validated_data):
         return FriendRequest.create_friend_request(from_user=self.context["request"].user,
                                                    to_user=validated_data["to_user"])
+
+    def validate(self, data):
+        from_user = self.context["request"].user
+        to_user = data["to_user"]
+
+        if from_user == to_user:
+            raise serializers.ValidationError("Cannot send a friend request to yourself.")
+
+        if from_user.userdetails.friends.filter(id=to_user.id).exists():
+            raise serializers.ValidationError("User is already a friend.")
+
+        if FriendRequest.objects.filter(from_user=from_user, to_user=to_user).exists():
+            raise serializers.ValidationError("Friend request already exists.")
+
+        existing_friend_request = FriendRequest.objects.filter(from_user=to_user, to_user=from_user)
+        if existing_friend_request.exists() and not existing_friend_request.get().declined:
+            raise serializers.ValidationError("This user has already sent you a friend request.")
+
+        return data
 
 
 class RegisterSerializer(serializers.ModelSerializer):

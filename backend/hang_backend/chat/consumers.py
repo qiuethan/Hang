@@ -9,9 +9,9 @@ from asgiref.sync import sync_to_async
 from channels.db import database_sync_to_async as dbsa
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import User
+from rest_framework import exceptions
 from rest_framework.exceptions import ValidationError
 
-from .exceptions import ChatActionError
 from .models import UserMessage, MessageChannel, Reaction
 from .serializers import AuthenticateWebsocketSerializer, MessageSerializer, UserMessageSerializer
 
@@ -34,12 +34,13 @@ class ChatAction(abc.ABC):
         try:
             # Throws an error if the ChatAction needs authentication and the user is not authenticated.
             if self.needs_authentication and not self.chat_consumer.authenticated:
-                raise ChatActionError("User is not authenticated.")
+                raise exceptions.PermissionDenied("User is not authenticated.")
 
             # Runs the ChatAction.
             await self.action()
             message = "success"
-        except ChatActionError as e:
+        except Exception as e:
+            traceback.print_exc()
             # If the ChatAction is invalid, change message to the error.
             message = str(e)
 
@@ -73,7 +74,7 @@ class ChatAction(abc.ABC):
         # Verifies that the MessageChannel exists.
         if not await dbsa((await dbsa(MessageChannel.objects.filter)(
                 id=message_channel_id, users=self.chat_consumer.user)).exists)():
-            raise ChatActionError("Message channel does not exist.")
+            raise exceptions.NotFound("Message channel does not exist.")
 
         # Sends the message to all users.
         message_channel = await dbsa(MessageChannel.objects.get)(id=message_channel_id)
