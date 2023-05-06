@@ -7,74 +7,18 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.db import models
+from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from rest_framework.exceptions import ValidationError
 
-from google.auth.transport import requests as google_requests
-from calendars.models import ManualCalendar, ImportedCalendar
 from hang_backend import settings
+from notifications.models import Notification
+from real_time_ws.models import RTWSSendMessageOnUpdate
 
 
-class EmailAuthToken(models.Model):
-    token = models.CharField(max_length=64, primary_key=True)  # Token is stored as SHA256 hash.
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    @classmethod
-    def create(cls, user):
-        random_string = str(uuid.uuid4())
-        token_id = EmailAuthToken.hash_token(random_string)
-        token = cls(token=token_id, user=user)
-        token.save()
-
-        send_mail("Hang Email Verification Token",
-                  f"Your email verification token is {random_string}. This token will stay valid for 24 hours.",
-                  settings.EMAIL_HOST_USER,
-                  [token.user.email])
-
-        return token
-
-    def verify(self):
-        if self.user.userdetails.is_verified:
-            raise ValidationError("User is already verified.")
-
-        if self.is_expired():
-            raise ValidationError("Token expired.")
-
-        self.user.userdetails.is_verified = True
-        self.user.userdetails.save()
-
-        self.delete()
-
-    @staticmethod
-    def hash_token(token):
-        return hashlib.sha256(token.encode("utf-8")).hexdigest()
-
-    def is_expired(self):
-        return datetime.now(timezone.utc) - self.created_at > timedelta(days=1)
-
-
-class FriendRequest(models.Model):
-    from_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_friend_requests")
-    to_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_friend_requests")
-    declined = models.BooleanField(default=False)
-
-    @classmethod
-    def create_friend_request(cls, from_user, to_user):
-        friend_request = cls(from_user=from_user, to_user=to_user)
-        friend_request.save()
-        return friend_request
-
-    def accept_friend_request(self):
-        self.from_user.userdetails.add_friend(self.to_user)
-        self.delete()
-
-    def decline_friend_request(self):
-        self.declined = True
-        self.save()
-class UserDetails(models.Model):
+class Profile(models.Model, RTWSSendMessageOnUpdate):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
     profile_picture = models.CharField(max_length=200, default="default profile pic change this later")
     is_verified = models.BooleanField(default=False)
@@ -83,11 +27,18 @@ class UserDetails(models.Model):
     friends = models.ManyToManyField(User, related_name="+")
     blocked_users = models.ManyToManyField(User, related_name="+")
 
+    rtws_message_content = "profile"
+
+    def get_rtws_users(self):
+        return [self.user]
+
     @staticmethod
     def create_user_and_associated_objects(username, email, password):
+        from calendars.models import ManualCalendar, ImportedCalendar
+
         user = User.objects.create_user(username, email, password)
 
-        UserDetails.objects.create(user=user)
+        Profile.objects.create(user=user)
         ManualCalendar.objects.create(user=user)
         ImportedCalendar.objects.create(user=user)
 
@@ -99,8 +50,8 @@ class UserDetails(models.Model):
         if not user or not user.is_active:
             raise ValidationError("Incorrect Credentials.")
 
-        if user.userdetails.is_verified != user_should_be_verified:
-            if user.userdetails.is_verified:
+        if user.profile.is_verified != user_should_be_verified:
+            if user.profile.is_verified:
                 raise ValidationError("User is already verified.")
             else:
                 raise ValidationError("User is not verified.")
@@ -109,6 +60,10 @@ class UserDetails(models.Model):
     def block_user(self, user_to_block):
         if self.user == user_to_block:
             raise ValidationError("Cannot block yourself.")
+        FriendRequest.objects.filter(from_user=user_to_block, to_user=self.user).delete()
+        FriendRequest.objects.filter(from_user=self.user, to_user=user_to_block).delete()
+        if user_to_block in self.friends:
+            self.remove_friend(user_to_block)
         self.blocked_users.add(user_to_block)
 
     def unblock_user(self, user_to_unblock):
@@ -116,11 +71,11 @@ class UserDetails(models.Model):
 
     def add_friend(self, user_to_add):
         self.friends.add(user_to_add)
-        user_to_add.userdetails.friends.add(self.user)
+        user_to_add.profile.friends.add(self.user)
 
     def remove_friend(self, user_to_remove):
         self.friends.remove(user_to_remove)
-        user_to_remove.userdetails.friends.remove(self.user)
+        user_to_remove.profile.friends.remove(self.user)
 
 
 class GoogleAuthenticationToken(models.Model):
@@ -213,4 +168,75 @@ class GoogleAuthenticationToken(models.Model):
         new_token = credentials.token
         self.access_token = new_token
         self.last_generated = datetime.now(timezone.utc)
+        self.save()
+
+
+class EmailAuthenticationToken(models.Model):
+    token = models.CharField(max_length=64, primary_key=True)  # Token is stored as SHA256 hash.
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    @classmethod
+    def create(cls, user):
+        random_string = str(uuid.uuid4())
+        token_id = EmailAuthenticationToken.hash_token(random_string)
+        token = cls(token=token_id, user=user)
+        token.save()
+
+        send_mail("Hang Email Verification Token",
+                  f"Your email verification token is {random_string}. This token will stay valid for 24 hours.",
+                  settings.EMAIL_HOST_USER,
+                  [token.user.email])
+
+        return token
+
+    def verify(self):
+        if self.user.profile.is_verified:
+            raise ValidationError("User is already verified.")
+
+        if self.is_expired():
+            raise ValidationError("Token expired.")
+
+        self.user.profile.is_verified = True
+        self.user.profile.save()
+
+        self.delete()
+
+    @staticmethod
+    def hash_token(token):
+        return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+    def is_expired(self):
+        return datetime.now(timezone.utc) - self.created_at > timedelta(days=1)
+
+
+class FriendRequest(models.Model, RTWSSendMessageOnUpdate):
+    from_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_friend_requests")
+    to_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_friend_requests")
+    declined = models.BooleanField(default=False)
+
+    rtws_message_content = "friend_request"
+
+    def get_rtws_users(self):
+        return [self.from_user, self.to_user]
+
+    @classmethod
+    def create_friend_request(cls, from_user, to_user):
+        friend_request = cls(from_user=from_user, to_user=to_user)
+        friend_request.save()
+        if to_user in from_user.profile.blocked_users or \
+                from_user in to_user.profile.blocked_users:
+            raise ValidationError(
+                "Friend request creation failed. Cannot create a friend request when one user is blocked.")
+        Notification.create_notification(user=to_user,
+                                         title=from_user.username,
+                                         description=f"{from_user.username} has sent you a friend request")
+        return friend_request
+
+    def accept_friend_request(self):
+        self.from_user.profile.add_friend(self.to_user)
+        self.delete()
+
+    def decline_friend_request(self):
+        self.declined = True
         self.save()

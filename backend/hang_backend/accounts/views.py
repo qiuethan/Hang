@@ -5,13 +5,20 @@ from rest_framework import generics, permissions, status, views, viewsets, mixin
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.status import HTTP_204_NO_CONTENT
-from rest_framework.views import APIView
 
-from common.util.generics.mixins import ListIDModelMixin
-from .models import EmailAuthToken, FriendRequest, UserDetails, GoogleAuthenticationToken
-from .serializers import LoginSerializer, UserSerializer, RegisterSerializer, SendEmailSerializer, \
-    FriendRequestReceivedSerializer, FriendRequestSentSerializer, UserDetailsSerializer, \
+from .models import EmailAuthenticationToken, FriendRequest, Profile, GoogleAuthenticationToken
+from .serializers import LoginSerializer, UserSerializer, RegisterSerializer, SendEmailAuthenticationTokenSerializer, \
+    FriendRequestReceivedSerializer, FriendRequestSentSerializer, ProfileSerializer, \
     LoginWithGoogleSerializer
+
+
+class ProfileView(generics.RetrieveAPIView, generics.UpdateAPIView):
+    queryset = Profile.objects.all()
+    serializer_class = ProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user.profile
 
 
 class RegisterView(generics.CreateAPIView):
@@ -31,7 +38,7 @@ class LoginView(views.APIView):
         })
 
 
-class RetrieveAuthorizationURLView(APIView):
+class RetrieveGoogleAuthenticationURLView(views.APIView):
     def get(self, request, *args, **kwargs):
         redirect_uri = request.build_absolute_uri('http://localhost:3000/profile')
         authorization_url = GoogleAuthenticationToken.get_authorization_url(redirect_uri)
@@ -52,13 +59,13 @@ class LoginWithGoogleView(views.APIView):
 
 class RetrieveUserView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated]
-    serializer_class = UserDetailsSerializer
+    serializer_class = ProfileSerializer
     queryset = User.objects.all()
     lookup_field = None
 
     def get_object(self):
         if not self.lookup_field == "me":
-            return self.request.user.userdetails
+            return self.request.user.profile
 
         lookup_value = self.kwargs.get("lookup_value")
 
@@ -67,20 +74,21 @@ class RetrieveUserView(generics.RetrieveAPIView):
         obj = generics.get_object_or_404(queryset, **filter_kwargs)
         self.check_object_permissions(self.request, obj)
 
-        return obj.userdetails
+        return obj.profile
 
 
 class EmailVerificationTokenViewSet(viewsets.GenericViewSet):
-    serializer_class = SendEmailSerializer
+    serializer_class = SendEmailAuthenticationTokenSerializer
 
     def create(self, request, *args, **kwargs):
-        serializer = SendEmailSerializer(data=request.data)
+        serializer = SendEmailAuthenticationTokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def destroy(self, request, *args, **kwargs):
-        token = get_object_or_404(EmailAuthToken.objects.filter(token=EmailAuthToken.hash_token(self.kwargs["pk"])))
+        token = get_object_or_404(
+            EmailAuthenticationToken.objects.filter(token=EmailAuthenticationToken.hash_token(self.kwargs["pk"])))
         token.verify()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -128,39 +136,36 @@ class ReceivedFriendRequestViewSet(mixins.ListModelMixin,
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class FriendsViewSet(ListIDModelMixin, viewsets.GenericViewSet):
+class FriendsViewSet(viewsets.GenericViewSet):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = UserSerializer
 
     def get_queryset(self):
-        return self.request.user.userdetails.friends.all()
+        return self.request.user.profile.friends.all()
+
+    def list(self, request):
+        return Response([friend.id for friend in self.get_queryset()], status=status.HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
-        self.request.user.userdetails.remove_friend(self.get_object())
+        self.request.user.profile.remove_friend(self.get_object())
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class BlockedUsersViewSet(ListIDModelMixin, viewsets.GenericViewSet):
+class BlockedUsersViewSet(viewsets.GenericViewSet):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = UserSerializer
 
     def get_queryset(self):
-        return self.request.user.userdetails.blocked_users.all()
+        return self.request.user.profile.blocked_users.all()
+
+    def list(self, request):
+        return Response([friend.id for friend in self.get_queryset()], status=status.HTTP_200_OK)
 
     def create(self, request, *args, **kwargs):
-        query = User.objects.filter(id=request.data["id"])
-        self.request.user.userdetails.block_user(get_object_or_404(query))
+        user_to_block = get_object_or_404(User, request.data["id"])
+        self.request.user.profile.block_user(user_to_block)
         return Response(status=HTTP_204_NO_CONTENT)
 
     def destroy(self, request, *args, **kwargs):
-        self.request.user.userdetails.unblock_user(self.get_object())
+        self.request.user.profile.unblock_user(self.get_object())
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class UserDetailsView(generics.RetrieveAPIView, generics.UpdateAPIView):
-    queryset = UserDetails.objects.all()
-    serializer_class = UserDetailsSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_object(self):
-        return self.request.user.userdetails

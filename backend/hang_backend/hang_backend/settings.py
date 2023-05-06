@@ -48,8 +48,8 @@ INSTALLED_APPS = [
 
     'accounts',
     'calendars',
-    'chat',
-    'hang_event',
+    'chats',
+    'hang_events',
     'notifications',
 ]
 

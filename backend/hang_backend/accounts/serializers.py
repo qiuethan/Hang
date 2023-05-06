@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers, validators
 
-from .models import EmailAuthToken, FriendRequest, UserDetails, \
+from .models import EmailAuthenticationToken, FriendRequest, Profile, \
     GoogleAuthenticationToken
 
 
@@ -17,21 +17,68 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "username", "email")
 
 
-class UserDetailsSerializer(serializers.ModelSerializer):
+class ProfileSerializer(serializers.ModelSerializer):
     """Class that serializes all a UserDetails object into JSON."""
     user = UserSerializer()
 
     class Meta:
-        model = UserDetails
+        model = Profile
         fields = ("user", "profile_picture", "is_verified", "about_me")
         read_only_fields = ("user", "is_verified")
 
 
-class FriendRequestReceivedSerializer(serializers.ModelSerializer):
+class RegisterSerializer(serializers.ModelSerializer):
+    """Serializer for RegisterView."""
+
     class Meta:
-        model = FriendRequest
-        fields = ("from_user", "to_user", "declined")
-        read_only_fields = ("from_user", "to_user", "declined")
+        model = User
+        fields = ('id', 'username', 'email', 'password')
+        extra_kwargs = {
+            'password': {'write_only': True, 'validators': [validate_password]},
+            'username': {'validators': [validators.UniqueValidator(queryset=User.objects.all())]},
+            'email': {'validators': [validators.UniqueValidator(queryset=User.objects.all())]}
+        }
+
+    def create(self, validated_data):
+        """Generates `User` object from params"""
+        return Profile.create_user_and_associated_objects(username=validated_data["username"],
+                                                          email=validated_data["email"],
+                                                          password=validated_data["password"])
+
+
+class LoginSerializer(serializers.Serializer):
+    """Serializer for LoginView."""
+
+    email = serializers.EmailField()
+    password = serializers.CharField()
+
+    def validate(self, data):
+        return {"user": Profile.authenticate_user(email=data["email"], password=data["password"])}
+
+
+class LoginWithGoogleSerializer(serializers.Serializer):
+    code = serializers.CharField()
+
+    def validate_code(self, code):
+        return urllib.parse.unquote(code)
+
+    def create(self, validated_data):
+        redirect_uri = 'http://localhost:3000/profile'
+        return GoogleAuthenticationToken.generate_token_from_code(code=validated_data["code"],
+                                                                  redirect_uri=redirect_uri)
+
+
+class SendEmailAuthenticationTokenSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField()
+
+    def validate(self, data):
+        return {"user": Profile.authenticate_user(email=data["email"],
+                                                  password=data["password"],
+                                                  user_should_be_verified=False)}
+
+    def create(self, validated_data):
+        return EmailAuthenticationToken.create(user=validated_data["user"])
 
 
 class FriendRequestSentSerializer(serializers.ModelSerializer):
@@ -51,7 +98,7 @@ class FriendRequestSentSerializer(serializers.ModelSerializer):
         if from_user == to_user:
             raise serializers.ValidationError("Cannot send a friend request to yourself.")
 
-        if from_user.userdetails.friends.filter(id=to_user.id).exists():
+        if from_user.profile.friends.filter(id=to_user.id).exists():
             raise serializers.ValidationError("User is already a friend.")
 
         if FriendRequest.objects.filter(from_user=from_user, to_user=to_user).exists():
@@ -64,57 +111,8 @@ class FriendRequestSentSerializer(serializers.ModelSerializer):
         return data
 
 
-class RegisterSerializer(serializers.ModelSerializer):
-    """Serializer for RegisterView."""
-
+class FriendRequestReceivedSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
-        fields = ('id', 'username', 'email', 'password')
-        extra_kwargs = {
-            'password': {'write_only': True, 'validators': [validate_password]},
-            'username': {'validators': [validators.UniqueValidator(queryset=User.objects.all())]},
-            'email': {'validators': [validators.UniqueValidator(queryset=User.objects.all())]}
-        }
-
-    def create(self, validated_data):
-        """Generates `User` object from params"""
-        return UserDetails.create_user_and_associated_objects(username=validated_data["username"],
-                                                              email=validated_data["email"],
-                                                              password=validated_data["password"])
-
-
-class LoginSerializer(serializers.Serializer):
-    """Serializer for LoginView."""
-
-    email = serializers.EmailField()
-    password = serializers.CharField()
-
-    def validate(self, data):
-        return {"user": UserDetails.authenticate_user(email=data["email"], password=data["password"])}
-
-
-class LoginWithGoogleSerializer(serializers.Serializer):
-    code = serializers.CharField()
-
-    def validate_code(self, code):
-        return urllib.parse.unquote(code)
-
-    def create(self, validated_data):
-        redirect_uri = 'http://localhost:3000/profile'
-        return GoogleAuthenticationToken.generate_token_from_code(code=validated_data["code"],
-                                                                  redirect_uri=redirect_uri)
-
-
-class SendEmailSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    password = serializers.CharField()
-
-    def validate(self, data):
-        return {"user": UserDetails.authenticate_user(email=data["email"],
-                                                      password=data["password"],
-                                                      user_should_be_verified=False)}
-
-    def create(self, validated_data):
-        return EmailAuthToken.create(user=validated_data["user"])
-
-# TODO: friend request logic, accounts rtws, notifs
+        model = FriendRequest
+        fields = ("from_user", "to_user", "declined")
+        read_only_fields = ("from_user", "to_user", "declined")

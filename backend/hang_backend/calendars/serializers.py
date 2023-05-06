@@ -1,9 +1,16 @@
-import requests
+from datetime import timedelta
+
+from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from .models import ManualTimeRange, ImportedCalendar, GoogleCalendarCalendars, \
-    ImportedTimeRange, RepeatingTimeRange, ManualCalendar
-from accounts.models import GoogleAuthenticationToken
+from hang_events.models import HangEvent
+from .models import ManualTimeRange, ImportedTimeRange, RepeatingTimeRange, ManualCalendar
+
+
+class TimeRangeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ImportedTimeRange
+        fields = ['start_time', 'end_time']
 
 
 class ManualTimeRangeSerializer(serializers.ModelSerializer):
@@ -11,7 +18,8 @@ class ManualTimeRangeSerializer(serializers.ModelSerializer):
         model = ManualTimeRange
         fields = ['type', 'start_time', 'end_time']
 
-    def validate_time_divisible_by_15(self, time):
+    @staticmethod
+    def validate_time_divisible_by_15(time):
         if time.minute % 15 != 0 or time.second != 0 or time.microsecond != 0:
             raise serializers.ValidationError("The time must end with a number of minutes divisible by 15 and have "
                                               "zero seconds and microseconds.")
@@ -56,62 +64,6 @@ class ManualTimeRangeSerializer(serializers.ModelSerializer):
         return new_range
 
 
-class GoogleCalendarAccessTokenSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = GoogleAuthenticationToken
-        fields = '__all__'
-        read_only_fields = ('access_token', 'user')
-
-    @staticmethod
-    def fetch_calendar_data(user):
-        try:
-            access_token = GoogleAuthenticationToken.objects.get(user=user)
-            access_token.refresh_access_token()
-        except GoogleAuthenticationToken.DoesNotExist:
-            raise serializers.ValidationError("Access token not found for the current user.")
-
-        url = f'https://www.googleapis.com/calendar/v3/users/me/calendarList?access_token={access_token.access_token}'
-        response = requests.get(url)
-
-        if response.status_code != 200:
-            raise serializers.ValidationError("Error fetching calendar data.")
-
-        imported_calendar = ImportedCalendar.objects.get(user=user)
-
-        existing_calendars = GoogleCalendarCalendars.objects.filter(calendar=imported_calendar)
-        existing_calendar_ids = [calendar.google_calendar_id for calendar in existing_calendars]
-
-        calendar_data = response.json()
-        calendar_list = [
-            {
-                "google_calendar_id": item["id"],
-                "name": item["summary"],
-                "previous": item["id"] in existing_calendar_ids
-            }
-            for item in calendar_data["items"]
-        ]
-        return calendar_list
-
-
-class GoogleCalendarCalendarsSerializer(serializers.Serializer):
-    id = serializers.CharField(max_length=255)
-    name = serializers.CharField(max_length=255)
-
-
-class GoogleCalendarCalendarsListSerializer(serializers.Serializer):
-    calendar_data = serializers.ListField(
-        child=GoogleCalendarCalendarsSerializer(),
-        min_length=1,
-        allow_empty=False
-    )
-
-
-class TimeRangeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ImportedTimeRange
-        fields = ['start_time', 'end_time']
-
-
 class RepeatingTimeRangeSerializer(serializers.ModelSerializer):
     class Meta:
         model = RepeatingTimeRange
@@ -119,18 +71,58 @@ class RepeatingTimeRangeSerializer(serializers.ModelSerializer):
         read_only_fields = ("id",)
 
     def create(self, validated_data):
-        start_time = validated_data.get('start_time')
-        end_time = validated_data.get('end_time')
-        repeat_interval = validated_data.get('repeat_interval')
-        repeat_count = validated_data.get('repeat_count')
-
         repeating_time_range = RepeatingTimeRange(
             calendar=ManualCalendar.objects.get(user=self.context["request"].user),
-            start_time=start_time,
-            end_time=end_time,
-            repeat_interval=repeat_interval,
-            repeat_count=repeat_count
+            **validated_data
         )
 
         repeating_time_range.save()
         return repeating_time_range
+
+
+class GoogleCalendarSerializer(serializers.Serializer):
+    id = serializers.CharField(max_length=255)
+    name = serializers.CharField(max_length=255)
+
+
+class FreeTimeRangesSerializer(serializers.Serializer):
+    hang_event = serializers.PrimaryKeyRelatedField(queryset=HangEvent.objects.all())
+    users = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True)
+    start_time = serializers.DateTimeField()
+    end_time = serializers.DateTimeField()
+
+    def validate(self, data):
+        event = data['hang_events']
+        if self.context["request"].user not in event.attendees.all() \
+                or not all(event.attendees.filter(id=user.id).exists() for user in (data['users'])) or \
+                event.archived:
+            raise serializers.ValidationError("Invalid Permissions")
+
+        time_difference = data['end_time'] - data['start_time']
+        max_difference = timedelta(days=35)
+
+        if time_difference > max_difference:
+            raise serializers.ValidationError(
+                "The time range between start_time and end_time cannot be more than a month."
+            )
+
+        return data
+
+
+class UserFreeDuringRangeSerializer(serializers.Serializer):
+    hang_event = serializers.PrimaryKeyRelatedField(queryset=HangEvent.objects.all())
+    users = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True, default=[])
+    start_time = serializers.DateTimeField(required=True)
+    end_time = serializers.DateTimeField(required=True)
+
+    def validate(self, data):
+        event = data['hang_events']
+        if self.context["request"].user not in event.attendees.all() \
+                or not all(event.attendees.filter(id=user.id).exists() for user in (data['users'])) or \
+                event.archived:
+            raise serializers.ValidationError("Invalid Permissions")
+        if data['end_time'] - data['start_time'] > timedelta(days=35):
+            raise serializers.ValidationError(
+                "The time range between start_time and end_time cannot be more than a month.")
+
+        return data

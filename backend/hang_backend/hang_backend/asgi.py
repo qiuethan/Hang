@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/4.0/howto/deployment/asgi/
 
 import os
 
-import chat.routing
+import chats.routing
 from channels.routing import ProtocolTypeRouter, URLRouter
 from django.core.asgi import get_asgi_application
 
@@ -21,6 +21,6 @@ application = ProtocolTypeRouter({
     "http": get_asgi_application(),
     "websocket":
         URLRouter(
-            chat.routing.websocket_urlpatterns + real_time_ws.routing.websocket_urlpatterns
+            chats.routing.websocket_urlpatterns + real_time_ws.routing.websocket_urlpatterns
         ),
 })

@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from .models import Notification
-from .serializer import NotificationSerializer
+from .serializers import NotificationSerializer
 
 
 class NotificationViewSet(mixins.RetrieveModelMixin,
