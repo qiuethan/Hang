@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_204_NO_CONTENT
 
 from .models import EmailAuthenticationToken, FriendRequest, Profile, GoogleAuthenticationToken
-from .serializers import LoginSerializer, UserSerializer, RegisterSerializer, SendEmailAuthenticationTokenSerializer, \
+from .serializers import LoginSerializer, UserSerializer, RegisterSerializer, EmailAuthenticationTokenSerializer, \
     FriendRequestReceivedSerializer, FriendRequestSentSerializer, ProfileSerializer, \
     LoginWithGoogleSerializer
 
@@ -26,10 +26,11 @@ class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
 
 
-class LoginView(views.APIView):
+class LoginView(generics.GenericAPIView):
+    serializer_class = LoginSerializer
 
     def post(self, request):
-        serializer = LoginSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
         return JsonResponse({
@@ -78,17 +79,23 @@ class RetrieveUserView(generics.RetrieveAPIView):
 
 
 class EmailVerificationTokenViewSet(viewsets.GenericViewSet):
-    serializer_class = SendEmailAuthenticationTokenSerializer
+    serializer_class = EmailAuthenticationTokenSerializer
+
+    def get_queryset(self):
+        return EmailAuthenticationToken.objects.filter(
+            token=EmailAuthenticationToken.hash_token(self.kwargs.get("pk"))).all()
+
+    def get_object(self):
+        return get_object_or_404(self.get_queryset())
 
     def create(self, request, *args, **kwargs):
-        serializer = SendEmailAuthenticationTokenSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def destroy(self, request, *args, **kwargs):
-        token = get_object_or_404(
-            EmailAuthenticationToken.objects.filter(token=EmailAuthenticationToken.hash_token(self.kwargs["pk"])))
+        token = self.get_object()
         token.verify()
         return Response(status=status.HTTP_204_NO_CONTENT)
 

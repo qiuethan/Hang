@@ -68,17 +68,17 @@ class LoginWithGoogleSerializer(serializers.Serializer):
                                                                   redirect_uri=redirect_uri)
 
 
-class SendEmailAuthenticationTokenSerializer(serializers.Serializer):
+class EmailAuthenticationTokenSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
+
+    def create(self, validated_data):
+        return EmailAuthenticationToken.create(user=validated_data["user"])
 
     def validate(self, data):
         return {"user": Profile.authenticate_user(email=data["email"],
                                                   password=data["password"],
                                                   user_should_be_verified=False)}
-
-    def create(self, validated_data):
-        return EmailAuthenticationToken.create(user=validated_data["user"])
 
 
 class FriendRequestSentSerializer(serializers.ModelSerializer):

@@ -20,7 +20,8 @@ from real_time_ws.models import RTWSSendMessageOnUpdate
 
 class Profile(models.Model, RTWSSendMessageOnUpdate):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
-    profile_picture = models.CharField(max_length=200, default="default profile pic change this later")
+    profile_picture = models.CharField(max_length=2000,
+                                       default="/static/media/logo.76ffd1144b342263116b472f0c0cff50.svg")
     is_verified = models.BooleanField(default=False)
     about_me = models.TextField(default="")
 
