@@ -1,43 +1,34 @@
-from rest_framework import generics, permissions
-from rest_framework.pagination import PageNumberPagination
+from rest_framework import viewsets, mixins, permissions
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
-from common.util.update_db import udbgenerics
-from notifications.models import Notification
-from notifications.serializer import NotificationSerializer
-from real_time_ws.utils import update_db_send_rtws_message
+from .models import Notification
+from .serializers import NotificationSerializer
 
 
-class RetrieveUpdateNotificationView(udbgenerics.UpdateDBRetrieveUpdateAPIView):
-    permission_classes = [
-        permissions.IsAuthenticated,
-    ]
-    queryset = Notification.objects.all()
+class NotificationViewSet(mixins.RetrieveModelMixin,
+                          mixins.UpdateModelMixin,
+                          mixins.ListModelMixin,
+                          viewsets.GenericViewSet):
+    permission_classes = [permissions.IsAuthenticated, ]
     serializer_class = NotificationSerializer
-    update_db_actions = [update_db_send_rtws_message]
-    rtws_update_actions = ["notification"]
 
     def get_queryset(self):
         return Notification.objects.filter(user=self.request.user).all()
 
-    def get_rtws_users(self, data):
-        return {self.request.user}
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.set_as_read()
+        return super().update(request, *args, **kwargs)
 
+    @action(detail=False, methods=['get'])
+    def unread(self, request):
+        queryset = self.get_queryset().filter(read=False)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
-class ListUnreadNotificationView(generics.ListAPIView):
-    permission_classes = [
-        permissions.IsAuthenticated,
-    ]
-    serializer_class = NotificationSerializer
-
-    def get_queryset(self):
-        return Notification.objects.filter(user=self.request.user).filter(read=False).all()
-
-
-class ListReadNotificationView(generics.ListAPIView):
-    permission_classes = [
-        permissions.IsAuthenticated,
-    ]
-    serializer_class = NotificationSerializer
-
-    def get_queryset(self):
-        return Notification.objects.filter(user=self.request.user).filter(read=True).all()
+    @action(detail=False, methods=['get'])
+    def read(self, request):
+        queryset = self.get_queryset().filter(read=True)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)

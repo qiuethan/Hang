@@ -6,7 +6,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import User
 from rest_framework.exceptions import ValidationError
 
-from chat.serializers import AuthenticateWebsocketSerializer
+from chats.serializers import AuthenticateWebsocketSerializer
 
 
 class RealTimeWSConsumer(AsyncWebsocketConsumer):

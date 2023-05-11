@@ -42,16 +42,14 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'allauth',
     'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.google',
     'knox',
     'corsheaders',
     'channels',
 
     'accounts',
     'calendars',
-    'chat',
-    'hang_event',
+    'chats',
+    'hang_events',
     'notifications',
 ]
 
@@ -183,4 +181,6 @@ CHANNEL_LAYERS = {
 }
 
 GOOGLE_CLIENT_ID = "110686712608-j4udo8p9sckujpgurj9s14ep5jui8tmu.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET = "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" # Change
+GOOGLE_CLIENT_SECRET = "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"  # Change
+
+APPEND_SLASH = False

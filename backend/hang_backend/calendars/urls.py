@@ -1,17 +1,22 @@
 from django.urls import path
-from .views import ManualTimeRangeCreateView, get_calendar_list, \
-    GoogleCalendarSyncView, BusyTimeRangesView, FreeTimeRangesView, UsersFreeDuringRangeView, \
-    RepeatingTimeRangeListCreateView, RepeatingTimeRangeRetrieveUpdateDestroyView
+from rest_framework.routers import DefaultRouter
+
+from .views import ManualTimeRangeView, \
+    GoogleCalendarSyncView, BusyTimeRangesView, FreeTimeRangesView, UsersFreeDuringRangeView, RepeatingTimeRangeViewSet, \
+    GoogleCalendarListView
 
 app_name = "calendars"
 
+router = DefaultRouter()
+router.register(r'repeating_time_ranges', RepeatingTimeRangeViewSet, basename='repeating_time_ranges')
+
 urlpatterns = [
-    path('time_range', ManualTimeRangeCreateView.as_view(), name='time_range_create'),
-    path('repeating_time_range', RepeatingTimeRangeListCreateView.as_view(), name='repeating_time_ranges_list_create'),
-    path('repeating_time_range/<int:pk>', RepeatingTimeRangeRetrieveUpdateDestroyView.as_view(), name='repeating_time_ranges_retrieve_update_destroy'),
-    path('google_calendar_list', get_calendar_list, name='calendar_list'),
-    path('google_calendar_sync', GoogleCalendarSyncView.as_view(), name='google_calendar_sync'),
-    path('get_busy_times/<int:user_id>', BusyTimeRangesView.as_view(), name='get_busy_times'),
-    path('get_free_times', FreeTimeRangesView.as_view(), name='get_free_times'),
-    path('get_free_users', UsersFreeDuringRangeView.as_view(), name='get_free_users')
+    path('time_ranges/', ManualTimeRangeView.as_view(), name='time_range_create'),
+    path('google_calendar/', GoogleCalendarListView.as_view(), name='google_calendar'),
+    path('google_calendar/sync/', GoogleCalendarSyncView.as_view(), name='google_calendar_sync'),
+    path('busy_times/<int:user_id>/', BusyTimeRangesView.as_view(), name='busy_times'),
+    path('free_times', FreeTimeRangesView.as_view(), name='free_times'),
+    path('free_users', UsersFreeDuringRangeView.as_view(), name='free_users')
 ]
+
+urlpatterns += router.urls
