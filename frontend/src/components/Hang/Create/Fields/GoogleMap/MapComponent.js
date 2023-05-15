@@ -3,8 +3,8 @@ import React, {useEffect, useState} from "react";
 import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
 
 const containerStyle = {
-    width: '400px',
-    height: '400px'
+    width: '800px',
+    height: '500px'
 };
 
 const MapComponent = ({latitude, longitude, updateLocation }) => {

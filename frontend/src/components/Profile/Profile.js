@@ -3,6 +3,8 @@ import {useSelector, useDispatch} from "react-redux";
 import {useNavigate} from "react-router-dom";
 import {getself} from "../../actions/users";
 import Google from "./Google/Google";
+import User from "./User/User";
+import {Box} from "@mui/material";
 
 const Profile = ({currentPage, setCurrentPage}) => {
 
@@ -27,9 +29,12 @@ const Profile = ({currentPage, setCurrentPage}) => {
     }, [])
 
     return(
-        <div>
-            <Google/>
-        </div>
+        <Box sx={{display: "flex", width: "100%", height: "100%", justifyContent: "center", alignItems: "center"}}>
+            <Box sx={{display:"flex", width: "98%", height: "95%", flexDirection:"column", overflowY:"scroll"}}>
+                <User/>
+                <Google/>
+            </Box>
+        </Box>
     )
 }
 

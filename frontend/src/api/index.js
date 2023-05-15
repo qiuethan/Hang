@@ -28,6 +28,8 @@ export const getuser = (id) => API.get(`/v1/accounts/user/id/${id}`);
 export const getuserbyusername = (username) => API.get(`/v1/accounts/user/username/${username}`)
 export const getuserbyemail = (email) => API.get(`/v1/accounts/user/email/${email}`)
 export const getcurrentuser = () => API.get('/v1/accounts/current_user');
+export const updatepicture = (picture) => API.patch('/v1/accounts/user/update_profile_picture/', {profile_picture: picture})
+export const updateaboutme = (aboutMe) => API.patch('/v1/accounts/user/update_about_me/', {about_me: aboutMe});
 
 //Friends
 export const loadfriends = () => API.get('/v1/accounts/friends');
@@ -45,7 +47,7 @@ export const loadsentfriendrequests = () => API.get('/v1/accounts/sent_friend_re
 export const deletesentfriendrequest = (id) => API.delete(`/v1/accounts/sent_friend_request/${id}`);
 
 //Hang Requests
-export const createhangevent = (inputs) => API.post('/v1/hang_event/hang_event', inputs);
+export const createhangevent = (inputs) => {console.log(inputs); API.post('/v1/hang_event/hang_event', inputs)};
 export const gethangevents = () => API.get('/v1/hang_event/hang_event');
 
 //Notifications

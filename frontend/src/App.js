@@ -32,7 +32,7 @@ const App = () => {
 
   const ping = () => {
     if(wsConnected){
-      try{
+      /*try{
         connection.send(
             JSON.stringify(
                 {
@@ -46,7 +46,7 @@ const App = () => {
         console.log(error);
         setWsConnected(false);
         connectRTWS();
-      }
+      }*/
     }
   }
 

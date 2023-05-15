@@ -4,6 +4,7 @@ import { CREATEHANGEVENT, GETHANGEVENTS } from '../constants/actionTypes.js'
 
 export const createhangevent = (inputs) => async(dispatch) => {
     try{
+        console.log(inputs);
         const { data } = await api.createhangevent(inputs);
         dispatch({type: CREATEHANGEVENT, payload: data})
     }
