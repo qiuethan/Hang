@@ -71,10 +71,9 @@ class RepeatingTimeRangeSerializer(serializers.ModelSerializer):
         read_only_fields = ("id",)
 
     def create(self, validated_data):
-        repeating_time_range = RepeatingTimeRange(
-            calendar=ManualCalendar.objects.get(user=self.context["request"].user),
-            **validated_data
-        )
+        validated_data["calendar"] = validated_data["manual_calendar"]
+        del validated_data["manual_calendar"]
+        repeating_time_range = RepeatingTimeRange(**validated_data)
 
         repeating_time_range.save()
         return repeating_time_range
