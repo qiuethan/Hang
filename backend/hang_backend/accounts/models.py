@@ -225,8 +225,8 @@ class FriendRequest(models.Model, RTWSSendMessageOnUpdate):
     def create_friend_request(cls, from_user, to_user):
         friend_request = cls(from_user=from_user, to_user=to_user)
         friend_request.save()
-        if to_user in from_user.profile.blocked_users or \
-                from_user in to_user.profile.blocked_users:
+        if to_user in from_user.profile.blocked_users.all() or \
+                from_user in to_user.profile.blocked_users.all():
             raise ValidationError(
                 "Friend request creation failed. Cannot create a friend request when one user is blocked.")
         Notification.create_notification(user=to_user,

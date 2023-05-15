@@ -65,7 +65,7 @@ class RetrieveUserView(generics.RetrieveAPIView):
     lookup_field = None
 
     def get_object(self):
-        if not self.lookup_field == "me":
+        if self.lookup_field == "me":
             return self.request.user.profile
 
         lookup_value = self.kwargs.get("lookup_value")

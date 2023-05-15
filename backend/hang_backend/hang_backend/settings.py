@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'chats',
     'hang_events',
     'notifications',
+    'real_time_ws',
 ]
 
 REST_FRAMEWORK = {
