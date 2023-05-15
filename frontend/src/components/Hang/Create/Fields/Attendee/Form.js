@@ -1,8 +1,9 @@
 import React, {useState} from 'react';
 import { useDispatch } from 'react-redux';
 import {getuserbyusername} from "../../../../../actions/users";
+import {Box} from "@mui/material";
 
-const Form = ({updateAttendee, fields}) => {
+const Form = ({updateAttendee, attendees, fields}) => {
 
     const [username, setUsername] = useState("");
     const dispatch = useDispatch();
@@ -12,13 +13,16 @@ const Form = ({updateAttendee, fields}) => {
         setUsername(event.target.value);
     }
 
+    console.log(attendees);
+
     const addAttendee = (event) => {
         event.preventDefault();
         dispatch(getuserbyusername(username)).then((response) => {
             try{
                 if(response !== undefined){
-                    if(!fields.attendees.includes(response.user.id)){
+                    if(!attendees.map(attendee => attendee.user.id).includes(response.user.id)){
                         updateAttendee(response);
+
                     }
                     setUsername("");
                 }
@@ -30,11 +34,11 @@ const Form = ({updateAttendee, fields}) => {
     }
 
     return(
-        <div>
+        <Box sx={{width: "100%"}}>
             <form onSubmit={addAttendee}>
-                <input type="text" value={username} onChange={updateField}/>
+                <input type="text" value={username} onChange={updateField} style={{width: "100%"}}/>
             </form>
-        </div>
+        </Box>
     );
 }
 

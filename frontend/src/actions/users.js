@@ -52,3 +52,15 @@ export const getuserbyemail = (email) => async(dispatch) => {
         console.log(error);
     }
 }
+
+export const updateProfile = (picture, aboutMe) => async(dispatch) => {
+    try{
+        await api.updatepicture(picture);
+        await api.updateaboutme(aboutMe);
+
+        await getself();
+    }
+    catch (error){
+        console.log(error);
+    }
+}

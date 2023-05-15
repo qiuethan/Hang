@@ -1,6 +1,7 @@
 import React, {useState, useRef} from 'react';
 
 import Autocomplete from "./Autocomplete";
+import {Box} from "@mui/material";
 
 const Search = ({updateLocation}) => {
 
@@ -33,14 +34,14 @@ const Search = ({updateLocation}) => {
     }
 
     return(
-        <div>
-            <form onSubmit={geocodeAddress}>
-                <label>Enter Address: </label>
-                <input ref={inputRef} value={address} onChange={handleChange}/>
-                <button type="submit">Submit</button>
+        <Box sx={{display: "flex", marginBottom: "10px", width: "100%", justifyContent:"center"}}>
+            <form onSubmit={geocodeAddress} style={{display: "flex", flexDirection: "row", width: "70%"}}>
+                <label style={{marginRight: "5px"}}>Enter Address:</label>
+                <input ref={inputRef} value={address} onChange={handleChange} style={{width: "70%"}}/>
+                <button type="submit" style={{marginLeft: "5px"}}>Submit</button>
             </form>
-            <Autocomplete inputRef={inputRef}/>
-        </div>
+            <Autocomplete inputRef={inputRef} setAddress={setAddress}/>
+        </Box>
     );
 };
 

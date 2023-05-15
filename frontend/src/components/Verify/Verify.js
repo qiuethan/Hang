@@ -21,7 +21,7 @@ const Verify = () => {
     useEffect(() => {
         const key = searchParams.get("key");
         validate(key).then((response) => console.log(response));
-    });
+    }, []);
 
     return(
         <div>Verified</div>
