@@ -76,9 +76,15 @@ class HangEvent(models.Model, RTWSSendMessageOnUpdate):
 
         hang_event.attendees.add(user)
         hang_event.save()
+        return hang_event
 
 
-class Task(models.Model):
+class Task(models.Model, RTWSSendMessageOnUpdate):
     event = models.ForeignKey(HangEvent, related_name="tasks", on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     completed = models.BooleanField(default=False)
+
+    rtws_message_content = "hang_event"
+
+    def get_rtws_users(self):
+        return list(self.event.attendees.all())

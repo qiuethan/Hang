@@ -63,7 +63,7 @@ class Profile(models.Model, RTWSSendMessageOnUpdate):
             raise ValidationError("Cannot block yourself.")
         FriendRequest.objects.filter(from_user=user_to_block, to_user=self.user).delete()
         FriendRequest.objects.filter(from_user=self.user, to_user=user_to_block).delete()
-        if user_to_block in self.friends:
+        if user_to_block in self.friends.all():
             self.remove_friend(user_to_block)
         self.blocked_users.add(user_to_block)
 

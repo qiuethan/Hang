@@ -93,9 +93,11 @@ class HangEventSerializer(serializers.ModelSerializer):
 
     def update_fields(self, instance, validated_data):
         for field in ('name', 'picture', 'description', 'scheduled_time_start', 'scheduled_time_end', 'longitude',
-                      'latitude', 'budget', 'owner', 'attendees'):
+                      'latitude', 'budget', 'owner'):
             if field in validated_data:
                 setattr(instance, field, validated_data[field])
+        if "attendees" in validated_data:
+            instance.attendees.set(validated_data["attendees"])
 
         return instance
 

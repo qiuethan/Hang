@@ -80,7 +80,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         return Task.objects.filter(event__attendees__username=self.request.user.username, event__archived=False).all()
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        serializer.save()
 
 
 # TODO
