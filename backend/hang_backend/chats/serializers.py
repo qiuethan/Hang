@@ -81,12 +81,12 @@ class GroupMessageChannelSerializer(MessageChannelSerializer):
         if self.instance:
             current_user = self.context["request"].user
             users = set(self.instance.users.all())
-            new_users = set(new_users.copy())
+            new_users_copy = set(new_users.copy())
 
             users.remove(current_user)
-            new_users.discard(current_user)
+            new_users_copy.discard(current_user)
 
-            if len(users.intersection(new_users)) != len(users) and self.instance.owner.id != current_user.id:
+            if len(users.intersection(new_users_copy)) != len(users) and self.instance.owner.id != current_user.id:
                 raise serializers.ValidationError("Permission Denied.")
 
         return new_users
@@ -97,14 +97,10 @@ class GroupMessageChannelSerializer(MessageChannelSerializer):
 
         if instance.owner != new_owner and current_user != instance.owner:
             raise serializers.ValidationError("Permission Denied.")
-        if not instance.users.filter(id=new_owner.id).exists():
+        if ("users" in self.initial_data and new_owner.id not in self.initial_data["users"]) or \
+                ("users" not in self.initial_data and not instance.users.filter(id=new_owner.id).exists()):
             raise serializers.ValidationError("Owner is not in the group chats.")
         return new_owner
-
-    def validate_name(self, new_name):
-        if self.instance and self.instance.name == new_name:
-            raise serializers.ValidationError("New name must be different from the current name.")
-        return new_name
 
     def update(self, instance, validated_data):
         current_user = self.context["request"].user

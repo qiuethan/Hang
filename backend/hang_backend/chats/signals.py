@@ -1,7 +1,9 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save, post_delete
 from django.dispatch import receiver
 
-from chats.models import Message, UserMessage, MessageChannelUsers, GroupMessageChannel
+from chats.consumers import send_to_message_channel
+from chats.models import Message, UserMessage, MessageChannelUsers, GroupMessageChannel, Reaction
+from chats.serializers import UserMessageSerializer, MessageSerializer
 from hang_events.models import HangEvent
 from notifications.models import Notification
 
@@ -13,10 +15,38 @@ def get_message_prefix(content):
     return content
 
 
-@receiver(post_save)
+def message_created(sender, instance, created, **kwargs):
+    if created:
+        send_to_message_channel("send_message", instance.message_channel, MessageSerializer(instance).data)
+
+
+def message_updated(sender, instance, **kwargs):
+    if instance.pk is not None:
+        orig = sender.objects.get(pk=instance.pk)
+        if orig.content != instance.content:
+            data = MessageSerializer(orig).data
+            data["content"] = instance.content
+            send_to_message_channel("edit_message", instance.message_channel, data)
+
+
+def message_deleted(sender, instance, **kwargs):
+    send_to_message_channel("delete_message", instance.message_channel, {"id": instance.id})
+
+
+def message_reacted(sender, instance, created, **kwargs):
+    if created:
+        send_to_message_channel("add_reaction",
+                                instance.message.message_channel,
+                                MessageSerializer(instance.message).data)
+
+
+def reaction_removed(sender, instance, **kwargs):
+    send_to_message_channel("remove_reaction",
+                            instance.message.message_channel,
+                            MessageSerializer(instance.message).data)
+
+
 def message_post_save(sender, instance, created, **kwargs):
-    if not issubclass(sender, Message) or not created:
-        return
     mcu_set = MessageChannelUsers.objects.filter(message_channel=instance.message_channel).all()
     sender = instance.user if isinstance(instance, UserMessage) else None
     for mcu in mcu_set:

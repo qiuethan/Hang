@@ -4,16 +4,30 @@ import sys
 import traceback
 
 import emoji
-
-from asgiref.sync import sync_to_async
+from asgiref.sync import sync_to_async, async_to_sync
 from channels.db import database_sync_to_async as dbsa
 from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.layers import get_channel_layer
 from django.contrib.auth.models import User
 from rest_framework import exceptions
 from rest_framework.exceptions import ValidationError
 
-from .models import UserMessage, MessageChannel, Reaction
+from .models import UserMessage, Reaction
 from .serializers import AuthenticateWebsocketSerializer, MessageSerializer, UserMessageSerializer
+
+
+def send_to_message_channel(action_name, message_channel, data):
+    """Function that sends a message to all users in a MessageChannel."""
+    # Sends the message to all users.
+    for user in list(message_channel.users.all()):
+        async_to_sync(get_channel_layer().group_send)(
+            "chats." + user.username,
+            {
+                "type": "action",
+                "action": action_name,
+                "content": data,
+            }
+        )
 
 
 class ChatAction(abc.ABC):
@@ -69,27 +83,6 @@ class ChatAction(abc.ABC):
             }
         )
 
-    async def send_to_message_channel(self, message_channel_id, data):
-        """Function that sends a message to all users in a MessageChannel."""
-        # Verifies that the MessageChannel exists.
-        if not await dbsa((await dbsa(MessageChannel.objects.filter)(
-                id=message_channel_id, users=self.chat_consumer.user)).exists)():
-            raise exceptions.NotFound("Message channel does not exist.")
-
-        # Sends the message to all users.
-        message_channel = await dbsa(MessageChannel.objects.get)(id=message_channel_id)
-        users = await dbsa(message_channel.users.all)()
-        users_list = await sync_to_async(list)(users)
-        for user in users_list:
-            await self.chat_consumer.channel_layer.group_send(
-                "chats." + user.username,
-                {
-                    "type": "action",
-                    "action": self.name,
-                    "content": data,
-                }
-            )
-
 
 class AuthenticateAction(ChatAction):
     """ChatAction that allows a user to authenticate themselves in a MessageChannel."""
@@ -123,11 +116,6 @@ class SendMessageAction(ChatAction):
 
         # Saves the message.
         message = await dbsa(serializer.save)()
-
-        # Sends the message to all users in the MessageChannel.
-        message_channel_id = (await sync_to_async(getattr)(message, "message_channel")).id
-        data = await sync_to_async(getattr)(serializer, "data")
-        await self.send_to_message_channel(message_channel_id=message_channel_id, data=data)
 
 
 class LoadMessageAction(ChatAction):
@@ -172,11 +160,6 @@ class EditMessageAction(ChatAction):
         # Re-saves the updated message.
         message = await dbsa(serializer.save)()
 
-        # Sends a message to all users in the MessageChannel.
-        await self.send_to_message_channel(
-            message_channel_id=(await sync_to_async(getattr)(message, "message_channel")).id,
-            data=await sync_to_async(getattr)(serializer, "data"))
-
 
 class DeleteMessageAction(ChatAction):
     """ChatAction that allows a user to delete a past message."""
@@ -186,15 +169,12 @@ class DeleteMessageAction(ChatAction):
     async def action(self):
         # Deletes a message.
         message = await dbsa(self.chat_consumer.user.messages.get)(id=self.data["id"])
-        await self.send_to_message_channel(
-            message_channel_id=(await sync_to_async(getattr)(message, "message_channel")).id,
-            data={"id": self.data["id"]})
         await dbsa(message.delete)()
 
 
-class ReactionAction(ChatAction):
-    """ChatAction that allows a user to modify their reactions to a message."""
-    name = "reaction"
+class AddReactionAction(ChatAction):
+    """ChatAction that allows a user to add a reaction to a message."""
+    name = "add_reaction"
     needs_authentication = True
 
     async def action(self):
@@ -205,23 +185,43 @@ class ReactionAction(ChatAction):
         if not await dbsa(self.chat_consumer.user.message_channels.filter(id=message_channel_id).exists)():
             raise ValidationError("Message does not exist.")
 
-        # Ensure that emojis are valid.
-        if not all(map(emoji.is_emoji, self.data["emoji"])):
+        # Ensure that emoji is valid.
+        if not emoji.is_emoji(self.data["emoji"]):
             raise ValidationError("Reactions must be valid emojis.")
 
-        # Delete all user's reactions.
-        await dbsa(message.reactions.filter(user=self.chat_consumer.user).delete)()
+        # Check if reaction already exists.
+        if await dbsa(message.reactions.filter(user=self.chat_consumer.user, emoji=self.data["emoji"]).exists)():
+            raise ValidationError("Reaction already exists.")
 
-        # Add reactions.
-        for e in self.data["emoji"]:
-            reaction = Reaction(user=self.chat_consumer.user, emoji=e, message=message)
-            await dbsa(reaction.save)()
-            await dbsa(message.reactions.add)(reaction)
+        # Add reaction.
+        reaction = Reaction(user=self.chat_consumer.user, emoji=self.data["emoji"], message=message)
+        await dbsa(reaction.save)()
+        await dbsa(message.reactions.add)(reaction)
 
-        await dbsa(message.refresh_from_db)()
-        # Send messages.
-        serializer = UserMessageSerializer(message)
-        await self.reply_to_sender(await dbsa(getattr)(serializer, "data"))
+
+class RemoveReactionAction(ChatAction):
+    """ChatAction that allows a user to remove their reaction from a message."""
+    name = "remove_reaction"
+    needs_authentication = True
+
+    async def action(self):
+        message = await dbsa(UserMessage.objects.get)(id=self.data["id"])
+
+        # Checks if user can see message.
+        message_channel_id = (await sync_to_async(getattr)(message, "message_channel")).id
+        if not await dbsa(self.chat_consumer.user.message_channels.filter(id=message_channel_id).exists)():
+            raise ValidationError("Message does not exist.")
+
+        # Ensure that emoji is valid.
+        if not emoji.is_emoji(self.data["emoji"]):
+            raise ValidationError("Reactions must be valid emojis.")
+
+        # Check if reaction doesn't exist.
+        if not await dbsa(message.reactions.filter(user=self.chat_consumer.user, emoji=self.data["emoji"]).exists)():
+            raise ValidationError("Reaction doesn't exist.")
+
+        # Delete user's reaction.
+        await dbsa(message.reactions.filter(user=self.chat_consumer.user, emoji=self.data["emoji"]).delete)()
 
 
 class PingAction(ChatAction):
@@ -237,7 +237,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     """Websocket for Chat."""
     # ChatActions.
     chat_actions = [AuthenticateAction, SendMessageAction, LoadMessageAction, EditMessageAction, DeleteMessageAction,
-                    ReactionAction, PingAction]
+                    AddReactionAction, RemoveReactionAction, PingAction]
 
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)

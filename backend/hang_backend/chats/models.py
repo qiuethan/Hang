@@ -68,7 +68,7 @@ class MessageChannel(models.Model):
     def has_read_message_channel(self, user):
         mc_users = MessageChannelUsers.objects.filter(message_channel=self, user=user)
         if not mc_users.exists():
-            raise exceptions.ValidationError("MessageChannelUsers does not exist")
+            return None
         obj = mc_users.get()
         return obj.has_read
 
@@ -126,11 +126,11 @@ class GroupMessageChannel(MessageChannel, RTWSSendMessageOnUpdate):
 
         for user in added_users:
             SystemMessage.objects.create(message_channel=self,
-                                         content=f"{current_user.username} has added {user.username} to group chats {self.name}")
+                                         content=f"{current_user.username} has added {user.username} to group chat {self.name}")
 
         for user in removed_users:
             SystemMessage.objects.create(message_channel=self,
-                                         content=f"{current_user.username} has removed {user.username} from group chats {self.name}")
+                                         content=f"{current_user.username} has removed {user.username} from group chat {self.name}")
 
         self.users.set(new_users)
 
@@ -163,13 +163,13 @@ class Message(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     message_channel = models.ForeignKey(MessageChannel, on_delete=models.CASCADE, related_name="messages")
+    content = models.CharField(max_length=2000)
 
 
 class UserMessage(Message):
     """Model that represents a user-sent message."""
     user = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="messages", null=True)
     reply = models.ForeignKey("self", on_delete=models.SET_NULL, related_name="replies", null=True)
-    content = models.CharField(max_length=2000)
 
     def __init__(self, *args, **kwargs):
         self._meta.get_field('type').default = "user_message"
@@ -178,7 +178,6 @@ class UserMessage(Message):
 
 class SystemMessage(Message):
     """Model that represents a system-sent message."""
-    content = models.CharField(max_length=2000)
 
     def __init__(self, *args, **kwargs):
         self._meta.get_field('type').default = "system_message"
@@ -186,6 +185,6 @@ class SystemMessage(Message):
 
 
 class Reaction(models.Model):
-    message = models.ForeignKey("hang_events.HangEvent", on_delete=models.CASCADE, related_name="reactions")
+    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name="reactions")
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     emoji = models.CharField(max_length=2)
