@@ -223,8 +223,6 @@ class FriendRequest(models.Model, RTWSSendMessageOnUpdate):
 
     @classmethod
     def create_friend_request(cls, from_user, to_user):
-        friend_request = cls(from_user=from_user, to_user=to_user)
-        friend_request.save()
         if to_user in from_user.profile.blocked_users.all() or \
                 from_user in to_user.profile.blocked_users.all():
             raise ValidationError(
@@ -232,6 +230,8 @@ class FriendRequest(models.Model, RTWSSendMessageOnUpdate):
         Notification.create_notification(user=to_user,
                                          title=from_user.username,
                                          description=f"{from_user.username} has sent you a friend request")
+        friend_request = cls(from_user=from_user, to_user=to_user)
+        friend_request.save()
         return friend_request
 
     def accept_friend_request(self):

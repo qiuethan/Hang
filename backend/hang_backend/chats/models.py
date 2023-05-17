@@ -144,7 +144,7 @@ class GroupMessageChannel(MessageChannel, RTWSSendMessageOnUpdate):
     def update_name(self, current_user, new_name):
         if self.name != new_name:
             SystemMessage.objects.create(message_channel=self,
-                                         content=f"{current_user.username} has renamed the group chats to to {new_name}")
+                                         content=f"{current_user.username} has renamed the group chat {self.name} to {new_name}")
             self.name = new_name
             self.save()
 
