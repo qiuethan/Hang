@@ -95,7 +95,7 @@ class MessageChannelUsers(models.Model, RTWSSendMessageOnUpdate):
     rtws_message_content = "message_channel"
 
     def get_rtws_users(self):
-        return [self.user]
+        return [self.user] + list(self.message_channel.users.all())
 
 
 class DirectMessageChannel(MessageChannel, RTWSSendMessageOnUpdate):

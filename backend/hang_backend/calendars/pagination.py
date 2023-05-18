@@ -6,12 +6,15 @@ from rest_framework.response import Response
 class DateBasedPagination(BasePagination):
     page_size = 50
 
+    def __init__(self, start_time):
+        self.start_time = start_time
+
     def paginate_queryset(self, queryset, request, view=None):
         # Sort the queryset by start_time
         self.request = request
         queryset = sorted(queryset, key=lambda x: parse(x['start_time']))
 
-        start_index = 0
+        start_index = len(queryset)
         for idx, item in enumerate(queryset):
             item_start_time = parse(item['start_time'])
             if item_start_time >= self.start_time:

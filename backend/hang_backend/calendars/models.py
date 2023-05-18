@@ -27,11 +27,11 @@ class GoogleCalendar(models.Model):
     name = models.CharField(max_length=255)
 
     @staticmethod
-    def fetch_free_busy_ranges(access_token, calendar_data_list):
+    def fetch_free_busy_ranges(authentication_token, calendar_data_list):
         time_min = datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
         time_ranges = []
 
-        credentials = Credentials(token=access_token)
+        credentials = Credentials(token=authentication_token.access_token)
         service = build('calendar', 'v3', credentials=credentials)
 
         for i in range(6):
@@ -57,7 +57,8 @@ class GoogleCalendar(models.Model):
                     time_ranges.append(
                         ImportedTimeRange(
                             start_time=parse(busy_range['start']),
-                            end_time=parse(busy_range['end'])
+                            end_time=parse(busy_range['end']),
+                            calendar=authentication_token.user.importedcalendar
                         )
                     )
             time_min = time_max

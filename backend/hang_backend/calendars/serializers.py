@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from rest_framework import serializers
 
 from hang_events.models import HangEvent
-from .models import ManualTimeRange, ImportedTimeRange, RepeatingTimeRange, ManualCalendar
+from .models import ManualTimeRange, ImportedTimeRange, RepeatingTimeRange
 
 
 class TimeRangeSerializer(serializers.ModelSerializer):
@@ -91,7 +91,7 @@ class FreeTimeRangesSerializer(serializers.Serializer):
     end_time = serializers.DateTimeField()
 
     def validate(self, data):
-        event = data['hang_events']
+        event = data['hang_event']
         if self.context["request"].user not in event.attendees.all() \
                 or not all(event.attendees.filter(id=user.id).exists() for user in (data['users'])) or \
                 event.archived:
@@ -115,7 +115,7 @@ class UserFreeDuringRangeSerializer(serializers.Serializer):
     end_time = serializers.DateTimeField(required=True)
 
     def validate(self, data):
-        event = data['hang_events']
+        event = data['hang_event']
         if self.context["request"].user not in event.attendees.all() \
                 or not all(event.attendees.filter(id=user.id).exists() for user in (data['users'])) or \
                 event.archived:

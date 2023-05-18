@@ -19,5 +19,4 @@ def handle_model_delete(sender, instance, **kwargs):
 @receiver(m2m_changed)
 def handle_m2m_field_change(sender, instance, action, reverse, model, pk_set, **kwargs):
     if issubclass(type(instance), RTWSSendMessageOnUpdate):
-        if action in ['post_add', 'post_remove', 'post_clear']:
-            instance.send_rtws_message()
+        instance.send_rtws_message()

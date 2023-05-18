@@ -78,6 +78,22 @@ class HangEvent(models.Model, RTWSSendMessageOnUpdate):
         hang_event.save()
         return hang_event
 
+    def to_google_calendar_event_data(self):
+        return {
+            'summary': self.name,
+            'location': self.address,
+            'description': self.description,
+            'start': {
+                'dateTime': self.scheduled_time_start.isoformat(),
+                'timeZone': 'UTC',
+            },
+            'end': {
+                'dateTime': self.scheduled_time_end.isoformat(),
+                'timeZone': 'UTC',
+            },
+            'attendees': [{'email': attendee.email} for attendee in self.attendees.all()]
+        }
+
 
 class Task(models.Model, RTWSSendMessageOnUpdate):
     event = models.ForeignKey(HangEvent, related_name="tasks", on_delete=models.CASCADE)

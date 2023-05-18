@@ -9,7 +9,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.models import GoogleAuthenticationToken
-from hang_backend import settings
 from hang_events.models import Task, HangEvent, generate_unique_invitation_code
 from hang_events.serializers import HangEventSerializer, TaskSerializer
 
@@ -83,7 +82,6 @@ class TaskViewSet(viewsets.ModelViewSet):
         serializer.save()
 
 
-# TODO
 class AddHangEventToGoogleCalendarView(APIView):
     permission_classes = (IsAuthenticated,)
 
@@ -106,35 +104,13 @@ class AddHangEventToGoogleCalendarView(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
         # Get the user's Google Calendar access token
-        google_calendar_access_token = get_object_or_404(GoogleAuthenticationToken, user=user)
-        google_calendar_access_token.refresh_access_token()
+        authentication_token = get_object_or_404(GoogleAuthenticationToken, user=user)
+        authentication_token.refresh_access_token()
 
-        # Create a Google Calendar event
-        credentials = Credentials.from_authorized_user_info(info={
-            'access_token': google_calendar_access_token.access_token,
-            'refresh_token': google_calendar_access_token.refresh_token,
-            'client_secret': settings.GOOGLE_CLIENT_SECRET,
-            'client_id': settings.GOOGLE_CLIENT_ID
-        })
-
+        credentials = Credentials(token=authentication_token.access_token)
         service = build('calendar', 'v3', credentials=credentials)
 
-        attendees = [{'email': attendee.email} for attendee in hang_event.attendees.all()]
-
-        event_body = {
-            'summary': hang_event.name,
-            'location': hang_event.address,
-            'description': hang_event.description,
-            'start': {
-                'dateTime': hang_event.scheduled_time_start.isoformat(),
-                'timeZone': 'UTC',
-            },
-            'end': {
-                'dateTime': hang_event.scheduled_time_end.isoformat(),
-                'timeZone': 'UTC',
-            },
-            'attendees': attendees
-        }
+        event_body = hang_event.to_google_calendar_event_data()
 
         try:
             event = service.events().insert(calendarId='primary', body=event_body).execute()

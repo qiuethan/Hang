@@ -15,8 +15,8 @@ urlpatterns = [
     path('google_calendar/', GoogleCalendarListView.as_view(), name='google_calendar'),
     path('google_calendar/sync/', GoogleCalendarSyncView.as_view(), name='google_calendar_sync'),
     path('busy_times/<int:user_id>/', BusyTimeRangesView.as_view(), name='busy_times'),
-    path('free_times', FreeTimeRangesView.as_view(), name='free_times'),
-    path('free_users', UsersFreeDuringRangeView.as_view(), name='free_users')
+    path('free_times/', FreeTimeRangesView.as_view(), name='free_times'),
+    path('free_users/', UsersFreeDuringRangeView.as_view(), name='free_users')
 ]
 
 urlpatterns += router.urls
