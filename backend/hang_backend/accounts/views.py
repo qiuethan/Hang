@@ -132,7 +132,7 @@ class ReceivedFriendRequestViewSet(mixins.ListModelMixin,
                                              declined=False)
         return get_object_or_404(query)
 
-    def update(self, request, *args, **kwargs):
+    def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
         instance.decline_friend_request()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -169,7 +169,7 @@ class BlockedUsersViewSet(viewsets.GenericViewSet):
         return Response([friend.id for friend in self.get_queryset()], status=status.HTTP_200_OK)
 
     def create(self, request, *args, **kwargs):
-        user_to_block = get_object_or_404(User, request.data["id"])
+        user_to_block = get_object_or_404(User.objects.filter(id=request.data["id"]))
         self.request.user.profile.block_user(user_to_block)
         return Response(status=HTTP_204_NO_CONTENT)
 

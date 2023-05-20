@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
+from rest_framework.fields import SerializerMethodField
 from rest_framework.relations import PrimaryKeyRelatedField
 
 from hang_events.models import HangEvent, Task
@@ -16,19 +17,31 @@ class TaskSerializer(serializers.ModelSerializer):
     def validate_event(self, value):
         if value.archived:
             raise serializers.ValidationError("Cannot create a Task for an archived HangEvent.")
+        if self.context["request"].user not in value.attendees.all():
+            raise serializers.ValidationError("HangEvent does not exist.")
         return value
+
+    def update(self, instance, validated_data):
+        if "event" in validated_data:
+            raise serializers.ValidationError("Cannot change HangEvent of Task.")
+        return super().update(instance, validated_data)
 
 
 class HangEventSerializer(serializers.ModelSerializer):
     tasks = TaskSerializer(many=True, read_only=True)
     attendees = PrimaryKeyRelatedField(queryset=User.objects.all(), required=False, many=True)
+    message_channel_has_read = SerializerMethodField(read_only=True)
 
     class Meta:
         model = HangEvent
         fields = (
             'id', 'name', 'owner', 'picture', 'description', 'scheduled_time_start', 'scheduled_time_end', 'longitude',
-            'latitude', 'address', 'budget', 'attendees', 'tasks', 'created_at', 'updated_at', 'message_channel')
-        read_only_fields = ('message_channel',)
+            'latitude', 'address', 'budget', 'attendees', 'tasks', 'created_at', 'updated_at', 'message_channel',
+            'message_channel_has_read',)
+        read_only_fields = ('message_channel', "message_channel_has_read")
+
+    def get_message_channel_has_read(self, obj):
+        return obj.message_channel.has_read_message_channel(self.context["request"].user)
 
     def validate_longitude(self, value):
         if value is not None and not (-180 <= value <= 180):
@@ -93,9 +106,11 @@ class HangEventSerializer(serializers.ModelSerializer):
 
     def update_fields(self, instance, validated_data):
         for field in ('name', 'picture', 'description', 'scheduled_time_start', 'scheduled_time_end', 'longitude',
-                      'latitude', 'budget', 'owner', 'attendees'):
+                      'latitude', 'budget', 'owner'):
             if field in validated_data:
                 setattr(instance, field, validated_data[field])
+        if "attendees" in validated_data:
+            instance.attendees.set(validated_data["attendees"])
 
         return instance
 

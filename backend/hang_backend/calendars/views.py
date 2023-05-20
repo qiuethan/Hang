@@ -55,13 +55,13 @@ class GoogleCalendarSyncView(views.APIView):
         serializer = GoogleCalendarSerializer(data=request.data, many=True)
         serializer.is_valid(raise_exception=True)
         user = request.user
-        access_token_obj = GoogleAuthenticationToken.objects.get(user=user)
-        access_token_obj.refresh_access_token()
+        authentication_token = GoogleAuthenticationToken.objects.get(user=user)
+        authentication_token.refresh_access_token()
 
         imported_calendar = ImportedCalendar.objects.get(user=user)
 
         # Fetch free/busy times
-        time_ranges = GoogleCalendar.fetch_free_busy_ranges(access_token_obj.access_token, serializer.validated_data)
+        time_ranges = GoogleCalendar.fetch_free_busy_ranges(authentication_token, serializer.validated_data)
 
         # Merge and store time ranges
         qs = ImportedTimeRange.objects.filter(calendar=imported_calendar).all()
@@ -74,27 +74,25 @@ class GoogleCalendarSyncView(views.APIView):
             ImportedTimeRange.objects.filter(calendar=imported_calendar).delete()
             for obj in time_ranges:
                 obj.save()
+        else:
+            merged_ranges = []
+            current_range = time_ranges[0]
 
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            for next_range in time_ranges[1:]:
+                if current_range.end_time >= next_range.start_time:
+                    current_range.end_time = max(current_range.end_time, next_range.end_time)
+                else:
+                    merged_ranges.append(current_range)
+                    current_range = next_range
 
-        merged_ranges = []
-        current_range = time_ranges[0]
+            merged_ranges.append(current_range)
 
-        for next_range in time_ranges[1:]:
-            if current_range.end_time >= next_range.start_time:
-                current_range.end_time = max(current_range.end_time, next_range.end_time)
-            else:
-                merged_ranges.append(current_range)
-                current_range = next_range
+            for time_range in merged_ranges:
+                time_range.calendar = imported_calendar
 
-        merged_ranges.append(current_range)
-
-        for time_range in merged_ranges:
-            time_range.calendar = imported_calendar
-
-        ImportedTimeRange.objects.filter(calendar=imported_calendar).delete()
-        for obj in merged_ranges:
-            obj.save()
+            ImportedTimeRange.objects.filter(calendar=imported_calendar).delete()
+            for obj in merged_ranges:
+                obj.save()
 
         # Sync Google Calendars
         GoogleCalendar.sync_google_calendar(imported_calendar, serializer.validated_data)
@@ -120,8 +118,7 @@ class BusyTimeRangesView(APIView):
 
         serializer = TimeRangeSerializer([{"start_time": e[0], "end_time": e[1]} for e in merged_ranges], many=True)
 
-        paginator = DateBasedPagination()
-        paginator.start_time = start_time
+        paginator = DateBasedPagination(start_time)
         page = paginator.paginate_queryset(serializer.data, request)
         return paginator.get_paginated_response(page)
 

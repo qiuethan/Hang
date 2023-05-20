@@ -19,6 +19,9 @@ from real_time_ws.models import RTWSSendMessageOnUpdate
 
 
 class Profile(models.Model, RTWSSendMessageOnUpdate):
+    """
+    This model represents a user profile. It extends the Django User model and adds additional fields.
+    """
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
     profile_picture = models.CharField(max_length=1000000,
                                        default="/static/media/logo.76ffd1144b342263116b472f0c0cff50.svg")
@@ -35,6 +38,9 @@ class Profile(models.Model, RTWSSendMessageOnUpdate):
 
     @staticmethod
     def create_user_and_associated_objects(username, email, password):
+        """
+        This static method creates a new user and associated objects.
+        """
         from calendars.models import ManualCalendar, ImportedCalendar
 
         user = User.objects.create_user(username, email, password)
@@ -47,6 +53,9 @@ class Profile(models.Model, RTWSSendMessageOnUpdate):
 
     @staticmethod
     def authenticate_user(email, password, user_should_be_verified=True):
+        """
+        This static method authenticates a user using their email and password.
+        """
         user = authenticate(email=email, password=password)
         if not user or not user.is_active:
             raise ValidationError("Incorrect Credentials.")
@@ -59,27 +68,42 @@ class Profile(models.Model, RTWSSendMessageOnUpdate):
         return user
 
     def block_user(self, user_to_block):
+        """
+        This method allows a user to block another user.
+        """
         if self.user == user_to_block:
             raise ValidationError("Cannot block yourself.")
         FriendRequest.objects.filter(from_user=user_to_block, to_user=self.user).delete()
         FriendRequest.objects.filter(from_user=self.user, to_user=user_to_block).delete()
-        if user_to_block in self.friends:
+        if user_to_block in self.friends.all():
             self.remove_friend(user_to_block)
         self.blocked_users.add(user_to_block)
 
     def unblock_user(self, user_to_unblock):
+        """
+        This method allows a user to unblock another user.
+        """
         self.blocked_users.remove(user_to_unblock)
 
     def add_friend(self, user_to_add):
+        """
+        This method allows a user to add another user as a friend.
+        """
         self.friends.add(user_to_add)
         user_to_add.profile.friends.add(self.user)
 
     def remove_friend(self, user_to_remove):
+        """
+        This method allows a user to remove another user from their friends list.
+        """
         self.friends.remove(user_to_remove)
         user_to_remove.profile.friends.remove(self.user)
 
 
 class GoogleAuthenticationToken(models.Model):
+    """
+    This model represents a Google authentication token.
+    """
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     access_token = models.CharField(max_length=512)
     refresh_token = models.CharField(max_length=1024)
@@ -87,6 +111,9 @@ class GoogleAuthenticationToken(models.Model):
 
     @staticmethod
     def get_flow(redirect_uri):
+        """
+        This static method returns a Google OAuth2 flow object configured with the client's credentials.
+        """
         flow = Flow.from_client_config(
             client_config={
                 "web": {
@@ -106,12 +133,18 @@ class GoogleAuthenticationToken(models.Model):
 
     @staticmethod
     def get_authorization_url(redirect_uri):
+        """
+        This static method returns the Google OAuth2 authorization URL.
+        """
         flow = GoogleAuthenticationToken.get_flow(redirect_uri)
         authorization_url, _ = flow.authorization_url(prompt='consent')
         return authorization_url
 
     @classmethod
     def generate_token_from_code(cls, code, redirect_uri):
+        """
+        This class method generates a Google OAuth2 token from an authorization code.
+        """
         try:
             flow = cls.get_flow(redirect_uri)
             flow.fetch_token(code=code)
@@ -150,11 +183,17 @@ class GoogleAuthenticationToken(models.Model):
             raise ValidationError(str(error))
 
     def needs_refresh(self):
+        """
+        This method checks if the Google OAuth2 token needs to be refreshed.
+        """
         refresh_threshold = 3600  # Set the time threshold for refreshing the token (in seconds)
         elapsed_time = (datetime.now(timezone.utc) - self.last_generated).total_seconds()
         return elapsed_time >= refresh_threshold
 
     def refresh_access_token(self):
+        """
+        This method refreshes the Google OAuth2 access token.
+        """
         if not self.needs_refresh():
             return
         credentials = Credentials.from_authorized_user_info(info={
@@ -173,12 +212,18 @@ class GoogleAuthenticationToken(models.Model):
 
 
 class EmailAuthenticationToken(models.Model):
+    """
+    This model represents an email authentication token.
+    """
     token = models.CharField(max_length=64, primary_key=True)  # Token is stored as SHA256 hash.
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
     @classmethod
     def create(cls, user):
+        """
+        This class method creates a new email authentication token for a user.
+        """
         random_string = str(uuid.uuid4())
         token_id = EmailAuthenticationToken.hash_token(random_string)
         token = cls(token=token_id, user=user)
@@ -192,6 +237,9 @@ class EmailAuthenticationToken(models.Model):
         return token
 
     def verify(self):
+        """
+        This method verifies the email authentication token.
+        """
         if self.user.profile.is_verified:
             raise ValidationError("User is already verified.")
 
@@ -205,13 +253,22 @@ class EmailAuthenticationToken(models.Model):
 
     @staticmethod
     def hash_token(token):
+        """
+        This static method hashes the email authentication token.
+        """
         return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
     def is_expired(self):
+        """
+        This method checks if the email authentication token has expired.
+        """
         return datetime.now(timezone.utc) - self.created_at > timedelta(days=1)
 
 
 class FriendRequest(models.Model, RTWSSendMessageOnUpdate):
+    """
+    This model represents a friend request between two users.
+    """
     from_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_friend_requests")
     to_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_friend_requests")
     declined = models.BooleanField(default=False)
@@ -223,8 +280,9 @@ class FriendRequest(models.Model, RTWSSendMessageOnUpdate):
 
     @classmethod
     def create_friend_request(cls, from_user, to_user):
-        friend_request = cls(from_user=from_user, to_user=to_user)
-        friend_request.save()
+        """
+        This class method creates a new friend request from one user to another.
+        """
         if to_user in from_user.profile.blocked_users.all() or \
                 from_user in to_user.profile.blocked_users.all():
             raise ValidationError(
@@ -232,12 +290,20 @@ class FriendRequest(models.Model, RTWSSendMessageOnUpdate):
         Notification.create_notification(user=to_user,
                                          title=from_user.username,
                                          description=f"{from_user.username} has sent you a friend request")
+        friend_request = cls(from_user=from_user, to_user=to_user)
+        friend_request.save()
         return friend_request
 
     def accept_friend_request(self):
+        """
+        This method allows a user to accept a friend request.
+        """
         self.from_user.profile.add_friend(self.to_user)
         self.delete()
 
     def decline_friend_request(self):
+        """
+        This method allows a user to decline a friend request.
+        """
         self.declined = True
         self.save()

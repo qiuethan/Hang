@@ -15,12 +15,12 @@ def get_message_prefix(content):
     return content
 
 
-def message_created(sender, instance, created, **kwargs):
+def message_created_notify_chat(sender, instance, created, **kwargs):
     if created:
         send_to_message_channel("send_message", instance.message_channel, MessageSerializer(instance).data)
 
 
-def message_updated(sender, instance, **kwargs):
+def message_edited_notify_chat(sender, instance, **kwargs):
     if instance.pk is not None:
         orig = sender.objects.get(pk=instance.pk)
         if orig.content != instance.content:
@@ -29,24 +29,24 @@ def message_updated(sender, instance, **kwargs):
             send_to_message_channel("edit_message", instance.message_channel, data)
 
 
-def message_deleted(sender, instance, **kwargs):
+def message_deleted_notify_chat(sender, instance, **kwargs):
     send_to_message_channel("delete_message", instance.message_channel, {"id": instance.id})
 
 
-def message_reacted(sender, instance, created, **kwargs):
+def message_reacted_added_notify_chat(sender, instance, created, **kwargs):
     if created:
         send_to_message_channel("add_reaction",
                                 instance.message.message_channel,
                                 MessageSerializer(instance.message).data)
 
 
-def reaction_removed(sender, instance, **kwargs):
+def message_reaction_removed_notify_chat(sender, instance, **kwargs):
     send_to_message_channel("remove_reaction",
                             instance.message.message_channel,
                             MessageSerializer(instance.message).data)
 
 
-def message_post_save(sender, instance, created, **kwargs):
+def message_saved_create_notifications(sender, instance, created, **kwargs):
     mcu_set = MessageChannelUsers.objects.filter(message_channel=instance.message_channel).all()
     sender = instance.user if isinstance(instance, UserMessage) else None
     for mcu in mcu_set:

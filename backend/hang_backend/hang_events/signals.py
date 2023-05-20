@@ -8,7 +8,6 @@ from googleapiclient.errors import HttpError
 
 from accounts.models import GoogleAuthenticationToken
 from chats.models import SystemMessage
-from hang_backend import settings
 from .models import HangEvent
 
 
@@ -19,7 +18,6 @@ def update_hang_event_message_channel(sender, instance, action, pk_set, **kwargs
             instance.message_channel.users.set(instance.attendees.all())
 
 
-# Modify the signal receiver to apply the changes only to specific fields
 @receiver(post_save, sender=HangEvent)
 def send_hang_event_updated_message(sender, instance, created, **kwargs):
     if not created:
@@ -36,7 +34,6 @@ def send_hang_event_updated_message(sender, instance, created, **kwargs):
                 setattr(instance, f"_old_{field.name}", new_value)
 
 
-# Add signal receivers for user added and removed messages
 @receiver(m2m_changed, sender=HangEvent.attendees.through)
 def send_hang_event_user_added_or_removed_message(sender, instance, action, pk_set, **kwargs):
     if action in ["post_add", "post_remove"]:
@@ -65,18 +62,13 @@ def update_google_calendar_event(sender, instance, **kwargs):
 
     # Prepare the Google Calendar API client
     try:
-        google_calendar_access_token = GoogleAuthenticationToken.objects.get(user=old_instance.owner)
+        authentication_token = GoogleAuthenticationToken.objects.get(user=old_instance.owner)
     except GoogleAuthenticationToken.DoesNotExist:
         instance.google_calendar_event_id = None
         return
 
-    credentials = Credentials.from_authorized_user_info(info={
-        "access_token": google_calendar_access_token.access_token,
-        "refresh_token": google_calendar_access_token.refresh_token,
-        "client_id": settings.GOOGLE_CLIENT_ID,
-        "client_secret": settings.GOOGLE_CLIENT_SECRET
-    })
-    service = build("calendar", "v3", credentials=credentials)
+    credentials = Credentials(token=authentication_token.access_token)
+    service = build('calendar', 'v3', credentials=credentials)
 
     # Delete the old event if the owner has changed
     if old_instance.owner != instance.owner:
@@ -89,33 +81,14 @@ def update_google_calendar_event(sender, instance, **kwargs):
 
     # If the new owner doesn't have a GoogleCalendarAccessToken, exit
     try:
-        google_calendar_access_token = GoogleAuthenticationToken.objects.get(user=instance.owner)
+        authentication_token = GoogleAuthenticationToken.objects.get(user=instance.owner)
     except GoogleAuthenticationToken.DoesNotExist:
         return
 
-    credentials = Credentials.from_authorized_user_info(info={
-        "access_token": google_calendar_access_token.access_token,
-        "refresh_token": google_calendar_access_token.refresh_token,
-        "client_id": settings.GOOGLE_CLIENT_ID,
-        "client_secret": settings.GOOGLE_CLIENT_SECRET
-    })
-    service = build("calendar", "v3", credentials=credentials)
+    credentials = Credentials(token=authentication_token.access_token)
+    service = build('calendar', 'v3', credentials=credentials)
 
-    # Prepare the event data
-    event_data = {
-        "summary": instance.name,
-        "location": instance.address,
-        "description": instance.description,
-        "start": {
-            "dateTime": instance.scheduled_time_start.isoformat(),
-            "timeZone": "UTC",
-        },
-        "end": {
-            "dateTime": instance.scheduled_time_end.isoformat(),
-            "timeZone": "UTC",
-        },
-        "attendees": [{"email": attendee.email} for attendee in instance.attendees.all()],
-    }
+    event_data = instance.to_google_calendar_event_data()
 
     # Create a new event if the owner has changed, otherwise update the existing event
     if instance.google_calendar_event_id is None:

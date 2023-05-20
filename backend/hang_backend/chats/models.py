@@ -95,7 +95,7 @@ class MessageChannelUsers(models.Model, RTWSSendMessageOnUpdate):
     rtws_message_content = "message_channel"
 
     def get_rtws_users(self):
-        return [self.user]
+        return [self.user] + list(self.message_channel.users.all())
 
 
 class DirectMessageChannel(MessageChannel, RTWSSendMessageOnUpdate):
@@ -144,7 +144,7 @@ class GroupMessageChannel(MessageChannel, RTWSSendMessageOnUpdate):
     def update_name(self, current_user, new_name):
         if self.name != new_name:
             SystemMessage.objects.create(message_channel=self,
-                                         content=f"{current_user.username} has renamed the group chats to to {new_name}")
+                                         content=f"{current_user.username} has renamed the group chat {self.name} to {new_name}")
             self.name = new_name
             self.save()
 

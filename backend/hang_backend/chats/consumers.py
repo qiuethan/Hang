@@ -115,7 +115,7 @@ class SendMessageAction(ChatAction):
         await sync_to_async(serializer.is_valid)(raise_exception=True)
 
         # Saves the message.
-        message = await dbsa(serializer.save)()
+        await dbsa(serializer.save)()
 
 
 class LoadMessageAction(ChatAction):
@@ -158,7 +158,7 @@ class EditMessageAction(ChatAction):
         await sync_to_async(serializer.is_valid)(raise_exception=True)
 
         # Re-saves the updated message.
-        message = await dbsa(serializer.save)()
+        await dbsa(serializer.save)()
 
 
 class DeleteMessageAction(ChatAction):

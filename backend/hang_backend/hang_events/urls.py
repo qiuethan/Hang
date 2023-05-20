@@ -12,9 +12,8 @@ router.register(r'archived', ArchivedHangEventViewSet, basename='hang_events_arc
 router.register(r'invitation_codes', InvitationCodeViewSet, basename='invitation_codes')
 router.register(r'tasks', TaskViewSet, basename='tasks')
 
-# Register Hang Event URLs.
 urlpatterns = [
-    path("add_hang_event_to_google_calendar/<int:pk>", AddHangEventToGoogleCalendarView.as_view()),
+    path("google_calendar/<int:pk>/", AddHangEventToGoogleCalendarView.as_view()),
 ]
 
 urlpatterns += router.urls
