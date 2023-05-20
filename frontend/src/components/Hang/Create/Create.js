@@ -92,6 +92,7 @@ const Create = () => {
         event.preventDefault();
         console.log(fields);
         dispatch(createhangevent(fields));
+        navigate("/hang/")
     }
 
 

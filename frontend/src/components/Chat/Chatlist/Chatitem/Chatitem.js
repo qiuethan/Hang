@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector} from "react-redux";
 import {getuser} from "../../../../actions/users";
+import {Avatar, Box, Button} from "@mui/material";
 
-const Chatitem = ({ roomid, users, type, gcName, setCurrentRoom }) => {
+const Chatitem = ({ roomid, users, type, gcName, currentRoom, setCurrentRoom }) => {
 
     const dispatch = useDispatch();
 
@@ -14,6 +15,7 @@ const Chatitem = ({ roomid, users, type, gcName, setCurrentRoom }) => {
     const userStorage = useSelector(state => state.users);
 
     const [name, setName] = useState("");
+    const [picture, setPicture] = useState("");
 
     console.log(name);
 
@@ -28,6 +30,7 @@ const Chatitem = ({ roomid, users, type, gcName, setCurrentRoom }) => {
                 }
                 else{
                     setName(obj.user.username);
+                    setPicture(obj.profile_picture);
                 }
             }
             catch (error){
@@ -40,9 +43,21 @@ const Chatitem = ({ roomid, users, type, gcName, setCurrentRoom }) => {
     }, [useSelector(state => state.users)]);
 
     return(
-        <div>
-            <button onClick={handleClick}>{name}</button>
-        </div>
+        <Box sx={{width: "100%", height: "60px"}}>
+            <Button
+                disableRipple
+                onClick={handleClick}
+                sx={{width: "100%", height: "100%", "&:hover": {backgroundColor: "#a5d6b0"}, borderRadius: "0", backgroundColor: roomid === currentRoom ? "#0c7c59" : ""}}
+            >
+                <Box sx={{display: "flex", flexDirection: "row", width: "100%"}}>
+                    <Box sx={{width: "20%", height: "100%"}}>
+                        <Avatar src={picture} sx={{aspectRatio: "1"}}/>
+                    </Box>
+                    <h3 style={{margin: "0", alignSelf:"center", marginLeft: "10px", color: roomid === currentRoom ? "white" : "black", overflowX: "scroll"}}>{name}</h3>
+                </Box>
+            </Button>
+        </Box>
+
     );
 };
 

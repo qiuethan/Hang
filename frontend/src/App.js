@@ -83,8 +83,8 @@ const App = () => {
             if(m.content === "friends"){
               dispatch(loadfriends());
             }
-            if(m.content === "chat"){
-
+            if(m.content === "profile"){
+              dispatch(loadfriends());
             }
           }
         }

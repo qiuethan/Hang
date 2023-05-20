@@ -6,7 +6,8 @@ export default (sentrequests = [], action) => {
             return action.payload;
         case DELETESENTFRIENDREQUEST:
             console.log(action.payload.id);
-            return sentrequests.filter((request) => request.to_user.id !== action.payload.id);
+            console.log(sentrequests);
+            return sentrequests.filter((request) => request.to_user !== action.payload.id);
         default:
             return sentrequests;
     }

@@ -20,6 +20,8 @@ const Auth = ({currentPage, setCurrentPage}) => {
 
     const [confirmAccount, setConfirmAccount] = useState(false);
 
+    const navigate = useNavigate();
+
     useEffect(() => {
         setCurrentPage("auth")
         if(JSON.parse(localStorage.getItem('profile')) !== null){
@@ -38,7 +40,7 @@ const Auth = ({currentPage, setCurrentPage}) => {
 
         if(isSignup){
             if(inputs.password == confirm.confirmPassword){  
-                dispatch(signup(inputs))
+                dispatch(signup(inputs, navigate))
                 .then((response) => {
                     try{
                         handleErrors(response.response.data.non_field_errors);

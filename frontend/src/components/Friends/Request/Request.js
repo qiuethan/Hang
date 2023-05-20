@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import { sendfriendrequest } from "../../../actions/friends";
+import {Box, TextField} from "@mui/material";
 
 const Request = () => {
 
@@ -20,14 +21,20 @@ const Request = () => {
     }
 
     return(
-        <form onSubmit={handleSubmit}>
-            <label for="email">Send Friend Request:</label>
-            <input
-                type="text"
-                name="email"
-                value={email || ""}
-                onChange = {handleChange}
-            />
+        <form onSubmit={handleSubmit} style={{width: "100%", height: "100%", display: "flex", flexDirection: "row", marginLeft: "10px", marginRight: "10px"}}>
+            <Box sx={{display: "flex", alignItems:"center", justifyContent: "center", width: "30%", marginRight: "10px", bgcolor: "#a5d6b0", borderRadius: "10px"}}>
+                <label htmlFor="email" style={{fontSize: "16px"}}>Send Friend Request: </label>
+            </Box>
+            <Box sx={{width: "70%"}}>
+                <TextField
+                    type="text"
+                    name="email"
+                    value={email || ""}
+                    onChange = {handleChange}
+                    sx={{width: "100%", "& .MuiOutlinedInput-root":{"& > fieldset": {borderColor: "black"}, '&.Mui-focused .MuiOutlinedInput-notchedOutline': {borderColor: '#0c7c59'}}}}
+                    autoComplete="off"
+                />
+            </Box>
         </form>
     )
 }

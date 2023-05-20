@@ -54,18 +54,16 @@ const Chat = ({ currentPage, setCurrentPage }) => {
     }
 
     return(
-        <Box sx={{display: "block", height: '98%', width: '98%', border: 1, margin: 1}}> 
-            <Grid container>
-                <Grid item xs={2}>
+        <Box sx={{display: "flex", height: '100%', width: '100%', alignItems: "center", justifyContent: "center"}}>
+            <Grid sx={{display: "flex", flexDirection: "row", height: "96%", width: "98%"}} container>
+                <Grid sx={{display: "flex", flexDirection: "column", height: "100%", width: "100%"}} item xs={2}>
                     <Chatlist client={client} currentRoom={currentRoom} setCurrentRoom={setCurrentRoom} clientOpened={clientOpened}/>
                     <Grouplist client={client} currentRoom={currentRoom} setCurrentRoom = {setCurrentRoom} clientOpened={clientOpened}/>
                 </Grid>
-                <Grid item xs={10}>
+                <Grid sx={{display: "flex", height: "100%", width: "100%", justifySelf: "flex-end"}} item xs={10}>
                     <Chatroom client={client} currentRoom={currentRoom} clientOpened={clientOpened} setClientOpened={setClientOpened}/>
                 </Grid>
             </Grid>
-            
-            
         </Box>
     );
 }

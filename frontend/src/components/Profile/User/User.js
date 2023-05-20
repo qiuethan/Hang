@@ -1,9 +1,8 @@
 import React, {useEffect, useState} from "react";
 import {useDispatch, useSelector} from "react-redux";
 import {Box, Button, TextField} from "@mui/material";
+import {logout} from "../../../actions/login";
 import {getself, updateProfile} from "../../../actions/users";
-
-import FileBase from 'react-file-base64';
 
 import "./User.css"
 
@@ -77,8 +76,12 @@ const User = () => {
         setEdit(false);
     }
 
+    const logOut = (e) => {
+        dispatch(logout(JSON.parse(localStorage.getItem("profile")).token));
+    }
+
     return(
-        <Box sx={{display: "flex", width: "90%", alignSelf: "center", justifyContent: "center"}}>
+        <Box sx={{display: "flex", width: "90%", alignSelf: "center", justifyContent: "center", marginBottom: "20px"}}>
                 {!edit && (
                     <Box sx={{width: "20%", aspectRatio: "1"}}>
                         {picture && <img style={{display: "block", justifySelf: "center", alignSelf: "center", maxWidth: "100%", maxHeight: "100%", aspectRatio:"1", objectFit: "cover", borderRadius: "50%"}} src={picture} alt="Uploaded Image"/>}
@@ -121,7 +124,10 @@ const User = () => {
                                 rows={4}
                             />
                         </Box>
-                        <Button sx={{marginTop: "20px", width: "100%", marginRight: "5px", backgroundColor: "#0c7c59", color: "white", ":hover": {color: "#0c7c59", backgroundColor: "white"}}} onClick={editProfile}>Edit Profile</Button>
+                        <Box sx={{display: "flex", flexDirection: "row", width: "100%"}}>
+                            <Button sx={{marginTop: "20px", width: "50%", marginRight: "5px", backgroundColor: "#0c7c59", color: "white", ":hover": {color: "#0c7c59", backgroundColor: "white"}}} onClick={editProfile}>Edit Profile</Button>
+                            <Button sx={{marginTop: "20px", width: "50%", marginRight: "5px", backgroundColor: "red", color: "white", ":hover": {color: "red", backgroundColor: "white"}}} onClick={logOut}>Log Out</Button>
+                        </Box>
                     </Box>
                 )}
                 {edit && (

@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 
 import { Box, Grid, TextField, IconButton } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
+import {useDispatch, useSelector} from "react-redux";
+import {getuser} from "../../../../actions/users";
 
 const Form = ({ client, currentRoom }) => {
 
     const [message, setMessage] = useState("");
+
+    const dispatch = useDispatch();
 
     const messageSend = (event) => {
         try{
@@ -31,15 +35,37 @@ const Form = ({ client, currentRoom }) => {
         setMessage(event.target.value);
     }
 
+    const user = JSON.parse(localStorage.getItem('profile'));
+    const allUsers = useSelector(state => state.users);
+
+    const [otherUser, setOtherUser] = useState("");
+
+    const dmDetails = useSelector(state => state.dms).filter(room => room.id === currentRoom)[0];
+    const groupDetails = useSelector(state => state.groups).filter(room => room.id === currentRoom)[0];
+
+    useEffect(() => {
+        if(dmDetails){
+            const dmUser = allUsers.find(u => u.user.id === dmDetails.users.filter(u => u !== user.user.id)[0]);
+            if(!dmUser){
+                console.log("Sent to Server");
+                dispatch(getuser(dmDetails.users.filter(u => u !== user.user.id)[0]));
+            }
+            else{
+                setOtherUser(dmUser);
+                console.log(dmUser);
+            }
+        }
+    }, [useSelector((state) => state.users), currentRoom])
+
     return(
-        <Box sx={{bgcolor:"#0c7c59"}}>
+        <Box sx={{height: "100%", borderRadius: "0 0 10px 0"}}>
             {
                 JSON.parse(localStorage.getItem('profile') !== null) &&
                 <form onSubmit={messageSend}>
                     <Grid container direction="row" sx={{p:1.5}}>
-                        <Grid item xs={7} sm={8} md={9} lg={10}>
+                        <Grid item xs={8} sm={9} md={10} lg={11}>
                             <TextField 
-                                label={message==="" ? `Message ${currentRoom}` : ""} 
+                                label={message==="" ? `Message ${otherUser !== "" && dmDetails ? otherUser.user.username : groupDetails ? groupDetails.name : ""}` : ""}
                                 value={message || ""} 
                                 onChange={handleChange} 
                                 onKeyDown={(e) => {
@@ -57,13 +83,13 @@ const Form = ({ client, currentRoom }) => {
                                 InputLabelProps={{shrink: false}}
                                 multiline
                                 size="small"
-                                maxRows={5}
-                                sx={{marginRight: 1, borderRadius: "10px", bgcolor: "white", width:"98%", "& .MuiOutlinedInput-root":{"& > fieldset": {border: "none"}},"& .MuiInputLabel-root":{color: "#0c7c59"}, "& label.Mui-focused": {color: "black"}}}
+                                maxRows={1}
+                                sx={{marginRight: 1, borderRadius: "10px", bgcolor: "white", width:"100%", "& .MuiOutlinedInput-root":{"& > fieldset": {border: "none"}},"& .MuiInputLabel-root":{color: "#0c7c59"}, "& label.Mui-focused": {color: "black"}}}
                             />
                         </Grid>
-                        <Grid item xs={5} sm={4} md={3} lg={2}>
+                        <Grid item xs={4} sm={3} md={2} lg={1}>
                             <Grid container direction="row" justifyContent="center" sx={{marginLeft: 1}}>
-                                <Grid item xs={4}>
+                                <Grid item xs={6}>
                                     <IconButton 
                                         variant="contained"
                                         disableElevation
@@ -71,15 +97,7 @@ const Form = ({ client, currentRoom }) => {
                                     >
                                     </IconButton>
                                 </Grid>
-                                <Grid item xs={4}>
-                                    <IconButton 
-                                        variant="contained"
-                                        disableElevation
-                                        sx={{bgcolor : "white", color: "#0c7c59", "&:hover": {bgcolor: "#a5d6b0", color: "white"}, borderRadius: "10px", height: "40px", minWidth: "40px"}}
-                                    >
-                                    </IconButton>
-                                </Grid>
-                                <Grid item xs={4}>
+                                <Grid item xs={6}>
                                     <IconButton 
                                         type="submit"
                                         variant="contained"

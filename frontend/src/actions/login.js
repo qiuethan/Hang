@@ -12,11 +12,10 @@ export const login = (inputs) => async (dispatch) => {
     }
 }
 
-export const signup = (inputs) => async (dispatch) => {
+export const signup = (inputs, navigate) => async (dispatch) => {
     try{
         const { data } = await api.signin(inputs);
-        dispatch({type: LOGIN, data})
-
+        navigate("/auth")
     }
     catch (error){
         console.log(error);
