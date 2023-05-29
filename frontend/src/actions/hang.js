@@ -22,3 +22,14 @@ export const gethangevents = () => async(dispatch) => {
         console.log(error);
     }
 }
+
+export const joinhangevent = (code, navigate) => async(dispatch) => {
+    try{
+        const { data } = await api.joinhangevent();
+        console.log(data);
+        navigate(`/hang/?room=${data.id}`)
+    }
+    catch(error){
+        console.log(error);
+    }
+}

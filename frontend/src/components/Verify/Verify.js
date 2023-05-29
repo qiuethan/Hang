@@ -5,7 +5,7 @@ import axios from "axios";
 
 const Verify = () => {
 
-    const[searchParams, setSearchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
 
     const navigate = useNavigate();
 

@@ -1,10 +1,10 @@
 import { useRef, useEffect } from "react";
 
-const Autocomplete = ({inputRef, setAddress}) => {
+const Autocomplete = ({inputRef, fields, setFields}) => {
     const autoCompleteRef = useRef();
 
     const options = {
-        fields: ["address_components", "geometry", "icon", "name"]
+        fields: ["address_components", "geometry", "formatted_address", "icon", "name"]
     };
 
     useEffect(() => {
@@ -15,8 +15,9 @@ const Autocomplete = ({inputRef, setAddress}) => {
 
         // Listen for the 'place_changed' event
         autoCompleteRef.current.addListener("place_changed", () => {
-            const selectedPlace = autoCompleteRef.current.getPlace();
-            setAddress(selectedPlace.address_components.map(address => address.short_name).join(" ")); // Log the selected place object
+            const selectedPlace = autoCompleteRef.current.getPlace().name;
+            console.log(selectedPlace);
+            setFields({...fields, address: selectedPlace.formatted_address}); // Log the selected place object
         });
     }, []);
 

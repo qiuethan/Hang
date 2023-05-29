@@ -22,7 +22,7 @@ const Create = () => {
 
     const [user, setUser] = useState(JSON.parse(localStorage.getItem("profile")));
 
-    const [fields, setFields] = useState({name: `${user.user.username}'s Hang`, description: `A Hang hosted by ${user.user.username}!`, picture: logo, owner: user.user.id, scheduled_time_start: "", scheduled_time_end: "", address: "In Progress", latitude: 0, longitude: 0, budget: 0.00, attendees: [user.user.id], needs: [], tasks: []});
+    const [fields, setFields] = useState({name: `${user.user.username}'s Hang`, description: `A Hang hosted by ${user.user.username}!`, picture: logo, owner: user.user.id, scheduled_time_start: "", scheduled_time_end: "", address: "", latitude: 0, longitude: 0, budget: 0.00, attendees: [user.user.id], needs: [], tasks: []});
 
     const [attendees, setAttendees] = useState([user]);
     const [needs, setNeeds] = useState([]);
@@ -172,7 +172,7 @@ const Create = () => {
                     {step === 2 && (
                         <Box sx={{position: "relative", width: "97%", height: "95%"}}>
                                 <Box sx={{height: "90%", width: "100%"}}>
-                                    <Location longitude={fields.longitude} latitude={fields.latitude} updateLocation={updateLocation}/>
+                                    <Location longitude={fields.longitude} latitude={fields.latitude} fields={fields} setFields={setFields} updateLocation={updateLocation}/>
                                 </Box>
                                 <Box sx={{display: "flex", width: "100%", height:"10%", alignSelf: "flex-end", alignItems: "flex-end"}}>
                                     <Box sx={{display: "flex", width: "50%", height: "100%", alignItems:"flex-end"}}>

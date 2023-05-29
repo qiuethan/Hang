@@ -3,32 +3,29 @@ import React, {useState, useRef} from 'react';
 import Autocomplete from "./Autocomplete";
 import {Box} from "@mui/material";
 
-const Search = ({updateLocation}) => {
+const Search = ({updateLocation, fields, setFields}) => {
 
     const inputRef = useRef();
-
-    const [address, setAddress] = useState("");
 
     const geocoder = new window.google.maps.Geocoder();
 
     const handleChange = (e) => {
         e.preventDefault();
-        setAddress(e.target.value);
+        setFields({...fields, address: e.target.value});
+        console.log(fields.address);
     }
 
     const geocodeAddress = (e) => {
         e.preventDefault();
-        geocoder.geocode({ 'address': address }, function handleResults (results, status){
-
-            if(status === window.google.maps.GeocoderStatus.OK){
-
-                updateLocation(results[0].geometry.location.lat(), results[0].geometry.location.lng());
-
-                setAddress("");
-
-                return;
-            }
-
+        console.log(e);
+        console.log(e.target.elements.address.value);
+        geocoder.geocode({ 'address': e.target.elements.address.value }, function handleResults (results, status){
+                console.log(fields.address);
+                console.log(status);
+                if(status === window.google.maps.GeocoderStatus.OK){
+                    console.log("check");
+                    updateLocation(results[0].geometry.location.lat(), results[0].geometry.location.lng());
+                }
             }
         );
     }
@@ -37,10 +34,10 @@ const Search = ({updateLocation}) => {
         <Box sx={{display: "flex", marginBottom: "10px", width: "100%", justifyContent:"center"}}>
             <form onSubmit={geocodeAddress} style={{display: "flex", flexDirection: "row", width: "70%"}}>
                 <label style={{marginRight: "5px"}}>Enter Address:</label>
-                <input ref={inputRef} value={address} onChange={handleChange} style={{width: "70%"}}/>
+                <input name="address" ref={inputRef} value={fields.address} onChange={handleChange} style={{width: "70%"}}/>
                 <button type="submit" style={{marginLeft: "5px"}}>Submit</button>
             </form>
-            <Autocomplete inputRef={inputRef} setAddress={setAddress}/>
+            <Autocomplete inputRef={inputRef} fields={fields} setFields={setFields}/>
         </Box>
     );
 };

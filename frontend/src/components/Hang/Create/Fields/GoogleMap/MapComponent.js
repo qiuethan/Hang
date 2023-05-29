@@ -10,7 +10,23 @@ const containerStyle = {
 const MapComponent = ({latitude, longitude, updateLocation }) => {
 
     const handleClick = (e) => {
-        updateLocation(e.latLng.lat(), e.latLng.lng());
+        const geocoder = new window.google.maps.Geocoder();
+
+        const lat = e.latLng.lat();
+        const lng = e.latLng.lng();
+        updateLocation(lat, lng);
+
+        //Reverse Geocode here
+        geocoder.geocode({'location': {lat, lng}}, function(results, status) {
+            if (status === window.google.maps.GeocoderStatus.OK) {
+                if (results[0]) {
+                    // You will get the formatted address here, you can set it in your state or do whatever you want
+                    console.log(results[0].formatted_address);
+                } else {
+                }
+            } else {
+            }
+        });
     };
 
     return(

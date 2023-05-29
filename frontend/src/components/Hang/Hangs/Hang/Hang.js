@@ -3,13 +3,22 @@ import React, {useEffect} from 'react';
 import User from "./User";
 
 import {Box, Button} from "@mui/material";
+import {useNavigate} from "react-router-dom";
 
-const Hang = ({hang}) => {
+const Hang = ({hang, setCurrentHang}) => {
 
     console.log(hang);
 
+    const navigate = useNavigate();
+
+    const openHang = (e) => {
+        e.preventDefault();
+        setCurrentHang(hang.id);
+        navigate(`/hang?room=${hang.id}`)
+    }
+
     return(
-        <Button sx={{width: "100%", height: "100%", borderRadius:"15px", color: "black", ":hover": {backgroundColor: "#0c7c59"}}}>
+        <Button onClick={openHang} disableRipple sx={{width: "100%", height: "100%", borderRadius:"15px", color: "black", ":hover": {backgroundColor: "#0c7c59"}}}>
             <Box sx={{width: "100%", height: "99%", backgroundColor:"#a5d6b0", borderRadius: "10px"}}>
                 <Box sx={{display: "flex", width: "100%", height: "100%", justifyItems:"center"}}>
                     <Box sx={{display: "flex", flexDirection: "column", justifyContent:"center", alignItems:"center"}}>
