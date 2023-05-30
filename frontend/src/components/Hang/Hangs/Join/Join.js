@@ -16,7 +16,9 @@ const Join = () => {
 
     useEffect(() => {
         const code = getCode();
-        dispatch(joinhangevent(code, navigate));
+        dispatch(joinhangevent(code, navigate)).then((r) =>{
+            console.log(r);
+        });
     }, []);
 
     return(

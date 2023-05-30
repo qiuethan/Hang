@@ -84,7 +84,7 @@ class LoginWithGoogleSerializer(serializers.Serializer):
         """
         Generates a Google OAuth2 token from the validated code.
         """
-        redirect_uri = 'http://localhost:3000/profile'
+        redirect_uri = 'http://localhost:3000/auth'
         return GoogleAuthenticationToken.generate_token_from_code(code=validated_data["code"],
                                                                   redirect_uri=redirect_uri)
 

@@ -5,6 +5,7 @@ import {logout} from "../../../actions/login";
 import {getself, updateProfile} from "../../../actions/users";
 
 import "./User.css"
+import {useNavigate} from "react-router-dom";
 
 const User = () => {
 
@@ -13,6 +14,8 @@ const User = () => {
     const user = useSelector(state => state);
 
     console.log(user.profile);
+
+    const navigate = useNavigate();
 
     const [edit, setEdit] = useState(false);
 
@@ -77,7 +80,12 @@ const User = () => {
     }
 
     const logOut = (e) => {
-        dispatch(logout(JSON.parse(localStorage.getItem("profile")).token));
+        dispatch(logout(JSON.parse(localStorage.getItem("profile")).token)).then((response) => {
+            console.log(response);
+            localStorage.clear();
+            console.log(localStorage);
+        });
+        navigate("/auth");
     }
 
     return(

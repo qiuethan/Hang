@@ -18,11 +18,10 @@ const Profile = ({currentPage, setCurrentPage}) => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        setCurrentPage("profile");
-        if(JSON.parse(localStorage.getItem('profile')) == null){
-            navigate("/auth")
+        if(JSON.parse(localStorage.getItem("profile")) === null){
+            navigate("/auth");
         }
-    }, [currentPage]);
+    }, [localStorage.getItem("profile")]);
 
     useEffect(() => {
         dispatch(getself());

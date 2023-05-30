@@ -1,11 +1,19 @@
 import React, {useEffect} from "react";
-import { Route, Routes } from "react-router-dom";
+import {Route, Routes, useNavigate} from "react-router-dom";
 
 import Hangs from "./Hangs/Hangs";
 import Create from "./Create/Create";
 import Join from "./Hangs/Join/Join";
 
 const Hang = ({currentPage, setCurrentPage}) => {
+
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if(JSON.parse(localStorage.getItem("profile")) === null){
+            navigate("/auth");
+        }
+    }, [localStorage.getItem("profile")]);
 
     return (
         <Routes>

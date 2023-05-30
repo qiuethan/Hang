@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useEffect} from "react";
 import * as actionTypes from "../../constants/actionTypes"; 
 import { useState, getState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -13,6 +13,14 @@ const Home = ({}) => {
     const [user, setUser] = useState(JSON.parse(localStorage.getItem('profile')));
 
     console.log(user);
+
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if(JSON.parse(localStorage.getItem("profile")) === null){
+            navigate("/auth");
+        }
+    }, [localStorage.getItem("profile")]);
 
     console.log(useSelector(state => state));
 

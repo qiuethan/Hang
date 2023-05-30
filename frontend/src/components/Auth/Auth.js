@@ -5,7 +5,10 @@ import { useNavigate } from 'react-router-dom';
 
 import { login, sendemail, signup } from "../../actions/login.js";
 
+import logo from "../../images/logo.svg";
+
 import Google from './Google/Google';
+import {Box, Button, Paper, TextField} from "@mui/material";
 
 const initialState = {username: "", email: "", password: ""};
 
@@ -94,71 +97,88 @@ const Auth = ({currentPage, setCurrentPage}) => {
     }
 
     return(
-        <div>
-            {
-                confirmAccount && (
-                    <div>
-                        Email Has Been Sent, Please Verify Account 
-                    </div>
-                )
-            }
+        <Box sx={{display: "flex", width: "100%", height: '100%', alignItems: "center", justifyContent: "center"}}>
+            <Paper elevation={16} sx={{width: "70%", height: "90%", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "#a5d6b0"}}>
+                <Box sx={{width: "90%", height: "90%", display: "flex", flexDirection: "row"}}>
+                    <Box sx={{width: "50%", height: "100%", marginRight: "10px", display: "flex", alignItems: "center", justifyContent: "center"}}>
+                        <img src={logo}/>
+                    </Box>
+                    <Box sx={{width: "50%", height: "100%", marginLeft: "10px", display: "flex", flexDirection: "column"}}>
 
-            <form onSubmit={handleSubmit} class = "signin-form">
-            {
-                isSignup && (
-                    <label>
-                        Username:
-                        <input 
-                            type="text" 
-                            name="username" 
-                            value={inputs.username || ""} 
-                            onChange={handleChange} />
-                    </label>
-                )
-            }
-            <label>
-                Email:
-                <input
-                    type="text"
-                    name="email"
-                    value={inputs.email || ""}
-                    onChange = {handleChange}
-                />
-            </label>
-            <label>
-                Password:
-                <input
-                    type="password"
-                    name="password"
-                    value={inputs.password || ""}
-                    onChange = {handleChange}
-                />
-            </label>
-            {
-                isSignup && (
-                    <label>
-                        Confirm Password:
-                        <input 
-                            type="password" 
-                            name="confirmPassword" 
-                            value={confirm.confirmPassword || ""} 
-                            onChange={confirmHandleChange} />
-                    </label>
-                )
-            }
+                        <form onSubmit={handleSubmit} class="signin-form">
 
+                            {
+                                isSignup && (
+                                    <Box sx={{width: "100%", display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "20px"}}>
+                                        <h3 style={{margin: "0", fontSize: "24px", marginBottom: "10px"}}>Username</h3>
+                                        <TextField
+                                            type="text"
+                                            name="username"
+                                            value={inputs.username || ""}
+                                            onChange = {handleChange}
+                                            sx={{width: "100%", bgcolor: "white", borderRadius: "5px", "& .MuiOutlinedInput-root":{"& > fieldset": {border: "none"}}}}
+                                        />
+                                    </Box>
+                                )
+                            }
+                            <Box sx={{width: "100%", display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "20px"}}>
+                                <h3 style={{margin: "0", fontSize: "24px", marginBottom: "10px"}}>Email</h3>
+                                <TextField
+                                    type="text"
+                                    name="email"
+                                    value={inputs.email || ""}
+                                    onChange = {handleChange}
+                                    sx={{width: "100%", bgcolor: "white", borderRadius: "5px", "& .MuiOutlinedInput-root":{"& > fieldset": {border: "none"}}}}
+                                />
+                            </Box>
+                            <Box sx={{width: "100%", display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "20px"}}>
+                                <h3 style={{margin: "0", fontSize: "24px", marginBottom: "10px"}}>Password</h3>
+                                <TextField
+                                    type="password"
+                                    name="password"
+                                    value={inputs.password || ""}
+                                    onChange = {handleChange}
+                                    sx={{width: "100%", bgcolor: "white", borderRadius: "5px", "& .MuiOutlinedInput-root":{"& > fieldset": {border: "none"}}}}
+                                />
+                            </Box>
+                            {
+                                isSignup && (
+                                    <Box sx={{width: "100%", display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "20px"}}>
+                                        <h3 style={{margin: "0", fontSize: "24px", marginBottom: "10px"}}>Confirm Password</h3>
+                                        <TextField
+                                            type="password"
+                                            name="confirmPassword"
+                                            value={confirm.confirmPassword || ""}
+                                            onChange = {confirmHandleChange}
+                                            sx={{width: "100%", bgcolor: "white", borderRadius: "5px", "& .MuiOutlinedInput-root":{"& > fieldset": {border: "none"}}}}
+                                        />
+                                    </Box>
+                                )
+                            }
 
+                            {
+                                confirmAccount && (
+                                    <Box>
+                                        <p style={{color: "black", margin: "0"}}>Email Has Been Sent, Please Verify Account</p>
+                                    </Box>
+                                )
+                            }
 
-            <button type="submit">{isSignup ? 'Sign Up' : "Login"}</button>
-            </form>
-            <button onClick={switchMode}>
-                {isSignup ? 'Already have an account? Log in!' : "Don't have an account? Sign Up!"}
-            </button>
+                            <Button disableRipple sx={{bgcolor: "#0c7c59", width: "100%", color: "white", marginBottom: "10px", ":hover": {color: "black"}}} type="submit">{isSignup ? 'Sign Up' : "Login"}</Button>
+                        </form>
 
-            {!isSignup && (
-                <Google/>
-            )}
-        </div>
+                        {!isSignup && (
+                            <Google/>
+                        )}
+
+                        <Button onClick={switchMode} disableRipple sx={{bgcolor: "#0c7c59", color: "white", marginBottom: "10px", ":hover": {color: "black"}}}>
+                            {isSignup ? 'Already have an account? Log in!' : "Don't have an account? Sign Up!"}
+                        </Button>
+
+                    </Box>
+                </Box>
+            </Paper>
+        </Box>
     );
 
 }

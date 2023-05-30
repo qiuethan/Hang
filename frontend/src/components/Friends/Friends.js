@@ -7,12 +7,21 @@ import Request from "./Request/Request";
 import Blockedlist from "./Blockedlist/Blockedlist";
 import Sentlist from "./Sentlist/Sentlist";
 import {Box, Button, Paper} from "@mui/material";
+import {useNavigate} from "react-router-dom";
 
 const Friends = () => {
 
     const dispatch = useDispatch();
 
     const [displayRequests, setDisplayRequests] = useState(1);
+
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if(JSON.parse(localStorage.getItem("profile")) === null){
+            navigate("/auth");
+        }
+    }, [localStorage.getItem("profile")]);
 
     useEffect(() => {
         dispatch(loadfriends());
