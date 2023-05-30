@@ -9,7 +9,7 @@ const Verify = () => {
 
     const navigate = useNavigate();
 
-    const API = axios.create({ baseURL: 'http://localhost:8000'})
+    const API = axios.create({ baseURL: 'https://hang-backend.fly.dev/'})
 
     const getKey = () => {
         return searchParams.get("key");

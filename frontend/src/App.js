@@ -64,6 +64,7 @@ const App = () => {
     connection.onmessage = (message) => {
       try{
         const m = JSON.parse(message.data);
+        console.log(m);
         try{
           if(m.type === "status" ){
             if(m.message === "success"){
@@ -76,6 +77,7 @@ const App = () => {
               dispatch(gethangevents());
             }
             if(m.content === "friend_request"){
+              dispatch(loadfriends());
               dispatch(loadrecievedfriendrequests());
               dispatch(loadsentfriendrequests());
               dispatch(loadblockedusers());

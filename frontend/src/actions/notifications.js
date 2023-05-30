@@ -15,8 +15,9 @@ export const getUnreadNotifications = () => async(dispatch) => {
 
 const connect = new Promise(function(success, failure) {
     try{
-        let connection = JSON.parse(localStorage.getItem('profile')) !== null ? new W3CWebSocket(`ws://localhost:8000/ws/real_time_ws/${JSON.parse(localStorage.getItem('profile')).user.username}/`) : null;
-        success(connection);
+        let connection = JSON.parse(localStorage.getItem('profile')) !== null ? new W3CWebSocket(`wss://hang-backend.fly.dev/ws/real_time_ws/${JSON.parse(localStorage.getItem('profile')).user.username}/`) : null;
+        connection.onopen = () => success(connection);
+        connection.onerror = () => failure();
     }
     catch(error){
         failure();

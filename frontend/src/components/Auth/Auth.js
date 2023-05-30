@@ -158,8 +158,8 @@ const Auth = ({currentPage, setCurrentPage}) => {
 
                             {
                                 confirmAccount && (
-                                    <Box>
-                                        <p style={{color: "black", margin: "0"}}>Email Has Been Sent, Please Verify Account</p>
+                                    <Box sx={{width: "100%", display: "flex", justifyContent: "center", alignItems: "center", marginBottom: "20px"}}>
+                                        <p style={{color: "black", margin: "0"}}>Verification Sent. Please Check Your Email.</p>
                                     </Box>
                                 )
                             }

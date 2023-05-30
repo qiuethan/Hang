@@ -29,15 +29,17 @@ export const loadgroups = () => async (dispatch) => {
 export const connectws = () => (dispatch) => {
     try{
 
-        let client = JSON.parse(localStorage.getItem('profile')) !== null ? new W3CWebSocket(`ws://localhost:8000/ws/chats/${JSON.parse(localStorage.getItem('profile')).user.username}/`) : null;
+        let client = JSON.parse(localStorage.getItem('profile')) !== null ? new W3CWebSocket(`wss://hang-backend.fly.dev/ws/chats/${JSON.parse(localStorage.getItem('profile')).user.username}/`) : null;
 
         try{
-            client.send(JSON.stringify({
-                action: "authenticate",
-                content: {
-                    token: JSON.parse(localStorage.getItem('profile')).token
-                }
-            }));
+            client.onopen(() => {
+                client.send(JSON.stringify({
+                    action: "authenticate",
+                    content: {
+                        token: JSON.parse(localStorage.getItem('profile')).token
+                    }
+                }));
+            })
         }
         catch(error){
             console.log(error);
