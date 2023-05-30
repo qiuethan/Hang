@@ -82,9 +82,15 @@ const App = () => {
             }
             if(m.content === "friends"){
               dispatch(loadfriends());
+              dispatch(loadrecievedfriendrequests());
+              dispatch(loadsentfriendrequests());
+              dispatch(loadblockedusers());
             }
             if(m.content === "profile"){
               dispatch(loadfriends());
+              dispatch(loadrecievedfriendrequests());
+              dispatch(loadsentfriendrequests());
+              dispatch(loadblockedusers());
             }
           }
         }
