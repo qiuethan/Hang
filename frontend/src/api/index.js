@@ -22,6 +22,7 @@ export const googlelogin = (code) => API.post('/v1/accounts/login/google/', {cod
 //Load Rooms List
 export const loadrooms = () => API.get('/v1/chats/direct_messages/');
 export const loadgroups = () => API.get('/v1/chats/group_chats/');
+export const createdm = (user) => API.post('/v1/chats/direct_messages/', {users: [JSON.parse(localStorage.getItem('profile')).user.id, user]});
 
 //Users
 export const getuser = (id) => API.get(`/v1/accounts/users/id/${id}/`);

@@ -55,3 +55,12 @@ export const connectws = () => (dispatch) => {
         console.log(error);
     }
 }
+
+export const createdm = (user) => async(dispatch) => {
+    try{
+        const { data } = api.createdm(user);
+    }
+    catch(error){
+        console.log(error);
+    }
+}

@@ -3,6 +3,7 @@ import { useDispatch } from "react-redux";
 import { getuser } from "../../../../actions/users";
 import {acceptfriendrequest, declinefriendrequest, loadfriends} from "../../../../actions/friends";
 import {Avatar, Box, Button} from "@mui/material";
+import {createdm} from "../../../../actions/chat";
 
 const Request = ({user}) => {
 
@@ -15,6 +16,7 @@ const Request = ({user}) => {
     useEffect(() => {
 
         const fetchUser = async() => {
+            console.log(user);
             const obj = await dispatch(getuser(user));
             console.log(obj);
             setUserObj(obj)
@@ -30,6 +32,7 @@ const Request = ({user}) => {
     const acceptRequest = (e) => {
         e.preventDefault();
         dispatch(acceptfriendrequest(userObj));
+        dispatch(createdm(user));
     }
 
     const declineRequest = (e) => {
