@@ -7,13 +7,16 @@ const containerStyle = {
     height: '500px'
 };
 
-const MapComponent = ({latitude, longitude, updateLocation }) => {
+const MapComponent = ({updateLocation, fields, setFields }) => {
+
+    const [latitude, setLatitude] = useState(0);
 
     const handleClick = (e) => {
         const geocoder = new window.google.maps.Geocoder();
 
         const lat = e.latLng.lat();
         const lng = e.latLng.lng();
+        console.log(lat, lng);
         updateLocation(lat, lng);
 
         //Reverse Geocode here
@@ -22,9 +25,13 @@ const MapComponent = ({latitude, longitude, updateLocation }) => {
                 if (results[0]) {
                     // You will get the formatted address here, you can set it in your state or do whatever you want
                     console.log(results[0].formatted_address);
+                    setFields({...fields, address: results[0].formatted_address, latitude: lat, longitude: lng})
+
                 } else {
+
                 }
             } else {
+                setFields({...fields, address: "None"})
             }
         });
     };
@@ -32,11 +39,11 @@ const MapComponent = ({latitude, longitude, updateLocation }) => {
     return(
         <GoogleMap
                 mapContainerStyle={containerStyle}
-                center={{lat: +latitude, lng: +longitude}}
+                center={{lat: +fields.latitude, lng: +fields.longitude}}
                 zoom={16}
                 onClick={handleClick}
             >
-                <Marker position={{lat: +latitude, lng: +longitude}}/>
+                <Marker position={{lat: +fields.latitude, lng: +fields.longitude}}/>
         </GoogleMap>
 
     );

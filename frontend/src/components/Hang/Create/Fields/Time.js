@@ -27,6 +27,11 @@ const Time = ({start, end, handleChange}) => {
                     onChange={handleChange}
                     style={{width:"100%"}}
                 />
+                {end < start && (
+                    <Box sx={{display: "flex", width: "100%", justifyContent: "center"}}>
+                        <p style={{margin: "0", marginTop: "3px", color: "red"}}>End date + time must be after start date + time!</p>
+                    </Box>
+                )}
             </Box>
         </Box>
     )

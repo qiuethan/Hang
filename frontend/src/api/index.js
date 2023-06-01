@@ -1,7 +1,8 @@
 import axios from 'axios';
+import {BASEURL} from "../constants/actionTypes";
 
 //API Setup
-const API = axios.create({ baseURL: 'https://hang-backend.fly.dev/' });
+const API = axios.create({ baseURL: BASEURL });
 
 API.interceptors.request.use((req) => {
     if (localStorage.getItem('profile')){

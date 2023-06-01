@@ -1,7 +1,7 @@
 import { w3cwebsocket as W3CWebSocket } from "websocket";
 import * as api from '../api/index.js';
 
-import { LOADROOMS, LOADGROUPS, CONNECTWS } from '../constants/actionTypes.js';
+import {LOADROOMS, LOADGROUPS, CONNECTWS, BASEWS} from '../constants/actionTypes.js';
 
 export const loadrooms = () => async (dispatch) => {
     try{
@@ -29,7 +29,7 @@ export const loadgroups = () => async (dispatch) => {
 export const connectws = () => (dispatch) => {
     try{
 
-        let client = JSON.parse(localStorage.getItem('profile')) !== null ? new W3CWebSocket(`wss://hang-backend.fly.dev/ws/chats/${JSON.parse(localStorage.getItem('profile')).user.username}/`) : null;
+        let client = JSON.parse(localStorage.getItem('profile')) !== null ? new W3CWebSocket(`${BASEWS}ws/chats/${JSON.parse(localStorage.getItem('profile')).user.username}/`) : null;
 
         try{
             client.onopen(() => {

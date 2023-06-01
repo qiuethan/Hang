@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import {useNavigate, useSearchParams} from "react-router-dom";
 
 import axios from "axios";
+import {BASEURL} from "../../constants/actionTypes";
 
 const Verify = () => {
 
@@ -9,7 +10,7 @@ const Verify = () => {
 
     const navigate = useNavigate();
 
-    const API = axios.create({ baseURL: 'https://hang-backend.fly.dev/'})
+    const API = axios.create({ baseURL: BASEURL})
 
     const getKey = () => {
         return searchParams.get("key");

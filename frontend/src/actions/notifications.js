@@ -1,6 +1,6 @@
 import { w3cwebsocket as W3CWebSocket } from "websocket";
 import * as api from "../api/index.js";
-import {CONNECTRTWS, GETUNREADNOTIFICATIONS} from "../constants/actionTypes";
+import {BASEWS, CONNECTRTWS, GETUNREADNOTIFICATIONS} from "../constants/actionTypes";
 
 export const getUnreadNotifications = () => async(dispatch) => {
     try{
@@ -15,7 +15,7 @@ export const getUnreadNotifications = () => async(dispatch) => {
 
 const connect = new Promise(function(success, failure) {
     try{
-        let connection = JSON.parse(localStorage.getItem('profile')) !== null ? new W3CWebSocket(`wss://hang-backend.fly.dev/ws/real_time_ws/${JSON.parse(localStorage.getItem('profile')).user.username}/`) : null;
+        let connection = JSON.parse(localStorage.getItem('profile')) !== null ? new W3CWebSocket(`${BASEWS}ws/real_time_ws/${JSON.parse(localStorage.getItem('profile')).user.username}/`) : null;
         connection.onopen = () => success(connection);
         connection.onerror = () => failure();
     }
