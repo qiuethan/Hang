@@ -24,7 +24,7 @@ const Search = ({updateLocation, fields, setFields}) => {
                 console.log(status);
                 if(status === window.google.maps.GeocoderStatus.OK){
                     console.log("check");
-                    updateLocation(results[0].geometry.location.lat(), results[0].geometry.location.lng());
+                    setFields({...fields, address: e.target.elements.address.value, latitude: results[0].geometry.location.lat(), longitude: results[0].geometry.location.lng()});
                 }
             }
         );

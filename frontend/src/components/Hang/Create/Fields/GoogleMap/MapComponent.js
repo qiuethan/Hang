@@ -25,8 +25,7 @@ const MapComponent = ({updateLocation, fields, setFields }) => {
                 if (results[0]) {
                     // You will get the formatted address here, you can set it in your state or do whatever you want
                     console.log(results[0].formatted_address);
-                    setFields({...fields, address: results[0].formatted_address, latitude: lat, longitude: lng})
-
+                    setFields({...fields, address: results[0].formatted_address, longitude: lng, latitude: lat})
                 } else {
 
                 }
