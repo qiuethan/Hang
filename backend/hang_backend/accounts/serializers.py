@@ -3,12 +3,13 @@ ICS4U
 Paul Chen
 This module contains serializers for various models related to user authentication and friend requests in a Django application.
 """
-
+import re
 import urllib.parse
 
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers, validators
+from rest_framework.exceptions import ValidationError
 
 from .models import EmailAuthenticationToken, FriendRequest, Profile, GoogleAuthenticationToken
 
@@ -17,6 +18,7 @@ class UserSerializer(serializers.ModelSerializer):
     """
     Serializer for the User model.
     """
+
     class Meta:
         model = User
         fields = ("id", "username", "email")
@@ -38,16 +40,25 @@ class ProfileSerializer(serializers.ModelSerializer):
         read_only_fields = ("user", "is_verified")
 
 
+def validate_username(value):
+    """
+    Check that the username only contains alphanumeric characters.
+    """
+    if not re.match('^[a-zA-Z0-9]*$', value):
+        raise ValidationError('Username can only contain alphanumeric characters.')
+
+
 class RegisterSerializer(serializers.ModelSerializer):
     """
     Serializer for registering a new User and associated Profile.
     """
+
     class Meta:
         model = User
         fields = ('id', 'username', 'email', 'password')
         extra_kwargs = {
             'password': {'write_only': True, 'validators': [validate_password]},
-            'username': {'validators': [validators.UniqueValidator(queryset=User.objects.all())]},
+            'username': {'validators': [validators.UniqueValidator(queryset=User.objects.all()), validate_username]},
             'email': {'validators': [validators.UniqueValidator(queryset=User.objects.all())]}
         }
 
@@ -157,6 +168,7 @@ class FriendRequestSentSerializer(serializers.ModelSerializer):
     """
     Serializer for creating a FriendRequest.
     """
+
     class Meta:
         model = FriendRequest
         fields = ("from_user", "to_user")
@@ -213,6 +225,7 @@ class FriendRequestReceivedSerializer(serializers.ModelSerializer):
     """
     Serializer for received FriendRequests.
     """
+
     class Meta:
         model = FriendRequest
         fields = ("from_user", "to_user", "declined")
