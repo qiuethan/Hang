@@ -24,12 +24,6 @@ class TaskSerializer(serializers.ModelSerializer):
     def validate_event(self, value):
         """
         Validate the event attribute.
-
-        Arguments:
-          value (HangEvent): The HangEvent instance to validate.
-
-        Returns:
-          HangEvent: The validated HangEvent instance.
         """
         if value.archived:
             raise serializers.ValidationError("Cannot create a Task for an archived HangEvent.")
@@ -40,13 +34,6 @@ class TaskSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         """
         Update a Task instance.
-
-        Arguments:
-          instance (Task): The Task instance to update.
-          validated_data (dict): The validated data.
-
-        Returns:
-          Task: The updated Task instance.
         """
         if "event" in validated_data:
             raise serializers.ValidationError("Cannot change HangEvent of Task.")
@@ -70,24 +57,12 @@ class HangEventSerializer(serializers.ModelSerializer):
     def get_message_channel_has_read(self, obj):
         """
         Check if the message channel has been read by the current user.
-
-        Arguments:
-          obj (HangEvent): The HangEvent instance.
-
-        Returns:
-          bool: True if the message channel has been read, False otherwise.
         """
         return obj.message_channel.has_read_message_channel(self.context["request"].user)
 
     def validate_longitude(self, value):
         """
         Validate the longitude attribute.
-
-        Arguments:
-          value (float): The longitude value to validate.
-
-        Returns:
-          float: The validated longitude value.
         """
         if value is not None and not (-180 <= value <= 180):
             raise serializers.ValidationError("Invalid longitude value.")
@@ -96,12 +71,6 @@ class HangEventSerializer(serializers.ModelSerializer):
     def validate_latitude(self, value):
         """
         Validate the latitude attribute.
-
-        Arguments:
-          value (float): The latitude value to validate.
-
-        Returns:
-          float: The validated latitude value.
         """
         if value is not None and not (-90 <= value <= 90):
             raise serializers.ValidationError("Invalid latitude value.")
@@ -110,12 +79,6 @@ class HangEventSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """
         Create a HangEvent instance.
-
-        Arguments:
-          validated_data (dict): The validated data.
-
-        Returns:
-          HangEvent: The created HangEvent instance.
         """
         current_user = self.context["request"].user
         validated_data["owner"] = current_user
@@ -130,13 +93,6 @@ class HangEventSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         """
         Update a HangEvent instance.
-
-        Arguments:
-          instance (HangEvent): The HangEvent instance to update.
-          validated_data (dict): The validated data.
-
-        Returns:
-          HangEvent: The updated HangEvent instance.
         """
         current_user = self.context["request"].user
         self.verify_permission(instance, current_user, validated_data)
@@ -151,11 +107,6 @@ class HangEventSerializer(serializers.ModelSerializer):
     def verify_permission(self, instance, current_user, validated_data):
         """
         Verify the permission of the current user.
-
-        Arguments:
-          instance (HangEvent): The HangEvent instance.
-          current_user (User): The current user.
-          validated_data (dict): The validated data.
         """
         if not instance.attendees.filter(id=current_user.id).exists():
             raise serializers.ValidationError("Permission Denied.")
@@ -166,14 +117,10 @@ class HangEventSerializer(serializers.ModelSerializer):
         if "owner" in validated_data:
             self.verify_owner_permission(instance, current_user, validated_data["owner"])
 
-    def verify_attendees_permission(self, instance, current_user, attendees):
+    @staticmethod
+    def verify_attendees_permission(instance, current_user, attendees):
         """
         Verify the permission of the attendees.
-
-        Arguments:
-          instance (HangEvent): The HangEvent instance.
-          current_user (User): The current user.
-          attendees (list): The list of attendees.
         """
         curr_attendees = set(instance.attendees.all())
         new_attendees = set(attendees.copy())
@@ -187,7 +134,8 @@ class HangEventSerializer(serializers.ModelSerializer):
                 instance.owner.id != current_user.id):
             raise serializers.ValidationError("Permission Denied.")
 
-    def verify_owner_permission(self, instance, current_user, owner):
+    @staticmethod
+    def verify_owner_permission(instance, current_user, owner):
         """
         Verify the permission of the owner.
 
@@ -201,16 +149,10 @@ class HangEventSerializer(serializers.ModelSerializer):
         if not instance.attendees.filter(id=owner.id).exists():
             raise serializers.ValidationError("Owner is not in the GC.")
 
-    def update_fields(self, instance, validated_data):
+    @staticmethod
+    def update_fields(instance, validated_data):
         """
         Update the fields of a HangEvent instance.
-
-        Arguments:
-          instance (HangEvent): The HangEvent instance.
-          validated_data (dict): The validated data.
-
-        Returns:
-          HangEvent: The updated HangEvent instance.
         """
         for field in ('name', 'picture', 'description', 'scheduled_time_start', 'scheduled_time_end', 'longitude',
                       'latitude', 'budget', 'owner'):
@@ -221,7 +163,8 @@ class HangEventSerializer(serializers.ModelSerializer):
 
         return instance
 
-    def transfer_ownership(self, instance):
+    @staticmethod
+    def transfer_ownership(instance):
         """
         Transfer the ownership of a HangEvent instance.
 

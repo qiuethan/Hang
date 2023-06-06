@@ -47,24 +47,12 @@ class DirectMessageChannelSerializer(MessageChannelSerializer):
     def get_has_read(self, obj):
         """
         Checks if the message channel has been read by the user.
-
-        Arguments:
-          obj (DirectMessageChannel): The direct message channel.
-
-        Returns:
-          bool: True if the message channel has been read, False otherwise.
         """
         return obj.has_read_message_channel(self.context["request"].user)
 
     def create(self, validated_data):
         """
         Creates a new direct message channel.
-
-        Arguments:
-          validated_data (dict): The validated data for the direct message channel.
-
-        Returns:
-          DirectMessageChannel: The created direct message channel.
         """
         users = validated_data["users"]
         return MessageChannel.objects.create_direct_message(users[0], users[1])
@@ -72,15 +60,6 @@ class DirectMessageChannelSerializer(MessageChannelSerializer):
     def validate(self, data):
         """
         Validates the data for the direct message channel.
-
-        Arguments:
-          data (dict): The data for the direct message channel.
-
-        Returns:
-          dict: The validated data.
-
-        Raises:
-          ValidationError: If the data is invalid.
         """
         current_user = self.context["request"].user
         users = data["users"]
@@ -122,24 +101,12 @@ class GroupMessageChannelSerializer(MessageChannelSerializer):
     def get_has_read(self, obj):
         """
         Checks if the message channel has been read by the user.
-
-        Arguments:
-          obj (GroupMessageChannel): The group message channel.
-
-        Returns:
-          bool: True if the message channel has been read, False otherwise.
         """
         return obj.has_read_message_channel(self.context["request"].user)
 
     def create(self, validated_data):
         """
         Creates a new group message channel.
-
-        Arguments:
-          validated_data (dict): The validated data for the group message channel.
-
-        Returns:
-          GroupMessageChannel: The created group message channel.
         """
         current_user = self.context["request"].user
         users = validated_data["users"]
@@ -152,15 +119,6 @@ class GroupMessageChannelSerializer(MessageChannelSerializer):
     def validate_users(self, new_users):
         """
         Validates the users for the group message channel.
-
-        Arguments:
-          new_users (list): The new users for the group message channel.
-
-        Returns:
-          list: The validated users.
-
-        Raises:
-          ValidationError: If the users are invalid.
         """
         if self.instance:
             current_user = self.context["request"].user
@@ -178,15 +136,6 @@ class GroupMessageChannelSerializer(MessageChannelSerializer):
     def validate_owner(self, new_owner):
         """
         Validates the owner for the group message channel.
-
-        Arguments:
-          new_owner (User): The new owner for the group message channel.
-
-        Returns:
-          User: The validated owner.
-
-        Raises:
-          ValidationError: If the owner is invalid.
         """
         current_user = self.context["request"].user
         instance = self.instance
@@ -254,12 +203,6 @@ class ReadMessageChannelSerializer(serializers.ModelSerializer):
     def get_has_read(self, obj):
         """
         Checks if the message channel has been read by the user.
-
-        Arguments:
-          obj (MessageChannel): The message channel.
-
-        Returns:
-          bool: True if the message channel has been read, False otherwise.
         """
         return obj.has_read_message_channel(self.context["request"].user)
 
@@ -284,12 +227,6 @@ class MessageSerializer(serializers.Serializer):
     def get_serializer(cls, _type):
         """
         Returns the appropriate serializer for the given message type.
-
-        Arguments:
-          _type (str): The type of the message.
-
-        Returns:
-          Serializer: The appropriate serializer for the message type.
         """
         if _type == "user_message":
             return UserMessageSerializer
@@ -299,12 +236,6 @@ class MessageSerializer(serializers.Serializer):
     def to_representation(self, instance):
         """
         Returns a dictionary representing the message.
-
-        Arguments:
-          instance (Message): The message to represent.
-
-        Returns:
-          dict: A dictionary representing the message.
         """
         serializer = self.get_serializer(instance.type)
         return serializer(serializer.Meta.model.objects.get(pk=instance.pk)).data
@@ -334,12 +265,6 @@ class UserMessageSerializer(serializers.ModelSerializer):
     def validate_user(self, instance):
         """
         Validates the user of the message.
-
-        Arguments:
-          instance (UserMessage): The message.
-
-        Raises:
-          ValidationError: If the user is invalid.
         """
         if instance.user.username != self.context["user"].username:
             raise serializers.ValidationError("Message does not exist.")
@@ -347,15 +272,6 @@ class UserMessageSerializer(serializers.ModelSerializer):
     def validate_message_channel(self, value):
         """
         Validates the message channel of the message.
-
-        Arguments:
-          value (MessageChannel): The message channel.
-
-        Returns:
-          MessageChannel: The validated message channel.
-
-        Raises:
-          ValidationError: If the message channel is invalid.
         """
         try:
             value.users.get(username=self.context["user"].username)
@@ -366,15 +282,6 @@ class UserMessageSerializer(serializers.ModelSerializer):
     def validate_reply(self, value):
         """
         Validates the reply of the message.
-
-        Arguments:
-          value (UserMessage): The reply.
-
-        Returns:
-          UserMessage: The validated reply.
-
-        Raises:
-          ValidationError: If the reply is invalid.
         """
         message_channel = self.initial_data.get("message_channel")
         if value is not None and value.message_channel_id != message_channel:
@@ -384,12 +291,6 @@ class UserMessageSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """
         Creates a new user message.
-
-        Arguments:
-          validated_data (dict): The validated data for the user message.
-
-        Returns:
-          UserMessage: The created user message.
         """
         message = UserMessage.objects.create(user=self.context["user"], **validated_data)
         validated_data["message_channel"].message_last_sent = datetime.now()
@@ -399,13 +300,6 @@ class UserMessageSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         """
         Updates a user message.
-
-        Arguments:
-          instance (UserMessage): The user message to update.
-          validated_data (dict): The validated data for the user message.
-
-        Returns:
-          UserMessage: The updated user message.
         """
         self.validate_user(instance)
         instance.content = validated_data.get("content", instance.content)
@@ -444,17 +338,7 @@ class AuthenticateWebsocketSerializer(serializers.Serializer):
     def validate_token(self, data):
         """
         Validates the authentication token.
-
-        Arguments:
-          data (str): The authentication token.
-
-        Returns:
-          User: The user associated with the token.
-
-        Raises:
-          ValidationError: If the token is invalid.
         """
-        # Checks if the AuthToken is valid.
         try:
             auth = TokenAuthentication().authenticate_credentials(data.encode("utf-8"))
             return auth[0]
@@ -464,9 +348,6 @@ class AuthenticateWebsocketSerializer(serializers.Serializer):
     def validate(self, data):
         """
         Validates the data for websocket authentication.
-
-        Arguments:
-          data (dict): The data for websocket authentication
         """
         if data["token"].username != self.context["user"].username:
             raise serializers.ValidationError("Token does not match user.")

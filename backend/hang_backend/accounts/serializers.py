@@ -1,7 +1,7 @@
 """
 ICS4U
 Paul Chen
-This module contains serializers for various models related to user authentication and friend requests in a Django application.
+This module contains serializers for the models defined in the models.py.
 """
 import re
 import urllib.parse
@@ -57,9 +57,9 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = ('id', 'username', 'email', 'password')
         extra_kwargs = {
-            'password': {'write_only': True, 'validators': [validate_password]},
             'username': {'validators': [validators.UniqueValidator(queryset=User.objects.all()), validate_username]},
-            'email': {'validators': [validators.UniqueValidator(queryset=User.objects.all())]}
+            'email': {'validators': [validators.UniqueValidator(queryset=User.objects.all())]},
+            'password': {'write_only': True, 'validators': [validate_password]},
         }
 
     def create(self, validated_data):
@@ -105,13 +105,13 @@ class LoginWithGoogleSerializer(serializers.Serializer):
 
     def validate_code(self, code):
         """
-        Validate the Google login code.
+        Prepares the code by fixing escape sequences.
 
         Arguments:
           code (str): The Google login code.
 
         Returns:
-          str: The unquoted Google login code.
+          str: The fixed Google login code.
         """
         return urllib.parse.unquote(code)
 
@@ -145,7 +145,7 @@ class EmailAuthenticationTokenSerializer(serializers.Serializer):
           validated_data (dict): Validated data for creating an EmailAuthenticationToken.
 
         Returns:
-          EmailAuthenticationToken: The created EmailAuthenticationTokeninstance.
+          EmailAuthenticationToken: The created EmailAuthenticationToken instance.
         """
         return EmailAuthenticationToken.create(user=validated_data["user"])
 

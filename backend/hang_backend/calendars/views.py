@@ -34,12 +34,6 @@ class ManualTimeRangeView(generics.CreateAPIView):
     queryset = ManualTimeRange.objects.all()
 
     def get_serializer_context(self):
-        """
-        Returns the context for the serializer.
-
-        Returns:
-          dict: The context for the serializer.
-        """
         return {'request': self.request, 'calendar': ManualCalendar.objects.get(user=self.request.user)}
 
 
@@ -51,24 +45,9 @@ class RepeatingTimeRangeViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """
-        Returns the queryset for the view.
-
-        Returns:
-          QuerySet: The queryset for the view.
-        """
         return RepeatingTimeRange.objects.filter(calendar__user=self.request.user)
 
     def perform_create(self, serializer):
-        """
-        Performs the creation of a repeating time range.
-
-        Arguments:
-          serializer (RepeatingTimeRangeSerializer): The serializer for the repeating time range.
-
-        Returns:
-          None
-        """
         calendar = get_object_or_404(ManualCalendar, user=self.request.user)
         serializer.save(manual_calendar=calendar)
 
@@ -80,15 +59,6 @@ class GoogleCalendarListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        """
-        Handles GET requests.
-
-        Arguments:
-          request (HttpRequest): The request.
-
-        Returns:
-          Response: The response.
-        """
         calendar_list = GoogleCalendar.fetch_calendar_data(request.user)
         return Response(calendar_list)
 
@@ -100,15 +70,6 @@ class GoogleCalendarSyncView(views.APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        """
-        Handles POST requests.
-
-        Arguments:
-          request (HttpRequest): The request.
-
-        Returns:
-          Response: The response.
-        """
         serializer = GoogleCalendarSerializer(data=request.data, many=True)
         serializer.is_valid(raise_exception=True)
         user = request.user
@@ -167,17 +128,6 @@ class BusyTimeRangesView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, user_id, format=None):
-        """
-        Handles GET requests.
-
-        Arguments:
-          request (HttpRequest): The request.
-          user_id (int): The ID of the user.
-          format (str): The format of the response.
-
-        Returns:
-          Response: The response.
-        """
         start_time = request.query_params.get('start_time')
         if start_time:
             start_time = datetime.fromisoformat(start_time).replace(tzinfo=tz.gettz())
@@ -202,15 +152,6 @@ class FreeTimeRangesView(APIView):
     View for getting the free time ranges of a user.
     """
     def get(self, request):
-        """
-        Handles GET requests.
-
-        Arguments:
-          request (HttpRequest): The request.
-
-        Returns:
-          Response: The response.
-        """
         query_serializer = FreeTimeRangesSerializer(data=request.query_params, context={"request": request})
         query_serializer.is_valid(raise_exception=True)
         validated_data = query_serializer.validated_data
@@ -240,15 +181,6 @@ class UsersFreeDuringRangeView(APIView):
     View for getting the users who are free during a certain time range.
     """
     def get(self, request):
-        """
-        Handles GET requests.
-
-        Arguments:
-          request (HttpRequest): The request.
-
-        Returns:
-          Response: The response.
-        """
         serializer = UserFreeDuringRangeSerializer(data=request.query_params, context={"request": request})
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data

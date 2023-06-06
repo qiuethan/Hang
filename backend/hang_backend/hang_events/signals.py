@@ -1,3 +1,9 @@
+"""
+ICS4U
+Paul Chen
+This module contains signal receivers for the HangEvent model.
+"""
+
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db.models.signals import pre_save, m2m_changed, post_save
@@ -13,6 +19,9 @@ from .models import HangEvent
 
 @receiver(m2m_changed, sender=HangEvent.attendees.through)
 def update_hang_event_message_channel(sender, instance, action, pk_set, **kwargs):
+    """
+    Updates the message channel of a HangEvent instance when attendees are added or removed.
+    """
     if action == "post_add" or action == "post_remove" or action == "post_clear":
         if hasattr(instance, "message_channel"):
             instance.message_channel.users.set(instance.attendees.all())
@@ -20,6 +29,9 @@ def update_hang_event_message_channel(sender, instance, action, pk_set, **kwargs
 
 @receiver(post_save, sender=HangEvent)
 def send_hang_event_updated_message(sender, instance, created, **kwargs):
+    """
+    Sends a system message when a HangEvent instance is updated.
+    """
     if not created:
         tracked_fields = [
             "name", "owner", "description", "scheduled_time_start", "scheduled_time_end", "address"
@@ -36,6 +48,9 @@ def send_hang_event_updated_message(sender, instance, created, **kwargs):
 
 @receiver(m2m_changed, sender=HangEvent.attendees.through)
 def send_hang_event_user_added_or_removed_message(sender, instance, action, pk_set, **kwargs):
+    """
+    Sends a system message when a user is added or removed from a HangEvent instance.
+    """
     if action in ["post_add", "post_remove"]:
         for user_pk in pk_set:
             user = User.objects.get(pk=user_pk)
@@ -49,6 +64,9 @@ def send_hang_event_user_added_or_removed_message(sender, instance, action, pk_s
 
 @receiver(pre_save, sender=HangEvent)
 def update_google_calendar_event(sender, instance, **kwargs):
+    """
+    Updates the Google Calendar event associated with a HangEvent instance before it is saved.
+    """
     # Exit if not an update
     if not instance.pk:
         return

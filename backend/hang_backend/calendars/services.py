@@ -84,7 +84,7 @@ class TimeRangeService:
           end_time (datetime): The end time of the period to consider.
 
         Returns:
-          list of tuples: A list of free time ranges derived from the busy time ranges within thegiven period.
+          list of tuples: A list of free time ranges derived from the busy time ranges within the given period.
         """
         free_ranges = []
         if sorted_busy_ranges:

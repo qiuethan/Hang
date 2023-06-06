@@ -1,7 +1,7 @@
 """
 ICS4U
 Paul Chen
-This module defines the data models for the user profiles, authentication tokens, and friend requests in the application.
+This module defines the database models for the user profiles, authentication tokens, and friend requests.
 """
 
 import hashlib
@@ -30,12 +30,12 @@ class Profile(models.Model, RTWSSendMessageOnUpdate):
 
     Attributes:
       user (User): The user associated with this profile.
-      profile_picture (str): The URL of the user's profile picture.
+      profile_picture (str): The user's profile picture encoded as a string.
       is_verified (bool): Whether the user's email is verified.
       about_me (str): The user's self-description.
       friends (User): The user's friends.
       blocked_users (User): The users blocked by this user.
-      rtws_message_content (str): The content of the real-time websocket message.
+      rtws_message_content (str): The content of the real-time websocket message that updates the frontend.
     """
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
     profile_picture = models.CharField(max_length=200000,
@@ -65,7 +65,7 @@ class Profile(models.Model, RTWSSendMessageOnUpdate):
         Returns:
           User: The created user.
         """
-        from calendars.models import ManualCalendar, ImportedCalendar
+        from calendars.models import ManualCalendar, ImportedCalendar  # We import here to avoid circular imports
 
         user = User.objects.create_user(username, email, password)
 
@@ -352,7 +352,7 @@ class EmailAuthenticationToken(models.Model):
         Checks if the token is expired.
 
         Returns:
-          bool: True if the token is expired,False otherwise.
+          bool: True if the token is expired, False otherwise.
         """
         return datetime.now(timezone.utc) - self.created_at > timedelta(days=1)
 
