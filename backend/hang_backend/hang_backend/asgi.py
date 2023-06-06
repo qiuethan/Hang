@@ -9,11 +9,14 @@ https://docs.djangoproject.com/en/4.0/howto/deployment/asgi/
 
 import os
 
+import django
+
+django.setup()
+
 import chats.routing
+import real_time_ws.routing
 from channels.routing import ProtocolTypeRouter, URLRouter
 from django.core.asgi import get_asgi_application
-
-import real_time_ws.routing
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'hang_backend.settings')
 

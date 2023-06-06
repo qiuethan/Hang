@@ -5,15 +5,15 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     LoginView, RegisterView,
     LoginWithGoogleView,
-    RetrieveGoogleAuthenticationURLView, RetrieveUserView, SentFriendRequestViewSet, ReceivedFriendRequestViewSet,
+    RetrieveGoogleAuthenticationURLView, RetrieveUserView, FriendRequestSentViewSet, FriendRequestReceivedViewSet,
     FriendsViewSet, BlockedUsersViewSet, EmailVerificationTokenViewSet, ProfileView
 )
 
 app_name = "accounts"
 
 router = DefaultRouter()
-router.register(r'friend_requests/sent', SentFriendRequestViewSet, basename='sent_friend_requests')
-router.register(r'friend_requests/received', ReceivedFriendRequestViewSet, basename='received_friend_requests')
+router.register(r'friend_requests/sent', FriendRequestSentViewSet, basename='sent_friend_requests')
+router.register(r'friend_requests/received', FriendRequestReceivedViewSet, basename='received_friend_requests')
 router.register(r'friends', FriendsViewSet, basename='friends')
 router.register(r'blocked_users', BlockedUsersViewSet, basename='blocked_users')
 router.register(r'email_verification_tokens', EmailVerificationTokenViewSet, basename='email_verification_tokens')

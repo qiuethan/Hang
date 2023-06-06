@@ -1,14 +1,26 @@
-from django.db.models.signals import post_save, pre_save, post_delete
-from django.dispatch import receiver
+"""
+ICS4U
+Paul Chen
+This module contains functions for handling chat notifications.
+"""
 
 from chats.consumers import send_to_message_channel
-from chats.models import Message, UserMessage, MessageChannelUsers, GroupMessageChannel, Reaction
-from chats.serializers import UserMessageSerializer, MessageSerializer
+from chats.models import UserMessage, MessageChannelUsers, GroupMessageChannel
+from chats.serializers import MessageSerializer
 from hang_events.models import HangEvent
 from notifications.models import Notification
 
 
 def get_message_prefix(content):
+    """
+    Truncate the message content to a maximum of 35 characters.
+
+    Arguments:
+      content (str): The content of the message.
+
+    Returns:
+      str: The truncated message content.
+    """
     if len(content) > 35:
         prefix = content[:35]
         content = prefix + "..."
@@ -16,11 +28,26 @@ def get_message_prefix(content):
 
 
 def message_created_notify_chat(sender, instance, created, **kwargs):
+    """
+    Send a notification when a new message is created.
+
+    Arguments:
+      sender (Model): The sender of the signal.
+      instance (Model): The instance that triggered the signal.
+      created (bool): Indicates whether a new record was created.
+    """
     if created:
         send_to_message_channel("send_message", instance.message_channel, MessageSerializer(instance).data)
 
 
 def message_edited_notify_chat(sender, instance, **kwargs):
+    """
+    Send a notification when a message is edited.
+
+    Arguments:
+      sender (Model): The sender of the signal.
+      instance (Model): The instance that triggered the signal.
+    """
     if instance.pk is not None:
         orig = sender.objects.get(pk=instance.pk)
         if orig.content != instance.content:
@@ -30,10 +57,25 @@ def message_edited_notify_chat(sender, instance, **kwargs):
 
 
 def message_deleted_notify_chat(sender, instance, **kwargs):
+    """
+    Send a notification when a message is deleted.
+
+    Arguments:
+      sender (Model): The sender of the signal.
+      instance (Model): The instance that triggered the signal.
+    """
     send_to_message_channel("delete_message", instance.message_channel, {"id": instance.id})
 
 
 def message_reacted_added_notify_chat(sender, instance, created, **kwargs):
+    """
+    Send a notification when a reaction is added to a message.
+
+    Arguments:
+      sender (Model): The sender of the signal.
+      instance (Model): The instance that triggered the signal.
+      created (bool): Indicates whether a new record was created.
+    """
     if created:
         send_to_message_channel("add_reaction",
                                 instance.message.message_channel,
@@ -41,12 +83,27 @@ def message_reacted_added_notify_chat(sender, instance, created, **kwargs):
 
 
 def message_reaction_removed_notify_chat(sender, instance, **kwargs):
+    """
+    Send a notification when a reaction is removed from a message.
+
+    Arguments:
+      sender (Model): The sender of the signal.
+      instance (Model): The instance that triggered the signal.
+    """
     send_to_message_channel("remove_reaction",
                             instance.message.message_channel,
                             MessageSerializer(instance.message).data)
 
 
 def message_saved_create_notifications(sender, instance, created, **kwargs):
+    """
+    Create notifications for saved messages.
+
+    Arguments:
+      sender (Model): The sender of the signal.
+      instance (Model): The instance that triggered the signal.
+      created (bool): Indicates whether a new record was created.
+    """
     mcu_set = MessageChannelUsers.objects.filter(message_channel=instance.message_channel).all()
     sender = instance.user if isinstance(instance, UserMessage) else None
     for mcu in mcu_set:

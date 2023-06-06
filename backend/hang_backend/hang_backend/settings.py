@@ -10,8 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
-from os import path
+from os import path, getenv
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +26,16 @@ SECRET_KEY = 'django-insecure-tm%x0^p&wyo!qoitd&r&-ih_olybec#ddzmwdavopavot=96nx
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# Load .env file
+load_dotenv()
+
+# Get the current environment
+DJANGO_ENV = getenv('DJANGO_ENV')
+
+ALLOWED_HOSTS = [
+    'localhost',
+    'hang-backend.fly.dev'
+]
 
 # Application definition
 
@@ -64,7 +74,6 @@ REST_KNOX = {
 }
 
 MIDDLEWARE = [
-
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -103,12 +112,20 @@ ASGI_APPLICATION = "hang_backend.asgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if DJANGO_ENV == 'development':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': '/mnt/db.sqlite3',
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
@@ -172,8 +189,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'hangtesthehehehaw@gmail.com'
-EMAIL_HOST_PASSWORD = 'tevnrgicquklgafh'
+EMAIL_HOST_USER = 'hangnoreply@gmail.com'
+EMAIL_HOST_PASSWORD = 'aadcruxqtpkraslg'
 
 CHANNEL_LAYERS = {
     'default': {

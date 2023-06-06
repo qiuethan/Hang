@@ -1,3 +1,9 @@
+"""
+ICS4U
+Paul Chen
+This module contains views for managing calendar and time range data.
+"""
+
 from datetime import datetime
 
 from dateutil.tz import tz
@@ -20,38 +26,89 @@ from .services import TimeRangeService
 
 
 class ManualTimeRangeView(generics.CreateAPIView):
+    """
+    View for creating a manual time range.
+    """
     permission_classes = [IsAuthenticated, ]
     serializer_class = ManualTimeRangeSerializer
     queryset = ManualTimeRange.objects.all()
 
     def get_serializer_context(self):
+        """
+        Returns the context for the serializer.
+
+        Returns:
+          dict: The context for the serializer.
+        """
         return {'request': self.request, 'calendar': ManualCalendar.objects.get(user=self.request.user)}
 
 
 class RepeatingTimeRangeViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing repeating time ranges.
+    """
     serializer_class = RepeatingTimeRangeSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        """
+        Returns the queryset for the view.
+
+        Returns:
+          QuerySet: The queryset for the view.
+        """
         return RepeatingTimeRange.objects.filter(calendar__user=self.request.user)
 
     def perform_create(self, serializer):
+        """
+        Performs the creation of a repeating time range.
+
+        Arguments:
+          serializer (RepeatingTimeRangeSerializer): The serializer for the repeating time range.
+
+        Returns:
+          None
+        """
         calendar = get_object_or_404(ManualCalendar, user=self.request.user)
         serializer.save(manual_calendar=calendar)
 
 
 class GoogleCalendarListView(APIView):
+    """
+    View for listing Google Calendars.
+    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        """
+        Handles GET requests.
+
+        Arguments:
+          request (HttpRequest): The request.
+
+        Returns:
+          Response: The response.
+        """
         calendar_list = GoogleCalendar.fetch_calendar_data(request.user)
         return Response(calendar_list)
 
 
 class GoogleCalendarSyncView(views.APIView):
+    """
+    View for syncing Google Calendars.
+    """
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        """
+        Handles POST requests.
+
+        Arguments:
+          request (HttpRequest): The request.
+
+        Returns:
+          Response: The response.
+        """
         serializer = GoogleCalendarSerializer(data=request.data, many=True)
         serializer.is_valid(raise_exception=True)
         user = request.user
@@ -70,11 +127,13 @@ class GoogleCalendarSyncView(views.APIView):
                 time_ranges.append(time_range)
         time_ranges = sorted(time_ranges, key=lambda x: x.start_time)
 
+        # If there's only one time range or none, delete all existing time ranges and save the new ones
         if len(time_ranges) <= 1:
             ImportedTimeRange.objects.filter(calendar=imported_calendar).delete()
             for obj in time_ranges:
                 obj.save()
         else:
+            # If there are multiple time ranges, merge overlapping ones
             merged_ranges = []
             current_range = time_ranges[0]
 
@@ -90,6 +149,7 @@ class GoogleCalendarSyncView(views.APIView):
             for time_range in merged_ranges:
                 time_range.calendar = imported_calendar
 
+            # Delete all existing time ranges and save the merged ones
             ImportedTimeRange.objects.filter(calendar=imported_calendar).delete()
             for obj in merged_ranges:
                 obj.save()
@@ -101,9 +161,23 @@ class GoogleCalendarSyncView(views.APIView):
 
 
 class BusyTimeRangesView(APIView):
+    """
+    View for getting the busy time ranges of a user.
+    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, user_id, format=None):
+        """
+        Handles GET requests.
+
+        Arguments:
+          request (HttpRequest): The request.
+          user_id (int): The ID of the user.
+          format (str): The format of the response.
+
+        Returns:
+          Response: The response.
+        """
         start_time = request.query_params.get('start_time')
         if start_time:
             start_time = datetime.fromisoformat(start_time).replace(tzinfo=tz.gettz())
@@ -124,7 +198,19 @@ class BusyTimeRangesView(APIView):
 
 
 class FreeTimeRangesView(APIView):
+    """
+    View for getting the free time ranges of a user.
+    """
     def get(self, request):
+        """
+        Handles GET requests.
+
+        Arguments:
+          request (HttpRequest): The request.
+
+        Returns:
+          Response: The response.
+        """
         query_serializer = FreeTimeRangesSerializer(data=request.query_params, context={"request": request})
         query_serializer.is_valid(raise_exception=True)
         validated_data = query_serializer.validated_data
@@ -150,7 +236,19 @@ class FreeTimeRangesView(APIView):
 
 
 class UsersFreeDuringRangeView(APIView):
+    """
+    View for getting the users who are free during a certain time range.
+    """
     def get(self, request):
+        """
+        Handles GET requests.
+
+        Arguments:
+          request (HttpRequest): The request.
+
+        Returns:
+          Response: The response.
+        """
         serializer = UserFreeDuringRangeSerializer(data=request.query_params, context={"request": request})
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data

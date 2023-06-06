@@ -10,12 +10,22 @@ from real_time_ws.models import RTWSSendMessageOnUpdate
 
 
 def generate_random_string():
-    """Utility method to generate a random string."""
+    """
+    Generates a random string of 10 characters.
+
+    Returns:
+      str: A random string of 10 characters.
+    """
     return "".join([random.choice(string.ascii_letters) for _ in range(10)])
 
 
 def generate_unique_invitation_code():
-    """Utility method to generate a random id for a MessageChannel."""
+    """
+    Generates a unique invitation code for a HangEvent.
+
+    Returns:
+      str: A unique invitation code.
+    """
     code = generate_random_string()
     while HangEvent.objects.filter(invitation_code=code).exists():
         code = generate_random_string()
@@ -23,10 +33,31 @@ def generate_unique_invitation_code():
 
 
 class HangEvent(models.Model, RTWSSendMessageOnUpdate):
-    """Model for a Hang Event."""
+    """
+    Represents a Hang Event in the application.
+
+    Attributes:
+      name (str): The name of the event.
+      owner (User): The user who owns the event.
+      picture (str): The picture associated with the event.
+      description (str): The description of the event.
+      scheduled_time_start (datetime): The start time of the event.
+      scheduled_time_end (datetime): The end time of the event.
+      longitude (float): The longitude of the event location.
+      latitude (float): The latitude of the event location.
+      address (str): The address of the event location.
+      budget (float): The budget for the event.
+      attendees (User): The users attending the event.
+      created_at (datetime): The time the event was created.
+      updated_at (datetime): The time the event was last updated.
+      google_calendar_event_id (str): The ID of the event in Google Calendar.
+      invitation_code (str): The unique invitation code for the event.
+      message_channel (HangEventMessageChannel): The message channel associated with the event.
+      archived (bool): Whether the event is archived or not.
+    """
     name = models.CharField(max_length=200)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="hang_events_owned")
-    picture = models.CharField(max_length=200)
+    picture = models.CharField(max_length=2000000)
     description = models.TextField()
     scheduled_time_start = models.DateTimeField()
     scheduled_time_end = models.DateTimeField()
@@ -66,6 +97,19 @@ class HangEvent(models.Model, RTWSSendMessageOnUpdate):
 
     @staticmethod
     def add_user_through_invitation_code(invitation_code, user):
+        """
+        Adds a user to a HangEvent using an invitation code.
+
+        Arguments:
+          invitation_code (str): The invitation code for the HangEvent.
+          user (User): The user to be added to the HangEvent.
+
+        Returns:
+          HangEvent: The HangEvent to which the user was added.
+
+        Raises:
+          ValidationError: If the HangEvent is archived or the user is already an attendee.
+        """
         hang_event = HangEvent.objects.filter(invitation_code=invitation_code).get()
 
         if hang_event.archived:
@@ -79,6 +123,12 @@ class HangEvent(models.Model, RTWSSendMessageOnUpdate):
         return hang_event
 
     def to_google_calendar_event_data(self):
+        """
+        Converts the HangEvent to a dictionary suitable for creating a Google Calendar event.
+
+        Returns:
+          dict: A dictionary containing the HangEvent data in a format suitable for Google Calendar.
+        """
         return {
             'summary': self.name,
             'location': self.address,
@@ -96,6 +146,14 @@ class HangEvent(models.Model, RTWSSendMessageOnUpdate):
 
 
 class Task(models.Model, RTWSSendMessageOnUpdate):
+    """
+    Represents a task associated with a HangEvent.
+
+    Attributes:
+      event (HangEvent): The event associated with the task.
+      name (str): The name of the task.
+      completed (bool): Whether the task is completed or not.
+    """
     event = models.ForeignKey(HangEvent, related_name="tasks", on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     completed = models.BooleanField(default=False)
