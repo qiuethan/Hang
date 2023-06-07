@@ -32,3 +32,13 @@ export const joinhangevent = (code, navigate) => async(dispatch) => {
         console.log(error);
     }
 }
+
+export const generatejoinlink = (id) => async(dispatch) => {
+    try{
+        const { data } = await api.generatecode(id);
+        return data;
+    }
+    catch (error){
+        console.log(error);
+    }
+}

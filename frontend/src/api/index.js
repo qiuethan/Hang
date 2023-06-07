@@ -52,6 +52,11 @@ export const deletesentfriendrequest = (id) => API.delete(`/v1/accounts/friend_r
 export const createhangevent = (inputs) => {console.log(inputs); API.post('/v1/hang_events/unarchived/', inputs)};
 export const gethangevents = () => API.get('/v1/hang_events/unarchived/');
 export const joinhangevent = (code) => API.post('/v1/hang_events/invitation_codes/join/', {invitation_code: code})
+export const generatecode = (id) => API.get(`/v1/hang_events/invitation_codes/${id}/`)
 
 //Notifications
 export const getunreadnotifications = () => API.get('/v1/notifications/notifications/unread/');
+
+//Google Calendar
+export const getgooglecalendar = () => API.get("/v1/calendars/google_calendar/");
+export const syncgooglecalendar = (syncedcalendar) => API.post("/v1/calendars/google_calendar/sync/", syncedcalendar);

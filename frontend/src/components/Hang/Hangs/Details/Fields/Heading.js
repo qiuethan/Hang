@@ -6,7 +6,7 @@ const Heading = ({details}) => {
     console.log(details);
 
     return(
-        <Box sx={{display: "flex", flexDirection: "row", width: "100%"}}>
+        <Box sx={{display: "flex", flexDirection: "row", width: "100%", marginBottom: "20px"}}>
             <Box sx={{width: "20%"}}>
                 <img style={{display: "block", justifySelf: "center", alignSelf: "center", maxWidth: "100%", maxHeight: "100%", aspectRatio:"1", objectFit: "cover", borderRadius: "50%"}} src={details.picture} alt="Picture"/>
             </Box>

@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {useSearchParams} from "react-router-dom";
+import {Button} from "@mui/material";
 
 const Google = () => {
 
@@ -20,7 +21,7 @@ const Google = () => {
     }
 
     return (
-       <button onClick={connect}>Connect to Google</button>
+       <Button onClick={connect} sx={{width: "100%", backgroundColor: "#0c7c59", color: "white", ":hover": {color: "#0c7c59", backgroundColor: "white"}}}>Connect to Google to Access Calendar Features!</Button>
     )
 }
 

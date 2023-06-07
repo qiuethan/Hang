@@ -27,7 +27,7 @@ const Attendee = ({attendee}) => {
     }, [useSelector((state) => state.users)])
 
     return(
-        <Box sx={{display: "flex", width: "100%", height: "60px", alignItems: "center", justifyContent: "center", ":hover": {bgcolor: "#a5d6b0"}, borderRadius: "10px", marginBottom: "10px"}}>
+        <Box sx={{display: "block", width: "100%", height: "60px", alignItems: "center", justifyContent: "center", ":hover": {bgcolor: "#a5d6b0"}, borderRadius: "10px", marginBottom: "10px"}}>
             {user !== "" && (
                 <Box sx={{display: "flex", width: "100%", height: "90%", alignItems: "center", marginLeft: "10px"}}>
                     <Avatar src={user.profile_picture} sx={{height: "40px", width: "40px"}}/>

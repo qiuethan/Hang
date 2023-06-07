@@ -4,7 +4,7 @@ import { loadrooms } from "../../../actions/chat";
 import Chatitem from "./Chatitem/Chatitem";
 import {Box, Paper} from "@mui/material";
 
-const Chatlist = ({ currentRoom, setCurrentRoom, clientOpened }) => {
+const Chatlist = ({ client, currentRoom, setCurrentRoom, clientOpened }) => {
     
     const dispatch = useDispatch();
 

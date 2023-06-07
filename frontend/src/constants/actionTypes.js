@@ -26,6 +26,6 @@ export const GETHANGEVENTS = 'GETHANGEVENTS';
 
 export const GETUNREADNOTIFICATIONS = 'GETUNREADNOTIFICATIONS';
 
-export const BASEURL = "https://hang-backend.fly.dev/";
-export const BASEWS = "wss://hang-backend.fly.dev/";
-export const FRONTENDURL = "https://hang-coherentboi.vercel.app/";
+export const BASEURL = "http://localhost:8000/";
+export const BASEWS = "ws://localhost:8000/";
+export const FRONTENDURL = "http://localhost:3000/";

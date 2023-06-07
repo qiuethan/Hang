@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { connectws } from '../../../../actions/chat';
+import {connectws, loadgroups, loadrooms} from '../../../../actions/chat';
 
 import Message from './Message/Message';
 
@@ -11,6 +11,8 @@ const Messages = ({ client, currentRoom, clientOpened }) => {
     const [messages, setMessages] = useState([]);
     const [sentMessage, setSentMessage] = useState();
     const scrollRef = useRef(null);
+
+    const dispatch = useDispatch();
 
     useEffect(() => {
         setMessages([]);
@@ -37,6 +39,8 @@ const Messages = ({ client, currentRoom, clientOpened }) => {
 
     try{
         client.onmessage = (message) => {
+            dispatch(loadrooms());
+            dispatch(loadgroups());
             const messageObject = JSON.parse(message.data);
             if(messageObject.type === "status"){
                 if(messageObject.message !== "success"){

@@ -3,13 +3,11 @@ import React, {useEffect, useState} from "react";
 import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
 
 const containerStyle = {
-    width: '800px',
-    height: '500px'
+    width: '95%',
+    height: '98%'
 };
 
 const MapComponent = ({updateLocation, fields, setFields }) => {
-
-    const [latitude, setLatitude] = useState(0);
 
     const handleClick = (e) => {
         const geocoder = new window.google.maps.Geocoder();
