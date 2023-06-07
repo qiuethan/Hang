@@ -19,7 +19,9 @@ export const login = (inputs) => async (dispatch) => {
     }
     catch(error){
         console.log(error);
-        return(error);
+
+        //return error to component
+        return error;
     }
 }
 
@@ -34,6 +36,9 @@ export const signup = (inputs, navigate) => async (dispatch) => {
     }
     catch (error){
         console.log(error);
+
+        //Return error to component
+        return error;
     }
 }
 

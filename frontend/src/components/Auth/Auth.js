@@ -32,6 +32,9 @@ const Auth = ({currentPage, setCurrentPage}) => {
     const [confirm, setConfirm] = useState({confirmPassword: ""})
     const [confirmAccount, setConfirmAccount] = useState(false);
 
+    // Setting up error checking
+    const [error, setError] = useState("");
+
     // We are using react-router-dom's navigate hook to navigate programmatically.
     const navigate = useNavigate();
 
@@ -59,10 +62,26 @@ const Auth = ({currentPage, setCurrentPage}) => {
                 dispatch(signup(inputs, navigate)) // dispatches signup action
                     .then((response) => {
                         try{
+                            //Handle non-field errors
                             handleErrors(response.response.data.non_field_errors);
                         }
                         catch (error){
-                            window.location.reload();
+                            console.log(response);
+                            //Handle Field Errors
+                            try{
+                                if(response.response.data.email !== undefined){
+                                    setError("Email: " + response.response.data.email)
+                                }
+                                else if(response.response.data.username !== undefined){
+                                    setError("Username: " + response.response.data.username)
+                                }
+                                else if(response.response.data.password !== undefined){
+                                    setError("Password: " + response.response.data.password);
+                                }
+                            }
+                            catch(e){
+                                console.log(e);
+                            }
                         }
                     });
             }
@@ -77,8 +96,17 @@ const Auth = ({currentPage, setCurrentPage}) => {
                         handleErrors(response.response.data);
                     }
                     catch (error){
-                        console.log(error);
-                        window.location.reload();
+                        try{
+                            if(response.response.data.email !== undefined){
+                                setError("Email: " + response.response.data.email)
+                            }
+                            else if(response.response.data.password !== undefined){
+                                setError("Password: " + response.response.data.password);
+                            }
+                        }
+                        catch(e){
+                            console.log(e);
+                        }
                     }
                 })
         }
@@ -90,6 +118,9 @@ const Auth = ({currentPage, setCurrentPage}) => {
             if(response.non_field_errors[0] == "User is not verified."){
                 setConfirmAccount(true);
                 sendVerificationEmail();
+            }
+            else{
+                setError(response.non_field_errors[0]);
             }
         }
     }
@@ -129,7 +160,7 @@ const Auth = ({currentPage, setCurrentPage}) => {
                             {
                                 isSignup && (
                                     <Box sx={{width: "100%", display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "20px"}}>
-                                        <h3 style={{margin: "0", fontSize: "24px", marginBottom: "10px"}}>Username</h3>
+                                        <h4 style={{margin: "0", fontSize: "20px", marginBottom: "10px"}}>Username</h4>
                                         <TextField
                                             type="text"
                                             name="username"
@@ -141,7 +172,7 @@ const Auth = ({currentPage, setCurrentPage}) => {
                                 )
                             }
                             <Box sx={{width: "100%", display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "20px"}}>
-                                <h3 style={{margin: "0", fontSize: "24px", marginBottom: "10px"}}>Email</h3>
+                                <h4 style={{margin: "0", fontSize: "20px", marginBottom: "10px"}}>Email</h4>
                                 <TextField
                                     type="text"
                                     name="email"
@@ -151,7 +182,7 @@ const Auth = ({currentPage, setCurrentPage}) => {
                                 />
                             </Box>
                             <Box sx={{width: "100%", display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "20px"}}>
-                                <h3 style={{margin: "0", fontSize: "24px", marginBottom: "10px"}}>Password</h3>
+                                <h4 style={{margin: "0", fontSize: "20px", marginBottom: "10px"}}>Password</h4>
                                 <TextField
                                     type="password"
                                     name="password"
@@ -163,7 +194,7 @@ const Auth = ({currentPage, setCurrentPage}) => {
                             {
                                 isSignup && (
                                     <Box sx={{width: "100%", display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "20px"}}>
-                                        <h3 style={{margin: "0", fontSize: "24px", marginBottom: "10px"}}>Confirm Password</h3>
+                                        <h4 style={{margin: "0", fontSize: "20px", marginBottom: "10px"}}>Confirm Password</h4>
                                         <TextField
                                             type="password"
                                             name="confirmPassword"
@@ -179,6 +210,14 @@ const Auth = ({currentPage, setCurrentPage}) => {
                                 confirmAccount && (
                                     <Box sx={{width: "100%", display: "flex", justifyContent: "center", alignItems: "center", marginBottom: "20px"}}>
                                         <p style={{color: "black", margin: "0"}}>Verification Sent. Please Check Your Email.</p>
+                                    </Box>
+                                )
+                            }
+
+                            {
+                                error !== "" && (
+                                    <Box sx={{width: "100%", display: "flex", justifyContent: "center", alignItems: "center", marginBottom: "20px"}}>
+                                        <p style={{color: "black", margin: "0"}}>{error}</p>
                                     </Box>
                                 )
                             }
