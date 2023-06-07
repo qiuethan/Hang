@@ -102,6 +102,9 @@ class LoginWithGoogleSerializer(serializers.Serializer):
     Serializer for logging in with Google.
     """
     code = serializers.CharField()
+    redirect_uri = serializers.ChoiceField(choices=["http://localhost:3000/auth", "http://localhost:3000/profile",
+                                                    "https://hang-coherentboi.vercel.app/auth",
+                                                    "https://hang-coherentboi.vercel.app/profile"])
 
     def validate_code(self, code):
         """
@@ -125,9 +128,8 @@ class LoginWithGoogleSerializer(serializers.Serializer):
         Returns:
           GoogleAuthenticationToken: The created GoogleAuthenticationToken instance.
         """
-        redirect_uri = 'https://hang-coherentboi.vercel.app/auth'
         return GoogleAuthenticationToken.generate_token_from_code(code=validated_data["code"],
-                                                                  redirect_uri=redirect_uri)
+                                                                  redirect_uri=validated_data["redirect_uri"])
 
 
 class EmailAuthenticationTokenSerializer(serializers.Serializer):
