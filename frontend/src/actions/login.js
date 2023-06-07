@@ -32,7 +32,7 @@ export const signup = (inputs, navigate) => async (dispatch) => {
         const { data } = await api.signin(inputs);
 
         //redirect page to /auth
-        navigate("/auth")
+        navigate("/auth");
     }
     catch (error){
         console.log(error);

@@ -61,6 +61,9 @@ const Auth = ({currentPage, setCurrentPage}) => {
             if(inputs.password === confirm.confirmPassword){
                 dispatch(signup(inputs, navigate)) // dispatches signup action
                     .then((response) => {
+                        if(response === undefined){
+                            window.location.reload();
+                        }
                         try{
                             //Handle non-field errors
                             handleErrors(response.response.data.non_field_errors);
