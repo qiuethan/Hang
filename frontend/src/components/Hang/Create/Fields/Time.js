@@ -1,7 +1,17 @@
-import React from "react";
+/*
+Author: Ethan Qiu
+Filename: Time.js
+Last Modified: June 7, 2023
+Description: Allows user to see + edit time
+*/
 
+import React from "react";
 import { Box } from "@mui/material";
+
+//Time component
 const Time = ({start, end, handleChange}) => {
+
+    //Render component
     return(
         <Box sx={{display:"flex", flexDirection:"column", height: "100%", width:"100%", marginRight: "10px", overflowY: "scroll"}}>
             <Box sx={{height: "50%", width: "100%"}}>

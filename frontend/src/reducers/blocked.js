@@ -1,3 +1,10 @@
+/*
+Author: Ethan Qiu
+Filename: blocked.js
+Last Modified: June 7, 2023
+Description: blocked users reducer
+*/
+
 import { BLOCKFRIEND, LOADBLOCKEDUSERS, UNBLOCKUSER } from "../constants/actionTypes";
 
 export default (blocked = [], action) => {

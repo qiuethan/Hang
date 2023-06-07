@@ -1,3 +1,10 @@
+/*
+Author: Ethan Qiu
+Filename: Create.js
+Last Modified: June 7, 2023
+Description: Allows users to create hangs
+*/
+
 import React, { useEffect, useState } from 'react';
 import {useDispatch, useSelector} from 'react-redux'
 import {useNavigate} from "react-router-dom";
@@ -13,64 +20,72 @@ import logo from "../../../images/logo.svg";
 
 import {addtocalendar, createhangevent, generatejoinlink} from '../../../actions/hang';
 
-import {Box, Paper, Stepper, Step, Button, TextField} from '@mui/material';
-import {connectws, createdm, loadrooms} from "../../../actions/chat";
+import {Box, Paper, Button} from '@mui/material';
+import {createdm, loadrooms} from "../../../actions/chat";
 import {FRONTENDURL} from "../../../constants/actionTypes";
 
-
+//Create component
 const Create = () => {
 
+    //Create user state variable
     const [user, setUser] = useState(JSON.parse(localStorage.getItem("profile")));
 
+    //Create fields state variable
     const [fields, setFields] = useState({name: `${user.user.username}'s Hang`, description: `A Hang hosted by ${user.user.username}!`, picture: logo, owner: user.user.id, scheduled_time_start: "", scheduled_time_end: "", address: "", latitude: 0, longitude: 0, budget: 0.00, attendees: [user.user.id], needs: [], tasks: []});
 
+    //Create attendees state variable
     const [attendees, setAttendees] = useState([user]);
 
+    //Define dispatch + navigate
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
+    //Get client from react store
     const client = useSelector((state) => state.websocket);
-    console.log(client);
 
+    //Get rooms from react store
     const rooms = useSelector((state) => state.dms);
-    console.log(rooms);
 
-    console.log(fields);
-
+    //On render + fields change
     useEffect(() => {
+        //Update fields live
         setFields(fields);
     }, [fields])
 
+    //On render
     useEffect(() => {
+        //Load dm rooms
         dispatch(loadrooms());
     }, [])
 
-    console.log(client);
-
+    //Handle changes made in components
     const handleChange = (event) => {
         event.preventDefault();
         setFields({...fields, [event.target.name]: event.target.value})
     }
 
+    //Update picture in component
     const updatePicture = (picture) => {
         setFields({...fields, picture: picture});
     }
 
+    //Update locaiton in component
     const updateLocation = (latitude, longitude) => {
         setFields({...fields, latitude: latitude, longitude: longitude})
     }
 
+    //Update attendees in component
     const updateAttendee = (attendee) => {
         setAttendees([...attendees, attendee]);
         fields.attendees.push(attendee.user.id);
-        console.log(attendees);
     }
 
+    //Update budget in component
     const handleBudget = (e) => {
         e.preventDefault();
         const budget = e.target.value;
 
-        // Use regex to check if input is a float with two decimal places
+        //Check if input is a float with two decimal places
         if (/^\d+(\.\d{0,2})?$/.test(budget)) {
             setFields({...fields, budget: budget});
         }
@@ -79,14 +94,22 @@ const Create = () => {
         }
     }
 
+    //Submit fields to backend API
     const handleSubmit = (event) => {
         event.preventDefault();
+        //Create hang event and returns hang event values
         dispatch(createhangevent(fields)).then((r) => {
+            //Adds hang event to calendar
             dispatch(addtocalendar(r.id)).then((s) => {
+                //Generates join link for hang event and returns to component
                 dispatch(generatejoinlink(r.id)).then((join) => {
+                    //For each attendee besides self
                     attendees.slice(1, attendees.length).forEach((attendee) => {
+                        //Find dm room with attendee
                         const findDm = rooms.filter((room) => room.users.includes(attendee.user.id))
+                        //If found
                         if(findDm.length > 0){
+                            //Send join link
                             client.send(JSON.stringify({
                                 action: "send_message",
                                 content: {
@@ -97,7 +120,9 @@ const Create = () => {
                             }));
                         }
                         else{
+                            //Create dm with attendee
                             dispatch(createdm(attendee.id)).then((code) =>{
+                                //Send join link
                                 client.send(JSON.stringify({
                                     action: "send_message",
                                     content: {
@@ -109,23 +134,27 @@ const Create = () => {
                             })
                         }
                     });
+                    //Navigate back to hang
                     navigate("/hang");
                 })
             });
         });
     }
 
-
+    //Step state variable
     const [step, setStep] = useState(0);
 
+    //Go to previous page
     const back = () => {
         setStep(step - 1);
     }
 
+    //Go to next page
     const next = () => {
         setStep(step+1);
     }
 
+    //Render components
     return(
         <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%'}}>
             <Paper elevation={16} sx={{display: "flex", width: "70%", height: "90%", borderRadius: "10px", justifyContent: "center", alignItems: "center"}}>

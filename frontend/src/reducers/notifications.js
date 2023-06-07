@@ -1,9 +1,16 @@
+/*
+Author: Ethan Qiu
+Filename: notifications.js
+Last Modified: June 7, 2023
+Description: notifications reducer
+*/
+
+
 import { GETUNREADNOTIFICATIONS } from "../constants/actionTypes";
 
 export default (notifications = [], action) => {
     switch (action.type){
         case GETUNREADNOTIFICATIONS:
-            console.log(action.payload);
             return action.payload;
         default:
             return notifications;

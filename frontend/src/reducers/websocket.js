@@ -1,3 +1,10 @@
+/*
+Author: Ethan Qiu
+Filename: websocket.js
+Last Modified: June 7, 2023
+Description: chat websocket reducer
+*/
+
 import { CONNECTWS } from "../constants/actionTypes";
 
 export default (client = {}, action) => {

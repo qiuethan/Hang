@@ -1,3 +1,11 @@
+/*
+Author: Ethan Qiu
+Filename: login.js
+Last Modified: June 7, 2023
+Description: authentication reducer
+*/
+
+
 import * as actionTypes from '../constants/actionTypes';
 
 const authReducer = (state = { authData: null }, action) => {

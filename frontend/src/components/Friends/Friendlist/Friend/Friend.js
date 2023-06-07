@@ -1,42 +1,58 @@
+/*
+Author: Ethan Qiu
+Filename: Friend.js
+Last Modified: June 7, 2023
+Description: Displays Friend in friendlist
+*/
+
 import React, {useState, useEffect} from "react";
 import {useDispatch, useSelector} from "react-redux";
 import { blockfriend, removefriend } from "../../../../actions/friends";
 import {getuser} from "../../../../actions/users";
 import {Avatar, Box, Button} from "@mui/material";
 
+//Friend component
 const Friend = ({friend}) => {
 
+    //Define dispatch
     const dispatch = useDispatch();
 
-    console.log(friend);
-
+    //Define user state variable
     const [user, setUser] = useState("");
 
+    //Get users from react store
     const users = useSelector(state => state.users);
 
-    console.log(user);
-
+    //On render
     useEffect(() => {
+        //Find user object with id
         const obj = users.find((user) => user.user.id === friend)
+        //If not found
         if(obj === undefined){
-            console.log("Sent to Server");
+            //Get object from API
             dispatch(getuser(friend));
         }
         else{
+            //Set user to object
             setUser(obj);
         }
     }, [useSelector((state) => state.users)])
 
+    //When button pressed to remove friend
     const remove = (e) => {
         e.preventDefault();
+        //Dispatch to backend
         dispatch(removefriend(friend));
     }
 
+    //When button pressed to block friend
     const block = (e) => {
         e.preventDefault();
+        //Dispatch to backend
         dispatch(blockfriend(friend));
     }
 
+    //Render Component
     return(
         <Box sx={{display: "flex", width: "99.5%", height: "65px", alignItems: "center", marginTop: "5px", borderTop: '0.5px solid black'}}>
             <Box sx={{display: "flex", width: "100%", height: "60px", alignItems: "center", ":hover": {bgcolor: "#a5d6b0"}, borderRadius: "10px", marginTop: "5px"}}>

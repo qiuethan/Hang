@@ -1,22 +1,26 @@
+/*
+Author: Ethan Qiu
+Filename: Navbar.js
+Last Modified: June 7, 2023
+Description: Display Navigation Bar
+*/
+
+//From https://mui.com/material-ui/react-drawer/
 import React, { useState, useEffect } from 'react';
-import {Link, useNavigate, useLocation} from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import {useNavigate} from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
 import { styled, useTheme } from "@mui/material/styles";
-import Box from "@mui/material/Box";
 import MuiDrawer from "@mui/material/Drawer";
 import List from "@mui/material/List";
-import CssBaseline from "@mui/material/CssBaseline";
-import Typography from "@mui/material/Typography";
-import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import MenuIcon from "@mui/icons-material/Menu";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
+import EventIcon from '@mui/icons-material/Event';
 import CloseIcon from "@mui/icons-material/Close";
-import HomeIcon from '@mui/icons-material/Home';
 import ChatIcon from '@mui/icons-material/Chat';
 import PeopleIcon from '@mui/icons-material/People';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
@@ -24,8 +28,10 @@ import CreateIcon from '@mui/icons-material/Create';
 
 import logo from '../../images/logo.svg';
 
+//Configure Opened Navbar Width
 const drawerWidth = 240;
 
+//Configure Navbar Open Style
 const openedMixin = (theme) => ({
   width: drawerWidth,
   transition: theme.transitions.create("width", {
@@ -35,6 +41,7 @@ const openedMixin = (theme) => ({
   overflowX: "hidden"
 });
 
+//Configure Navbar Closed Style
 const closedMixin = (theme) => ({
   transition: theme.transitions.create("width", {
     easing: theme.transitions.easing.sharp,
@@ -47,6 +54,7 @@ const closedMixin = (theme) => ({
   }
 });
 
+//Configure Drawer Toolbar Icon
 const DrawerHeader = styled("div")(({ theme }) => ({
   display: "flex",
   alignItems: "center",
@@ -56,6 +64,7 @@ const DrawerHeader = styled("div")(({ theme }) => ({
   ...theme.mixins.toolbar
 }));
 
+//Configure Drawer Functionality
 const Drawer = styled(MuiDrawer, {
   shouldForwardProp: (prop) => prop !== "open"
 })(({ theme, open }) => ({
@@ -73,6 +82,7 @@ const Drawer = styled(MuiDrawer, {
   })
 }));
 
+//Get and return window dimensions
 const getWindowDimensions = () => {
   const { innerWidth: width, innerHeight: height } = window;
   return{
@@ -81,14 +91,17 @@ const getWindowDimensions = () => {
   };
 }
 
+//Apply window dimensions + window resize
 const useWindowDimensions = () => {
+  //Define windowDimension state variable
   const [windowDimensions, setWindowDimensions] = useState(getWindowDimensions());
-  
+
+  //On render
   useEffect(() => {
     const handleResize = () => {
       setWindowDimensions(getWindowDimensions());
     }
-
+    //If resized
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -96,46 +109,64 @@ const useWindowDimensions = () => {
   return windowDimensions
 }
 
+//Navbar component
 const Navbar = ({ setCurrentPage }) => {
+
+    //Define user state variable
     const [user, setUser] = useState(JSON.parse(localStorage.getItem('profile')));
-    const dispatch = useDispatch();
-    const location = useLocation();
+
+    //Define navigation variable
     const history = useNavigate();
 
+    //On render
     useEffect(() => {
-      console.log(localStorage);
       setUser(JSON.parse(localStorage.getItem('profile')));
     }, [useSelector((state) => state)])
 
+    //Get window dimensions
     const {height, width} = useWindowDimensions();
 
+    //When home clicked
     const home = () => {
         history("/");
         setCurrentPage("home");
     }
+
+    //When chat clicked
     const chat = () => {
         history("/chat");
         setCurrentPage("chat");
     }
 
+    //When hang clicked
+    const hang = () => {
+        history("/hang");
+        setCurrentPage("hang");
+    }
+
+    //When create clicked
     const create = () => {
         history("/hang/create");
         setCurrentPage("create");
     }
 
+    //When friends clicked
     const friends = () => {
         history("/friends");
         setCurrentPage("friends");
     }
 
+    //When profile clicked
     const profile = () => {
         history("/profile");
         setCurrentPage("profile");
     }
 
+    //Apply theme
     const theme = useTheme();
     const [open, setOpen] = React.useState(false);
 
+    //When drawer toolbox clicked
     const handleDrawer = () => {
         if (open) {
         handleDrawerClose();
@@ -144,14 +175,17 @@ const Navbar = ({ setCurrentPage }) => {
         }
     };
 
+    //Open drawer
     const handleDrawerOpen = () => {
         setOpen(true);
     };
 
+    //Close drawer
     const handleDrawerClose = () => {
         setOpen(false);
     };
 
+    //Render components
     return(
       <Drawer variant="permanent" open={open} sx={{height : '100%'}}>
         <DrawerHeader>
@@ -181,6 +215,29 @@ const Navbar = ({ setCurrentPage }) => {
               <ListItemText primary={"Home"} sx={{ opacity: open ? 1 : 0}}/>
             </ListItemButton>
           </ListItem>
+            {user !== null &&
+                <ListItem key={"hangs"} disablePadding sx={{display: "block"}}>
+                    <ListItemButton
+                        sx={{
+                            minHeight: 48,
+                            justifyContent: open ? "initial" : "center",
+                            px: 2.5
+                        }}
+                        onClick={hang}
+                    >
+                        <ListItemIcon
+                            sx={{
+                                minWidth: 0,
+                                mr: open ? 3 : "auto",
+                                justifyContent: "center"
+                            }}
+                        >
+                            <EventIcon/>
+                        </ListItemIcon>
+                        <ListItemText primary={"View Hang Events"} sx={{ opacity: open ? 1 : 0}}/>
+                    </ListItemButton>
+                </ListItem>
+            }
             {user !== null &&
                 <ListItem key={"create"} disablePadding sx={{display: "block"}}>
                     <ListItemButton

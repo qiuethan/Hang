@@ -1,9 +1,17 @@
+/*
+Author: Ethan Qiu
+Filename: index.js
+Last Modified: June 7, 2023
+Description: A list of all the API calls sent to the backend
+*/
+
 import axios from 'axios';
 import {BASEURL} from "../constants/actionTypes";
 
 //API Setup
 const API = axios.create({ baseURL: BASEURL });
 
+//Embed authorization token in each axios request
 API.interceptors.request.use((req) => {
     if (localStorage.getItem('profile')){
         req.headers.Authorization = `Token ${JSON.parse(localStorage.getItem('profile')).token}`;

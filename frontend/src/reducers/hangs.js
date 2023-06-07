@@ -1,3 +1,11 @@
+/*
+Author: Ethan Qiu
+Filename: hangs.js
+Last Modified: June 7, 2023
+Description: hang events reducer
+*/
+
+
 import { CREATEHANGEVENT, GETHANGEVENTS } from "../constants/actionTypes"
 
 export default (hangs = [], action) => {

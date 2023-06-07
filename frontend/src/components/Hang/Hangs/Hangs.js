@@ -1,3 +1,10 @@
+/*
+Author: Ethan Qiu
+Filename: Hangs.js
+Last Modified: June 7, 2023
+Description: Display details of Hangs in short form
+*/
+
 import React, {useEffect, useState} from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 
@@ -9,41 +16,55 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import Details from "./Details/Details";
 import {useSearchParams} from "react-router-dom";
 
+//Hangs component
 const Hangs = () => {
 
+    //Define dispatch variable
     const dispatch = useDispatch();
 
+    //Get hangs from react store
     const hangs = useSelector((state) => state.hangs);
-    console.log(hangs);
 
+    //On render
     useEffect(() => {
+        //Get hang events
         dispatch(gethangevents());
     }, [])
 
+    //On render + hang change
     useEffect(() => {
         if(hangs.length !== 0){
+            //Search for room code
             const room = getRoom();
-            console.log(room);
             if(room !== null){
+                //Set room id to room
                 setCurrentHang(+room);
             }
             else{
+                //No room selected
                 setCurrentHang("");
             }
         }
     }, [hangs])
 
+    //Set currenthang state variable
     const [currentHang, setCurrentHang] = useState("");
+
+    //Define search parameter variable
+
     const [searchParams, setSearchParams] = useSearchParams();
 
+    //Function to get room
     const getRoom = () => {
         return searchParams.get("room");
     }
 
+    //Back to hang home
     const back = () => {
         setCurrentHang("");
     }
 
+    //Render components
     return(
         <Box sx={{display: "flex", width: "100%", height: "100%", justifyContent: "center", alignItems:"center"}}>
             <Paper elevation={16} sx={{display: "flex", width: '98%', height: "96%", borderRadius: "10px", alignItems: "center", justifyContent:"center"}}>

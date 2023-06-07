@@ -1,21 +1,28 @@
+/*
+Author: Ethan Qiu
+Filename: Time.js
+Last Modified: June 7, 2023
+Description: Display time of Hang
+*/
+
 import React, {useEffect, useState} from "react";
 import {Box} from "@mui/material";
 
+//Time Component
 const Time = ({details}) => {
 
-    console.log(details);
-
+    //Create begin and end state variables
     const [begin, setBegin] = useState("");
     const [end, setEnd] = useState("");
 
-
+    //On render
     useEffect(() => {
+        //Set begin and end states to hang begin and end
         setBegin(new Date(details.scheduled_time_start));
         setEnd(new Date(details.scheduled_time_end));
     }, [])
 
-    console.log(begin);
-
+    //Render components
     return(
         <Box sx={{display: "flex", width: "100%", height: "390px", bgcolor: "#a5d6b0", borderRadius: "10px", marginRight: "5px"}}>
             {begin !== "" && end !== "" && (

@@ -1,10 +1,17 @@
+/*
+Author: Ethan Qiu
+Filename: Details.js
+Last Modified: June 7, 2023
+Description: Display name, description, picture of Hang
+*/
+
 import React from "react";
 import {Box} from "@mui/material";
 
+//Heading component
 const Heading = ({details}) => {
 
-    console.log(details);
-
+    //Render components
     return(
         <Box sx={{display: "flex", flexDirection: "row", width: "100%", marginBottom: "20px"}}>
             <Box sx={{width: "20%"}}>

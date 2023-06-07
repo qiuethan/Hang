@@ -1,31 +1,42 @@
+/*
+Author: Ethan Qiu
+Filename: Attendee.js
+Last Modified: June 7, 2023
+Description: Display attendees of Hang
+*/
+
 import React, {useEffect, useState} from "react";
 import {Avatar, Box} from "@mui/material";
 import {useDispatch, useSelector} from "react-redux";
 import {getuser} from "../../../../../actions/users";
 
+//Attendee component
 const Attendee = ({attendee}) => {
 
+    //Define dispatch
     const dispatch = useDispatch();
 
-    console.log(attendee);
-
+    //Define user state variable
     const [user, setUser] = useState("");
 
+    //Get users from react store
     const users = useSelector(state => state.users);
 
-    console.log(user);
-
+    //On render
     useEffect(() => {
+        //Get user object from react store
         const obj = users.find((user) => user.user.id === attendee)
+        //If not found, send to server
         if(obj === undefined){
-            console.log("Sent to Server");
             dispatch(getuser(attendee));
         }
         else{
+            //Set user state to object
             setUser(obj);
         }
     }, [useSelector((state) => state.users)])
 
+    //Render components
     return(
         <Box sx={{display: "block", width: "100%", height: "60px", alignItems: "center", justifyContent: "center", ":hover": {bgcolor: "#a5d6b0"}, borderRadius: "10px", marginBottom: "10px"}}>
             {user !== "" && (

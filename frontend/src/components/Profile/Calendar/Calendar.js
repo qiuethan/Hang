@@ -1,3 +1,10 @@
+/*
+Author: Ethan Qiu
+Filename: Calendar.js
+Last Modified: June 7, 2023
+Description: Allow users to connect + display + sync calendars
+*/
+
 import React, {useEffect, useState} from "react";
 import {useDispatch} from "react-redux";
 import {getgooglecalendar, syncgooglecalendar} from "../../../actions/calendar";
@@ -5,27 +12,41 @@ import Google from "./Google/Google";
 import {Box, Button} from "@mui/material";
 import UserCalendar from "./UserCalendar/UserCalendar";
 
+//Calendar component
 const Calendar = () => {
 
+    //Define dispatch variable
     const dispatch = useDispatch();
 
+    //Define connected state variable
     const [connected, setConnected] = useState(null);
 
+    //Define calendars state variable
     const [calendars, setCalendars] = useState("");
+
+    //Define synced calendars state variable
     const [syncedCalendars, setSynchedCalendars] = useState([]);
 
+    //On render + synced calendar change
     useEffect(() => {
+        //Update state variable
         console.log(syncedCalendars);
     }, [syncedCalendars])
 
+    //On Render
     useEffect(() => {
+        //Get google calendars
         dispatch(getgooglecalendar()).then(r => {
+           //Not found, not connected to google calendar
            if(r === "Access token not found for the current user."){
                setConnected(false);
            }
            else{
+               //Found, connect to google calendar
                setConnected(true);
+               //Set calendars to calendars from API
                setCalendars(r);
+               //Map previously synced calendars to synchedcalendars
                setSynchedCalendars(r.filter((calendar) => calendar.previous)
                    .map((calendar) => ({
                        id: calendar.google_calendar_id,
@@ -36,13 +57,18 @@ const Calendar = () => {
         });
     }, [])
 
+    //Update sync when user presses save changes
     const update = () => {
+        //Send request to API
         dispatch(syncgooglecalendar(syncedCalendars)).then(r => {
+            //Get new google calendars
             dispatch(getgooglecalendar()).then(r => {
+                //If access denied
                 if(r === "Access token not found for the current user."){
                     setConnected(false);
                 }
                 else{
+                    //Set new calendars to updated values
                     setConnected(true);
                     setCalendars(r);
                     setSynchedCalendars(r.filter((calendar) => calendar.previous)
@@ -56,6 +82,7 @@ const Calendar = () => {
         });
     }
 
+    //Render components
     return(
         <Box sx={{display: "flex", width: "100%", height: "100%"}}>
             {

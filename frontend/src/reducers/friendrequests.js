@@ -1,3 +1,11 @@
+/*
+Author: Ethan Qiu
+Filename: friendrequests.js
+Last Modified: June 7, 2023
+Description: friend request reducer
+*/
+
+
 import { LOADRECEIVEDFRIENDREQUESTS, ACCEPTFRIENDREQUEST, DECLINEFRIENDREQUEST } from "../constants/actionTypes";
 
 export default (requests = [], action) => {

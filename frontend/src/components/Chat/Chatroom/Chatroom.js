@@ -1,21 +1,28 @@
+/*
+Author: Ethan Qiu
+Filename: Chatroom.js
+Last Modified: June 7, 2023
+Description: Chatroom portion of chat feature
+*/
+
 import React, { useState, useEffect } from 'react';
-import {useDispatch, useSelector} from 'react-redux';
-import { loadmessages } from '../../../actions/chat';
 
 import Form from './Form/Form';
 import Messages from './Messages/Messages';
 import Settings from './Settings/Settings';
-
 import {Box, Paper} from '@mui/material';
 
 const Chatroom = ({ client, currentRoom, clientOpened }) => {
 
+    // Create State for Settings
     const [settings, setSettings] = useState(false);
 
+    // On Render
     useEffect(() => {
         setSettings(false);
     }, [currentRoom])
 
+    // Render UI
     return(
         <Paper elevation={16} sx={{display: "flex", height: "100%", width: "100%", borderRadius: "10px"}}>
 

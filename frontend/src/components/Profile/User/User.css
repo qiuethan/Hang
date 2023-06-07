@@ -1,3 +1,10 @@
+/*
+Author: Ethan Qiu
+Filename: User.css
+Last Modified: June 7, 2023
+Description: Styling for image overlay
+*/
+
 .image-preview-profile{
     transition: opacity 0.3s;
 }

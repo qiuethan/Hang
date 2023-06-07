@@ -1,16 +1,28 @@
+/*
+Author: Ethan Qiu
+Filename: Grouplist.js
+Last Modified: June 7, 2023
+Description: Displays GCs in list
+*/
+
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { loadgroups } from "../../../actions/chat";
 import Chatitem from "./Chatitem/Chatitem";
 import {Box, Paper} from "@mui/material";
 
+// GroupList Component
 const Grouplist = ({ currentRoom, setCurrentRoom, clientOpened }) => {
-    
+
+    // Define Dispatch
     const dispatch = useDispatch();
 
+    // Find rooms using react store
     const rooms = useSelector(state => state.groups);
 
+    // On render
     useEffect(() => {
+        //load groups from API, save to react store
         dispatch(loadgroups());
     }, [currentRoom, clientOpened]);
 

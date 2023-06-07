@@ -1,10 +1,16 @@
+/*
+Author: Ethan Qiu
+Filename: profile.js
+Last Modified: June 7, 2023
+Description: profile reducer
+*/
+
+
 import { GETSELF } from '../constants/actionTypes.js';
 
 export default (user = [], action) => {
-    console.log(action)
     switch (action.type){
         case GETSELF:
-            console.log(action.payload);
             return action.payload;
         default:
             return user;

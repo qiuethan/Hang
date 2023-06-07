@@ -1,8 +1,17 @@
-import React from "react";
+/*
+Author: Ethan Qiu
+Filename: Description.js
+Last Modified: June 7, 2023
+Description: Allows user to see + edit description
+*/
 
+import React from "react";
 import { Box, TextField } from "@mui/material";
 
+//Description component
 const Description = ({value, handleChange}) => {
+
+    //Render component
     return (
         <Box>
             <Box sx={{display: "flex", width: "100%" ,justifyContent: "center"}}>

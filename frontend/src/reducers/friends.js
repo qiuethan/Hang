@@ -1,3 +1,11 @@
+/*
+Author: Ethan Qiu
+Filename: friends.js
+Last Modified: June 7, 2023
+Description: friends reducer
+*/
+
+
 import { ACCEPTFRIENDREQUEST, LOADFRIENDS, REMOVEFRIEND } from "../constants/actionTypes";
 
 export default (friends = [], action) => {

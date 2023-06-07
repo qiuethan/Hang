@@ -1,3 +1,10 @@
+/*
+Author: Ethan Qiu
+Filename: sentrequests.js
+Last Modified: June 7, 2023
+Description: sent friend requests reducer
+*/
+
 import { LOADSENTFRIENDREQUESTS, DELETESENTFRIENDREQUEST } from "../constants/actionTypes";
 
 export default (sentrequests = [], action) => {
@@ -5,8 +12,6 @@ export default (sentrequests = [], action) => {
         case LOADSENTFRIENDREQUESTS:
             return action.payload;
         case DELETESENTFRIENDREQUEST:
-            console.log(action.payload.id);
-            console.log(sentrequests);
             return sentrequests.filter((request) => request.to_user !== action.payload.id);
         default:
             return sentrequests;
