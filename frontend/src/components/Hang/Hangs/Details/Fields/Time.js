@@ -28,6 +28,9 @@ const Time = ({details}) => {
                             <h3 style={{margin: "0", fontSize: "16px"}}>Ends: {end.toLocaleString()}</h3>
                         </Box>
                     </Box>
+                    <Box sx={{marginTop: '10px'}}>
+                        Budget: ${details.budget}
+                    </Box>
                 </Box>
             )}
         </Box>

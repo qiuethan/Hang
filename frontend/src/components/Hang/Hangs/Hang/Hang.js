@@ -1,9 +1,10 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 
 import User from "./User";
 
 import {Box, Button} from "@mui/material";
 import {useNavigate} from "react-router-dom";
+import Location from "./Location";
 
 const Hang = ({hang, setCurrentHang}) => {
 
@@ -16,6 +17,15 @@ const Hang = ({hang, setCurrentHang}) => {
         setCurrentHang(hang.id);
         navigate(`/hang?room=${hang.id}`)
     }
+
+    const [begin, setBegin] = useState("");
+    const [end, setEnd] = useState("");
+
+
+    useEffect(() => {
+        setBegin(new Date(hang.scheduled_time_start));
+        setEnd(new Date(hang.scheduled_time_end));
+    }, [])
 
     return(
         <Button onClick={openHang} disableRipple sx={{width: "100%", height: "100%", borderRadius:"15px", color: "black", ":hover": {backgroundColor: "#0c7c59"}}}>
@@ -49,10 +59,22 @@ const Hang = ({hang, setCurrentHang}) => {
                                 </Box>
                             </Box>
                         </Box>
-                        <Box sx={{display: "flex", height: "50%", width:"95%", flexDirection:"row", justifyContent:"center", alignItems: "center"}}>
-                            {hang.attendees.map((attendee) => (
-                                <User attendee={attendee}/>
-                            ))}
+                        <Box sx={{display: "flex", height: "50%", width:"95%", flexDirection:"row"}}>
+                            <Box sx={{display: "flex", width: "25%", flexDirection: "column", height: "100%", overflowY: "scroll", justifyContent: "left", alignItems: "center", marginTop: "5px"}}>
+                                {hang.attendees.map((attendee) => (
+                                    <User attendee={attendee}/>
+                                ))}
+                            </Box>
+                            {begin !== "" && end !== "" && (
+                                <Box sx={{display: "flex", width: "25%", flexDirection: "column", height: "100%", overflowY: "scroll", justifyContent: "left", alignItems: "center", marginTop: "5px"}}>
+                                    <Box>{begin.toLocaleString()}</Box>
+                                    <Box>To</Box>
+                                    <Box>{end.toLocaleString()}</Box>
+                                </Box>
+                            )}
+                            <Box sx={{display: "flex", width: "50%", flexDirection: "column", height: "100%", overflowY: "scroll"}}>
+                                <Location details={hang}/>
+                            </Box>
                         </Box>
                     </Box>
                 </Box>
