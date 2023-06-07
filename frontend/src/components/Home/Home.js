@@ -22,6 +22,10 @@ const Home = ({}) => {
         }
     }, [localStorage.getItem("profile")]);
 
+    useEffect(() => {
+        navigate("/hang");
+    }, [])
+
     console.log(useSelector(state => state));
 
     const logOut = () => {
