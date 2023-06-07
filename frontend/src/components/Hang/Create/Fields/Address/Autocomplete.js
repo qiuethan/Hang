@@ -1,3 +1,10 @@
+/*
+Author: Ethan Qiu
+Filename: Autocomplete.js
+Last Modified: June 7, 2023
+Description: Creates autocomplete for user
+*/
+
 import { useRef, useEffect } from "react";
 
 const Autocomplete = ({inputRef, fields, setFields}) => {

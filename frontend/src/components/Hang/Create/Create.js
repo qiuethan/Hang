@@ -1,5 +1,12 @@
+/*
+Author: Ethan Qiu
+Filename: Create.js
+Last Modified: June 7, 2023
+Description: Allows users to create hangs
+*/
+
 import React, { useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux'
+import {useDispatch, useSelector} from 'react-redux'
 import {useNavigate} from "react-router-dom";
 
 import Name from './Fields/Name';
@@ -8,59 +15,77 @@ import Picture from './Fields/Picture/Picture';
 import Time from './Fields/Time';
 import Location from './Fields/Location';
 import Attendees from './Fields/Attendees';
-import Needs from "./Fields/Needs/Needs";
-import Tasks from "./Fields/Tasks/Tasks";
 
 import logo from "../../../images/logo.svg";
 
-import { createhangevent } from '../../../actions/hang';
+import {addtocalendar, createhangevent, generatejoinlink} from '../../../actions/hang';
 
-import {Box, Paper, Stepper, Step, Button, TextField} from '@mui/material';
+import {Box, Paper, Button} from '@mui/material';
+import {createdm, loadrooms} from "../../../actions/chat";
+import {FRONTENDURL} from "../../../constants/actionTypes";
 
-
+//Create component
 const Create = () => {
 
+    //Create user state variable
     const [user, setUser] = useState(JSON.parse(localStorage.getItem("profile")));
 
+    //Create fields state variable
     const [fields, setFields] = useState({name: `${user.user.username}'s Hang`, description: `A Hang hosted by ${user.user.username}!`, picture: logo, owner: user.user.id, scheduled_time_start: "", scheduled_time_end: "", address: "", latitude: 0, longitude: 0, budget: 0.00, attendees: [user.user.id], needs: [], tasks: []});
 
+    //Create attendees state variable
     const [attendees, setAttendees] = useState([user]);
-    const [needs, setNeeds] = useState([]);
-    const [tasks, setTasks] = useState([]);
 
+    //Define dispatch + navigate
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
-    console.log(fields);
+    //Get client from react store
+    const client = useSelector((state) => state.websocket);
 
+    //Get rooms from react store
+    const rooms = useSelector((state) => state.dms);
+
+    //On render + fields change
     useEffect(() => {
+        //Update fields live
         setFields(fields);
     }, [fields])
 
+    //On render
+    useEffect(() => {
+        //Load dm rooms
+        dispatch(loadrooms());
+    }, [])
+
+    //Handle changes made in components
     const handleChange = (event) => {
         event.preventDefault();
         setFields({...fields, [event.target.name]: event.target.value})
     }
 
+    //Update picture in component
     const updatePicture = (picture) => {
         setFields({...fields, picture: picture});
     }
 
+    //Update locaiton in component
     const updateLocation = (latitude, longitude) => {
         setFields({...fields, latitude: latitude, longitude: longitude})
     }
 
+    //Update attendees in component
     const updateAttendee = (attendee) => {
         setAttendees([...attendees, attendee]);
         fields.attendees.push(attendee.user.id);
-        console.log(attendees);
     }
 
+    //Update budget in component
     const handleBudget = (e) => {
         e.preventDefault();
         const budget = e.target.value;
 
-            // Use regex to check if input is a float with two decimal places
+        //Check if input is a float with two decimal places
         if (/^\d+(\.\d{0,2})?$/.test(budget)) {
             setFields({...fields, budget: budget});
         }
@@ -69,43 +94,67 @@ const Create = () => {
         }
     }
 
-    const addNeed = (need) => {
-        setNeeds([...needs, need]);
-        fields.needs = [...fields.needs, need.need];
-    }
-
-    const deleteNeed = (n) => {
-        setNeeds(needs.filter(need => need.n !== n));
-        fields.needs = fields.needs.filter(need => need.n !== n).map( need => need.need);
-    }
-
-    const addTask = (task) => {
-        setTasks([...tasks, task]);
-        fields.tasks = [...fields.tasks, task.task]
-    }
-
-    const deleteTask = (n) => {
-        setTasks(tasks.filter(task => task.n !== n));
-        fields.tasks = fields.tasks.filter(task => task.n !== n).map(task => task.task);
-    }
+    //Submit fields to backend API
     const handleSubmit = (event) => {
         event.preventDefault();
-        console.log(fields);
-        dispatch(createhangevent(fields));
-        navigate("/hang/")
+        //Create hang event and returns hang event values
+        dispatch(createhangevent(fields)).then((r) => {
+            //Adds hang event to calendar
+            dispatch(addtocalendar(r.id)).then((s) => {
+                //Generates join link for hang event and returns to component
+                dispatch(generatejoinlink(r.id)).then((join) => {
+                    //For each attendee besides self
+                    attendees.slice(1, attendees.length).forEach((attendee) => {
+                        //Find dm room with attendee
+                        const findDm = rooms.filter((room) => room.users.includes(attendee.user.id))
+                        //If found
+                        if(findDm.length > 0){
+                            //Send join link
+                            client.send(JSON.stringify({
+                                action: "send_message",
+                                content: {
+                                    message_channel: findDm[0].id,
+                                    content: `${FRONTENDURL}hang/join?code=${join.invitation_code}`,
+                                    reply: null
+                                }
+                            }));
+                        }
+                        else{
+                            //Create dm with attendee
+                            dispatch(createdm(attendee.id)).then((code) =>{
+                                //Send join link
+                                client.send(JSON.stringify({
+                                    action: "send_message",
+                                    content: {
+                                        message_channel: code,
+                                        content: `${FRONTENDURL}hang/join?code=${join.invitation_code}`,
+                                        reply: null
+                                    }
+                                }));
+                            })
+                        }
+                    });
+                    //Navigate back to hang
+                    navigate("/hang");
+                })
+            });
+        });
     }
 
-
+    //Step state variable
     const [step, setStep] = useState(0);
 
+    //Go to previous page
     const back = () => {
         setStep(step - 1);
     }
 
+    //Go to next page
     const next = () => {
         setStep(step+1);
     }
 
+    //Render components
     return(
         <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%'}}>
             <Paper elevation={16} sx={{display: "flex", width: "70%", height: "90%", borderRadius: "10px", justifyContent: "center", alignItems: "center"}}>
@@ -179,33 +228,12 @@ const Create = () => {
                                         <Button sx={{backgroundColor: "#0c7c59", height: "80%", color: "white", ":hover": {color: "#0c7c59", backgroundColor: "white"}}} onClick={back}>Back</Button>
                                     </Box>
                                     <Box sx={{display: "flex", width: "50%", height: "100%", alignItems:"flex-end", justifyContent:"flex-end"}}>
-                                        <Button sx={{backgroundColor: "#0c7c59", height: "80%", color: "white", ":hover": {color: "#0c7c59", backgroundColor: "white"}}} onClick={next}>Next</Button>
-                                    </Box>
-                                </Box>
-                        </Box>
-                    )}
-                    {step === 3 && (
-                        <Box sx={{position: "relative", width: "97%", height: "95%"}}>
-                            <Box sx={{width: "100%", height: "100%"}}>
-                                <Box sx={{display: "flex", width: "100%", height: "90%"}}>
-                                    <Box sx={{display: "block", width: "50%", height:"100%", marginRight: "10px"}}>
-                                        <Needs addNeed={addNeed} needs={needs} deleteNeed={deleteNeed}/>
-                                    </Box>
-                                    <Box sx={{display: "block", width: "50%", height:"100%", marginLeft: "10px"}}>
-                                        <Tasks addTask={addTask} tasks={tasks} attendees={attendees} deleteTask={deleteTask}/>
-                                    </Box>
-                                </Box>
-                                <Box sx={{display: "flex", width: "100%", height:"10%", alignSelf: "flex-end", alignItems: "flex-end"}}>
-                                    <Box sx={{display: "flex", width: "50%", height: "100%", alignItems:"flex-end"}}>
-                                        <Button sx={{backgroundColor: "#0c7c59", height: "80%", color: "white", ":hover": {color: "#0c7c59", backgroundColor: "white"}}} onClick={back}>Back</Button>
-                                    </Box>
-                                    <Box sx={{display: "flex", width: "50%", height: "100%", alignItems:"flex-end", justifyContent:"flex-end"}}>
                                         <Button sx={{backgroundColor: "#0c7c59", height: "80%", color: "white", ":hover": {color: "#0c7c59", backgroundColor: "white"}}} onClick={handleSubmit}>Submit</Button>
                                     </Box>
                                 </Box>
-                            </Box>
                         </Box>
                     )}
+
             </Paper>
         </Box>
     )

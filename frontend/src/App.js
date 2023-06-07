@@ -1,8 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import {BrowserRouter, Routes, Route, useNavigate} from 'react-router-dom';
-import {useDispatch, useSelector} from "react-redux";
+/*
+Author: Ethan Qiu
+Filename: App.js
+Last Modified: June 7, 2023
+Description: File where all components are housed
+*/
 
-import {debounce} from "lodash";
+
+import React, { useState, useEffect } from 'react';
+import {BrowserRouter, Routes, Route} from 'react-router-dom';
+import {useDispatch, useSelector} from "react-redux";
 
 import Box from "@mui/material/Box";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -20,39 +26,32 @@ import Verify from './components/Verify/Verify';
 import Friends from './components/Friends/Friends';
 import Hang from './components/Hang/Hang';
 import Profile from './components/Profile/Profile';
+import {connectws} from "./actions/chat";
 
+//App Component
 const App = () => {
 
+  //Define currentPage state variable
   const [currentPage, setCurrentPage] = useState();
+
+  //Define wsConected state variable
   const [wsConnected, setWsConnected] = useState(false);
 
+  //Define dispatch variable
   const dispatch = useDispatch();
 
+  //Get real time websocket from react store
   const connection = useSelector(state => state.rtws);
 
-  const ping = () => {
-    if(wsConnected){
-      /*try{
-        connection.send(
-            JSON.stringify(
-                {
-                  action: "ping",
-                  content: {}
-                }
-            )
-        )
-      }
-      catch(error){
-        console.log(error);
-        setWsConnected(false);
-        connectRTWS();
-      }*/
-    }
-  }
-
-  setInterval(ping, 10000);
-
+  //On render
   useEffect(() => {
+    //Connect chat websocket
+    dispatch(connectws());
+  }, [])
+
+  //On render
+  useEffect(() => {
+    //Connect real time webscoket
     const connect = async() => {
       const status = await dispatch(connectRTWS());
     }
@@ -61,16 +60,19 @@ const App = () => {
   }, [])
 
   try{
+    //Response from real time websocket
     connection.onmessage = (message) => {
       try{
+        //Get response value
         const m = JSON.parse(message.data);
-        console.log(m);
         try{
+          //If status, connected = true
           if(m.type === "status" ){
             if(m.message === "success"){
               setWsConnected(true);
             }
           }
+          //If update, update react store via API call
           if(m.type === "update"){
             dispatch(getUnreadNotifications());
             if(m.content === "hang_event"){
@@ -110,6 +112,7 @@ const App = () => {
     console.log(error);
   }
 
+  //Render components in BrowserRouter
   return (
     <BrowserRouter>
       <Box sx={{ display:"flex", height:'100vh', width:'100vw'}}>

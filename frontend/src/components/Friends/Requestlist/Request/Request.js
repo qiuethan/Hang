@@ -1,3 +1,10 @@
+/*
+Author: Ethan Qiu
+Filename: Request.js
+Last Modified: June 7, 2023
+Description: Displays friend request in request list
+*/
+
 import React, {useEffect, useState} from "react";
 import { useDispatch } from "react-redux";
 import { getuser } from "../../../../actions/users";
@@ -5,41 +12,45 @@ import {acceptfriendrequest, declinefriendrequest, loadfriends} from "../../../.
 import {Avatar, Box, Button} from "@mui/material";
 import {createdm} from "../../../../actions/chat";
 
+//Request component
 const Request = ({user}) => {
 
+    //Create user object state variable
     const [userObj, setUserObj] = useState({user: {username: ""} });
 
-    console.log(user);
-
+    //Define dispatch
     const dispatch = useDispatch();
 
+    //On render
     useEffect(() => {
 
+        //Async function to get user
         const fetchUser = async() => {
-            console.log(user);
             const obj = await dispatch(getuser(user));
-            console.log(obj);
             setUserObj(obj)
-            console.log(userObj);
         };
 
+        //Call async function
         fetchUser().catch((error) => console.log(error));
 
     }, [])
 
-    console.log(userObj);
-
+    //When accept button pressed
     const acceptRequest = (e) => {
         e.preventDefault();
+        //Send request to API
         dispatch(acceptfriendrequest(userObj));
         dispatch(createdm(user));
     }
 
+    //When decline button pressed
     const declineRequest = (e) => {
         e.preventDefault();
+        //Send request to API
         dispatch(declinefriendrequest(userObj));
     }
 
+    //Render
     return(
         <Box sx={{display: "flex", width: "99.5%", height: "65px", alignItems: "center", marginTop: "5px", borderTop: '0.5px solid black'}}>
             <Box sx={{display: "flex", width: "100%", height: "60px", alignItems: "center", ":hover": {bgcolor: "#a5d6b0"}, borderRadius: "10px", marginTop: "5px"}}>

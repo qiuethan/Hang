@@ -1,3 +1,11 @@
+/*
+Author: Ethan Qiu
+Filename: index.js
+Last Modified: June 7, 2023
+Description: stores all other reducers
+*/
+
+
 import { combineReducers } from 'redux';
 
 import login from './login';

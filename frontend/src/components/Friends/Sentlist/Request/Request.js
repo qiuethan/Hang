@@ -1,38 +1,47 @@
+/*
+Author: Ethan Qiu
+Filename: Request.js
+Last Modified: June 7, 2023
+Description: Displays sent requests in list
+*/
+
 import React, {useEffect, useState} from "react";
 import { useDispatch } from "react-redux";
 import { getuser } from "../../../../actions/users";
 import {deletesentfriendrequest} from "../../../../actions/friends";
 import {Avatar, Box, Button} from "@mui/material";
 
+//Request component
 const Request = ({user}) => {
 
+    //Define user state variable
     const [userObj, setUserObj] = useState({user: {username: ""} });
 
-    console.log(user);
-
+    //Define dispatch
     const dispatch = useDispatch();
 
+    //On render
     useEffect(() => {
 
+        //Async function to get user object
         const fetchUser = async() => {
             const obj = await dispatch(getuser(user));
-            console.log(obj);
             setUserObj(obj)
-            console.log(userObj);
         };
 
+        //Call async function
         fetchUser().catch((error) => console.log(error));
 
     }, [])
 
-    console.log(userObj);
-
-
+    //When delete request button pressed
     const deleterequest = (e) => {
         e.preventDefault();
+        //Send request to API
         dispatch(deletesentfriendrequest(userObj.user.id));
     }
 
+    //Render Request
     return(
         <Box sx={{display: "flex", width: "99.5%", height: "65px", alignItems: "center", marginTop: "5px", borderTop: '0.5px solid black'}}>
             <Box sx={{display: "flex", width: "100%", height: "60px", alignItems: "center", ":hover": {bgcolor: "#a5d6b0"}, borderRadius: "10px", marginTop: "5px"}}>

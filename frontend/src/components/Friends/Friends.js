@@ -1,3 +1,10 @@
+/*
+Author: Ethan Qiu
+Filename: Friends.js
+Last Modified: June 7, 2023
+Description: Friends page, houses all friends components
+*/
+
 import React, {useEffect, useState} from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {loadblockedusers, loadfriends, loadrecievedfriendrequests, loadsentfriendrequests} from "../../actions/friends";
@@ -9,45 +16,56 @@ import Sentlist from "./Sentlist/Sentlist";
 import {Box, Button, Paper} from "@mui/material";
 import {useNavigate} from "react-router-dom";
 
+//Friends component
 const Friends = () => {
 
+    //Define dispatch
     const dispatch = useDispatch();
 
+    //State variable that toggles between list views
     const [displayRequests, setDisplayRequests] = useState(1);
 
+    //Define navigation variables to route through browser router
     const navigate = useNavigate();
 
+    //On render
     useEffect(() => {
+        //If user not logged in, send them to login screen
         if(JSON.parse(localStorage.getItem("profile")) === null){
             navigate("/auth");
         }
     }, [localStorage.getItem("profile")]);
 
+    //On render
     useEffect(() => {
+        //Load all friend lists
         dispatch(loadfriends());
         dispatch(loadrecievedfriendrequests());
         dispatch(loadsentfriendrequests());
         dispatch(loadblockedusers());
     }, [])
 
-    console.log(useSelector((state) => state.friends));
-
+    //When friend button is clicked
     const showFriends = () => {
         setDisplayRequests(1);
     }
 
+    //When friend request button is clicked
     const showRequests = () => {
         setDisplayRequests(2);
     }
 
+    //When sent request button is clicked
     const sentRequests = () => {
         setDisplayRequests(3);
     }
 
+    //When blocked button is clicked
     const showBlocked = () => {
         setDisplayRequests(4);
     }
 
+    //Render components
     return(
         <Box sx={{display: "flex", width: "100%", height: "100%", justifyContent: "center", alignItems: "center"}}>
             <Paper elevation={16} sx={{width: "98%", height: "96%", borderRadius: "10px"}}>

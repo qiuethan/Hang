@@ -1,3 +1,10 @@
+/*
+Author: Ethan Qiu
+Filename: Navbar.js
+Last Modified: June 7, 2023
+Description: Display user profile settings
+*/
+
 import React, {useEffect, useState} from "react";
 import {useDispatch, useSelector} from "react-redux";
 import {Box, Button, TextField} from "@mui/material";
@@ -7,29 +14,37 @@ import {getself, updateProfile} from "../../../actions/users";
 import "./User.css"
 import {useNavigate} from "react-router-dom";
 
+//User component
 const User = () => {
 
-
+    //Define dispatch variable
     const dispatch = useDispatch();
+
+    //Get user from react store
     const user = useSelector(state => state);
 
-    console.log(user.profile);
-
+    //Define navigation variable
     const navigate = useNavigate();
 
+    //Set edit state variable
     const [edit, setEdit] = useState(false);
 
+    //Set profile fields state variables
     const [picture, setPicture] = useState("");
     const [username, setUsername] = useState("");
     const [aboutMe, setAboutMe] = useState("");
     const [email, setEmail] = useState("");
 
+    //On render
     useEffect(() => {
+        //Get self from API
         dispatch(getself());
     }, [])
 
+    //On render + user change
     useEffect(() => {
         try{
+            //Set fields to profile fields
             setPicture(user.profile.profile_picture);
             setUsername(user.profile.user.username);
             setAboutMe(user.profile.about_me);
@@ -40,26 +55,30 @@ const User = () => {
         }
     }, [user])
 
+    //When user changes image
     const changeImage = (e) => {
+        //Allows user to select image, then converts image to DataURL
         const selectedImage = e.target.files[0];
         const reader = new FileReader();
-        console.log(reader);
         reader.readAsDataURL(selectedImage);
         reader.onload = () => {
             setPicture(reader.result);
-            console.log(picture);
         };
     }
 
+    //Handle About Me Changes
     const changeAboutMe = (e) => {
         e.preventDefault();
         setAboutMe(e.target.value);
     }
 
+    //Handle Whether Edit/View
     const editProfile = (e) => {
         e.preventDefault();
         setEdit(true);
     }
+
+    //Handle when user cancels changes
     const cancel = (e) => {
         e.preventDefault();
         setAboutMe(user.profile.about_me);
@@ -67,27 +86,30 @@ const User = () => {
         setEdit(false);
     }
 
+    //Handle when user saves changes
     const saveChanges = (e) => {
-        console.log(picture);
-        console.log(aboutMe);
         e.preventDefault();
+        //Send update to API
         dispatch(updateProfile(picture, aboutMe)).then(
             r => {
+                //Then get new copy of self
                 dispatch(getself());
             }
         );
         setEdit(false);
     }
 
+    //If user presses logout button
     const logOut = (e) => {
+        //Dispatch logout to API
         dispatch(logout(JSON.parse(localStorage.getItem("profile")).token)).then((response) => {
-            console.log(response);
             localStorage.clear();
-            console.log(localStorage);
         });
+        //Navigate to auth
         navigate("/auth");
     }
 
+    //Render Components
     return(
         <Box sx={{display: "flex", width: "90%", alignSelf: "center", justifyContent: "center", marginBottom: "20px"}}>
                 {!edit && (

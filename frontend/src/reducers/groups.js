@@ -1,3 +1,11 @@
+/*
+Author: Ethan Qiu
+Filename: groups.js
+Last Modified: June 7, 2023
+Description: group rooms reducer
+*/
+
+
 import { LOADGROUPS } from "../constants/actionTypes";
 
 export default (rooms = [], action) => {
