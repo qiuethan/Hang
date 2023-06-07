@@ -20,6 +20,7 @@ import Verify from './components/Verify/Verify';
 import Friends from './components/Friends/Friends';
 import Hang from './components/Hang/Hang';
 import Profile from './components/Profile/Profile';
+import {connectws} from "./actions/chat";
 
 const App = () => {
 
@@ -51,6 +52,10 @@ const App = () => {
   }
 
   setInterval(ping, 10000);
+
+  useEffect(() => {
+    dispatch(connectws());
+  }, [])
 
   useEffect(() => {
     const connect = async() => {

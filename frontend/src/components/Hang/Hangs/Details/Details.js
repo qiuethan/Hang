@@ -7,6 +7,7 @@ import Attendee from "./Fields/Attendee";
 import {generatejoinlink} from "../../../../actions/hang";
 import {FRONTENDURL} from "../../../../constants/actionTypes";
 import Location from "./Fields/Location";
+import Time from "./Fields/Time";
 
 const Details = ({currentHang}) => {
 
@@ -35,13 +36,15 @@ const Details = ({currentHang}) => {
             {
                 details !== "" && (
                     <Box sx={{display: "flex", width: "98%", height: "96%"}}>
-                        <Box sx={{display: "block", width: "77%", overflowY: "scroll"}}>
+                        <Box sx={{display: "block", width: "77%", overflowY: "scroll", marginRight: "10px"}}>
                             <Heading details={details}/>
-                            <Box sx={{display: "flex", width: "50%"}}>
-
-                            </Box>
-                            <Box sx={{display: "flex", width: "50%"}}>
-                                <Location details={details}/>
+                            <Box sx={{display: "flex", width: "100%"}}>
+                                <Box sx={{display: "flex", width: "50%"}}>
+                                    <Time details={details}/>
+                                </Box>
+                                <Box sx={{display: "flex", width: "50%"}}>
+                                    <Location details={details}/>
+                                </Box>
                             </Box>
                         </Box>
                         <Box sx={{display: "flex", flexDirection: "column", width: "23%", overflowY: "scroll"}}>

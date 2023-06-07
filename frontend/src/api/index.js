@@ -49,10 +49,11 @@ export const loadsentfriendrequests = () => API.get('/v1/accounts/friend_request
 export const deletesentfriendrequest = (id) => API.delete(`/v1/accounts/friend_requests/sent/${id}/`);
 
 //Hang Requests
-export const createhangevent = (inputs) => {console.log(inputs); API.post('/v1/hang_events/unarchived/', inputs)};
+export const createhangevent = (inputs) => API.post('/v1/hang_events/unarchived/', inputs);
 export const gethangevents = () => API.get('/v1/hang_events/unarchived/');
 export const joinhangevent = (code) => API.post('/v1/hang_events/invitation_codes/join/', {invitation_code: code})
 export const generatecode = (id) => API.get(`/v1/hang_events/invitation_codes/${id}/`)
+export const addtocalendar = (id) => API.post(`/v1/hang_events/google_calendar/${id}/`);
 
 //Notifications
 export const getunreadnotifications = () => API.get('/v1/notifications/notifications/unread/');

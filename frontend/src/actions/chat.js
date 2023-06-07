@@ -39,6 +39,7 @@ export const connectws = () => (dispatch) => {
                         token: JSON.parse(localStorage.getItem('profile')).token
                     }
                 }));
+
             })
         }
         catch(error){
@@ -58,7 +59,8 @@ export const connectws = () => (dispatch) => {
 
 export const createdm = (user) => async(dispatch) => {
     try{
-        const { data } = api.createdm(user);
+        const { data } = await api.createdm(user);
+        return data;
     }
     catch(error){
         console.log(error);

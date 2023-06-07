@@ -7,6 +7,7 @@ export const createhangevent = (inputs) => async(dispatch) => {
         console.log(inputs);
         const { data } = await api.createhangevent(inputs);
         dispatch({type: CREATEHANGEVENT, payload: data})
+        return data;
     }
     catch (error){
         console.log(error);
@@ -36,6 +37,16 @@ export const joinhangevent = (code, navigate) => async(dispatch) => {
 export const generatejoinlink = (id) => async(dispatch) => {
     try{
         const { data } = await api.generatecode(id);
+        return data;
+    }
+    catch (error){
+        console.log(error);
+    }
+}
+
+export const addtocalendar = (id) => async(dispatch) => {
+    try{
+        const { data } = await api.addtocalendar(id);
         return data;
     }
     catch (error){

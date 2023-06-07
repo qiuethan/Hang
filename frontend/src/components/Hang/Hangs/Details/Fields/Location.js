@@ -16,9 +16,11 @@ const MapComponent = ({details}) => {
     }
 
     return(
-        <Box sx={{display: "flex", width: "100%", height: "390px", bgcolor: "#a5d6b0", borderRadius: "10px"}}>
+        <Box sx={{display: "flex", width: "100%", height: "390px", bgcolor: "#a5d6b0", borderRadius: "10px", marginLeft: "5px"}}>
             <Box sx={{display: "flex", flexDirection: "column", width: "100%", margin: "10px", alignItems: "center"}}>
-                <Box sx={{marginBottom: "10px"}}>{details.address}</Box>
+                <Box sx={{marginBottom: "10px"}}>
+                    <h3 style={{margin: "0", fontSize: "16px"}}>{details.address}</h3>
+                </Box>
                 <GoogleMap
                     mapContainerStyle={containerStyle}
                     center={{lat: +details.latitude, lng: +details.longitude}}
