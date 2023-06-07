@@ -12,7 +12,7 @@ import {googlelogin} from "../../../actions/login";
 import {Button} from "@mui/material";
 
 import GoogleIcon from '@mui/icons-material/Google';
-import {BASEURL} from "../../../constants/actionTypes";
+import {FRONTENDURL} from "../../../constants/actionTypes";
 
 const Google = () => {
 
@@ -27,7 +27,7 @@ const Google = () => {
         //search address bar for code parameter
         if(searchParams.get('code') !== null){
             //dispatch action with code then reload
-            dispatch(googlelogin(searchParams.get('code').replace("/", "\%2F"), `${BASEURL}auth`)).then((response) => window.location.reload());
+            dispatch(googlelogin(searchParams.get('code').replace("/", "\%2F"), `${FRONTENDURL}auth`)).then((response) => window.location.reload());
         }
         else{
             console.log(searchParams.get('code'));
