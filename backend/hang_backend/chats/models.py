@@ -1,10 +1,7 @@
 """
-Module: message_models.py
-
-This module defines Django models related to messaging functionality, including MessageChannel, Message, UserMessage, SystemMessage, Reaction, and their managers.
-
-Author: [Your Name]
-Date: [Current Date]
+ICS4U
+Paul Chen
+This module defines the models for the chats package.
 """
 
 import random
@@ -18,9 +15,7 @@ from real_time_ws.models import RTWSSendMessageOnUpdate
 
 
 class MessageChannelManager(models.Manager):
-    """
-    Manager for MessageChannels that allows for the creation of DirectMessages and GroupChats.
-    """
+    """Manager for MessageChannels that allows for the creation of DirectMessages and GroupChats."""
 
     def create_direct_message(self, user1, user2):
         """
@@ -112,7 +107,8 @@ class MessageChannelManager(models.Manager):
 
 class MessageChannel(models.Model):
     """
-    Model that represents a MessageChannel.
+    Model that represents a MessageChannel. This model will be inherited by other models such as
+    DirectMessageChannel, GroupMessageChannel, and HangEventMessageChannel, that allow for more specific functionality.
     """
     id = models.CharField(max_length=10, primary_key=True)
     channel_type = models.CharField(
@@ -126,15 +122,7 @@ class MessageChannel(models.Model):
     objects = MessageChannelManager()
 
     def has_read_message_channel(self, user):
-        """
-        Checks if the given user has read the message channel.
-
-        Args:
-            user (User): The user to check.
-
-        Returns:
-            bool: True if the user has read the channel, False otherwise.
-        """
+        """Checks if the given user has read the message channel."""
         mc_users = MessageChannelUsers.objects.filter(message_channel=self, user=user)
         if not mc_users.exists():
             return None
@@ -142,15 +130,7 @@ class MessageChannel(models.Model):
         return obj.has_read
 
     def read_message_channel(self, user):
-        """
-        Marks the message channel as read for the given user.
-
-        Args:
-            user (User): The user who read the channel.
-
-        Raises:
-            ValidationError: If MessageChannelUsers does not exist.
-        """
+        """Marks the message channel as read for the given user."""
         mc_users = MessageChannelUsers.objects.filter(message_channel=self, user=user)
         if not mc_users.exists():
             raise exceptions.ValidationError("MessageChannelUsers does not exist")
@@ -159,34 +139,16 @@ class MessageChannel(models.Model):
         obj.save()
 
     def contains_user(self, user):
-        """
-        Checks if the message channel contains the given user.
-
-        Args:
-            user (User): The user to check.
-
-        Returns:
-            bool: True if the user is in the channel, False otherwise.
-        """
+        """Checks if the message channel contains the given user."""
         return self.users.contains(user)
 
     def contains_message(self, message):
-        """
-        Checks if the message channel contains the given message.
-
-        Args:
-            message (Message): The message to check.
-
-        Returns:
-            bool: True if the message belongs to the channel, False otherwise.
-        """
+        """Checks if the message channel contains the given message."""
         return self == message.message_channel
 
 
 class MessageChannelUsers(models.Model, RTWSSendMessageOnUpdate):
-    """
-    Model that represents the relationship between users and message channels.
-    """
+    """Model that represents the relationship between users and message channels."""
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     message_channel = models.ForeignKey(MessageChannel, on_delete=models.CASCADE)
     has_read = models.BooleanField(default=True)
@@ -194,47 +156,25 @@ class MessageChannelUsers(models.Model, RTWSSendMessageOnUpdate):
     rtws_message_content = "message_channel"
 
     def get_rtws_users(self):
-        """
-        Returns the users associated with the message channel.
-
-        Returns:
-            list: List of User objects.
-        """
         return [self.user] + list(self.message_channel.users.all())
 
 
 class DirectMessageChannel(MessageChannel, RTWSSendMessageOnUpdate):
-    """
-    Model that represents a direct message channel.
-    """
+    """Model that represents a direct message channel."""
     rtws_message_content = "message_channel"
 
     def get_rtws_users(self):
-        """
-        Returns the users associated with the direct message channel.
-
-        Returns:
-            list: List of User objects.
-        """
         return list(self.users.all())
 
 
 class GroupMessageChannel(MessageChannel, RTWSSendMessageOnUpdate):
-    """
-    Model that represents a group chat.
-    """
+    """Model that represents a group chat."""
     name = models.CharField(max_length=75)
     owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name="message_channels_owned", null=True)
 
     rtws_message_content = "message_channel"
 
     def get_rtws_users(self):
-        """
-        Returns the users associated with the group chat.
-
-        Returns:
-            list: List of User objects.
-        """
         return list(self.users.all())
 
     def update_users(self, current_user, new_users):
@@ -244,7 +184,6 @@ class GroupMessageChannel(MessageChannel, RTWSSendMessageOnUpdate):
         Args:
             current_user (User): The user performing the update.
             new_users (list): A list of User objects to replace the existing users.
-
         """
         existing_users = set(self.users.all())
         new_users = set(new_users)
@@ -300,24 +239,17 @@ class GroupMessageChannel(MessageChannel, RTWSSendMessageOnUpdate):
 
 
 class HangEventMessageChannel(MessageChannel, RTWSSendMessageOnUpdate):
-    """
-    Model that represents a message channel for hang events.
-    """
+    """Model that represents a message channel that is created alongside a HangEvent."""
     rtws_message_content = "message_channel"
 
     def get_rtws_users(self):
-        """
-        Returns the users associated with the hang event message channel.
-
-        Returns:
-            list: List of User objects.
-        """
         return list(self.users.all())
 
 
 class Message(models.Model):
     """
-    Model that represents a message.
+    Model that represents a Message. This model will be inherited by other models such as
+    UserMessage and SystemMessage which allow for more specific functionality.
     """
     type = models.CharField(max_length=40)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -327,9 +259,7 @@ class Message(models.Model):
 
 
 class UserMessage(Message):
-    """
-    Model that represents a user-sent message.
-    """
+    """Model that represents a user-sent message."""
     user = models.ForeignKey(User, on_delete=models.SET_NULL, related_name="messages", null=True)
     reply = models.ForeignKey("self", on_delete=models.SET_NULL, related_name="replies", null=True)
 
@@ -339,15 +269,14 @@ class UserMessage(Message):
 
 
 class SystemMessage(Message):
-    """
-    Model that represents a system-sent message.
-    """
+    """Model that represents a system-sent message."""
     def __init__(self, *args, **kwargs):
         self._meta.get_field('type').default = "system_message"
         super(SystemMessage, self).__init__(*args, **kwargs)
 
 
 class Reaction(models.Model):
+    """Model that represents a reaction to a message."""
     message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name="reactions")
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     emoji = models.CharField(max_length=2)

@@ -70,12 +70,6 @@ class DateBasedPagination(BasePagination):
     def get_paginated_response(self, data):
         """
         Return a Response with the paginated data and next/previous page start times.
-
-        Arguments:
-          data (list): The paginated data.
-
-        Returns:
-          Response: A Response object with the paginated data and next/previous page start times.
         """
         # Prepare the response data
         response_data = {

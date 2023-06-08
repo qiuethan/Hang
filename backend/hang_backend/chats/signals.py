@@ -1,7 +1,7 @@
 """
 ICS4U
 Paul Chen
-This module contains functions for handling chat notifications.
+This module defines the signals for the chats package.
 """
 
 from chats.consumers import send_to_message_channel
@@ -12,15 +12,7 @@ from notifications.models import Notification
 
 
 def get_message_prefix(content):
-    """
-    Truncate the message content to a maximum of 35 characters.
-
-    Arguments:
-      content (str): The content of the message.
-
-    Returns:
-      str: The truncated message content.
-    """
+    """Truncate the message content to a maximum of 35 characters."""
     if len(content) > 35:
         prefix = content[:35]
         content = prefix + "..."
@@ -28,26 +20,13 @@ def get_message_prefix(content):
 
 
 def message_created_notify_chat(sender, instance, created, **kwargs):
-    """
-    Send a notification when a new message is created.
-
-    Arguments:
-      sender (Model): The sender of the signal.
-      instance (Model): The instance that triggered the signal.
-      created (bool): Indicates whether a new record was created.
-    """
+    """Send a message to the chat websocket when a new message is created."""
     if created:
         send_to_message_channel("send_message", instance.message_channel, MessageSerializer(instance).data)
 
 
 def message_edited_notify_chat(sender, instance, **kwargs):
-    """
-    Send a notification when a message is edited.
-
-    Arguments:
-      sender (Model): The sender of the signal.
-      instance (Model): The instance that triggered the signal.
-    """
+    """Send a message to the chat websocket when a message is edited."""
     if instance.pk is not None:
         orig = sender.objects.get(pk=instance.pk)
         if orig.content != instance.content:
@@ -57,25 +36,12 @@ def message_edited_notify_chat(sender, instance, **kwargs):
 
 
 def message_deleted_notify_chat(sender, instance, **kwargs):
-    """
-    Send a notification when a message is deleted.
-
-    Arguments:
-      sender (Model): The sender of the signal.
-      instance (Model): The instance that triggered the signal.
-    """
+    """Send a message to the chat websocket when a message is deleted."""
     send_to_message_channel("delete_message", instance.message_channel, {"id": instance.id})
 
 
-def message_reacted_added_notify_chat(sender, instance, created, **kwargs):
-    """
-    Send a notification when a reaction is added to a message.
-
-    Arguments:
-      sender (Model): The sender of the signal.
-      instance (Model): The instance that triggered the signal.
-      created (bool): Indicates whether a new record was created.
-    """
+def message_reaction_added_notify_chat(sender, instance, created, **kwargs):
+    """Send a message to the chat websocket when a reaction is added to a message."""
     if created:
         send_to_message_channel("add_reaction",
                                 instance.message.message_channel,
@@ -83,27 +49,14 @@ def message_reacted_added_notify_chat(sender, instance, created, **kwargs):
 
 
 def message_reaction_removed_notify_chat(sender, instance, **kwargs):
-    """
-    Send a notification when a reaction is removed from a message.
-
-    Arguments:
-      sender (Model): The sender of the signal.
-      instance (Model): The instance that triggered the signal.
-    """
+    """Send a message to the chat websocket when a reaction is removed from a message."""
     send_to_message_channel("remove_reaction",
                             instance.message.message_channel,
                             MessageSerializer(instance.message).data)
 
 
 def message_saved_create_notifications(sender, instance, created, **kwargs):
-    """
-    Create notifications for saved messages.
-
-    Arguments:
-      sender (Model): The sender of the signal.
-      instance (Model): The instance that triggered the signal.
-      created (bool): Indicates whether a new record was created.
-    """
+    """Create a notification when a message is saved."""
     mcu_set = MessageChannelUsers.objects.filter(message_channel=instance.message_channel).all()
     sender = instance.user if isinstance(instance, UserMessage) else None
     for mcu in mcu_set:

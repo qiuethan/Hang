@@ -1,7 +1,7 @@
 """
 ICS4U
 Paul Chen
-This module defines the Notification model, representing user notifications.
+This module defines the models for the notifications package.
 """
 
 from django.contrib.auth.models import User
@@ -11,7 +11,7 @@ from real_time_ws.models import RTWSSendMessageOnUpdate
 
 class Notification(models.Model, RTWSSendMessageOnUpdate):
     """
-    Represents a user notification in the system.
+    Model that represents notifications for a given user, telling them about recent actions.
 
     Attributes:
       user (ForeignKey): The user to whom the notification belongs.
@@ -32,12 +32,6 @@ class Notification(models.Model, RTWSSendMessageOnUpdate):
     rtws_message_content = "notification"
 
     def get_rtws_users(self):
-        """
-        Gets the user associated with the current notification.
-
-        Returns:
-          list: List containing the user associated with the current notification.
-        """
         return [self.user]
 
     @classmethod

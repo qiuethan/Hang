@@ -1,7 +1,7 @@
 """
 ICS4U
 Paul Chen
-This module defines the RTWSSendMessageOnUpdate mixin for sending real-time WebSocket messages on updates.
+This module defines the RTWSSendMessageOnUpdate class for sending real-time WebSocket messages on updates.
 """
 
 import threading
@@ -14,7 +14,8 @@ from channels.layers import get_channel_layer
 
 class RTWSSendMessageOnUpdate:
     """
-    Mixin to send WebSocket messages to users upon updates.
+    Class that should be inherited by a model class. When the `rtws_message_content` and the `get_rtws_users` fields
+    are overridden, a message will be sent to the real time WebSocket whenever the model is created, updated, or deleted.
 
     Attributes:
       _lock (Lock): A threading lock for controlling access to shared data.

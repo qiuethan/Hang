@@ -1,8 +1,7 @@
 """
 ICS4U
 Paul Chen
-This module provides the functionality for managing manual, imported, and Google Calendars for users. It includes
-classes for different types of calendars and time ranges, and methods for synchronizing with Google Calendars.
+This module defines the models for the calendars package.
 """
 
 import json
@@ -21,23 +20,28 @@ from real_time_ws.models import RTWSSendMessageOnUpdate
 
 
 class ManualCalendar(models.Model):
-    """Represents a manually created calendar associated with a user."""
+    """
+    Model that contains the user’s manual changes to their calendar
+    (i.e. the ones that are not automatically imported from Google Calendar).
+    """
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
 
 
 class ImportedCalendar(models.Model):
-    """Represents an imported calendar associated with a user."""
+    """
+    Model that contains the user’s calendar data that is imported from Google Calendar.
+    """
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
 
 
 class GoogleCalendar(models.Model):
     """
-    Represents a Google Calendar associated with an ImportedCalendar.
+    Represents the list of Google Calendars that are currently synced with the user’s ImportedCalendar.
 
     Attributes:
-        calendar (ImportedCalendar): The ImportedCalendar associated with this GoogleCalendar.
-        google_calendar_id (str): The ID of the Google Calendar.
-        name (str): The name of the Google Calendar.
+        calendar (ForeignKey[ImportedCalendar]): The ImportedCalendar associated with this GoogleCalendar.
+        google_calendar_id (CharField): The unique ID of the Google Calendar.
+        name (CharField): The name of the Google Calendar that will be displayed to the user.
     """
     calendar = models.ForeignKey(ImportedCalendar, on_delete=models.CASCADE)
     google_calendar_id = models.CharField(max_length=255)
@@ -53,7 +57,7 @@ class GoogleCalendar(models.Model):
             calendar_data_list (list): List of calendars for which to fetch time ranges.
 
         Returns:
-            list: List of ImportedTimeRange instances representing the free/busy time ranges.
+            list[ImportedTimeRange]: List of ImportedTimeRange instances representing the free/busy time ranges.
         """
         # Initialize start time
         time_min = datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
@@ -63,7 +67,7 @@ class GoogleCalendar(models.Model):
         credentials = Credentials(token=authentication_token.access_token)
         service = build('calendar', 'v3', credentials=credentials)
 
-        # Fetch free/busy time ranges for next 6 months
+        # Fetch free/busy time ranges for next 12 months
         for i in range(6):
             # Set end time for current month
             time_max = (datetime.utcnow() + timedelta(days=(i + 1) * 60)).replace(
@@ -167,13 +171,13 @@ class GoogleCalendar(models.Model):
 
 class ManualTimeRange(models.Model, RTWSSendMessageOnUpdate):
     """
-    Represents a time range on a manual calendar.
+    Represents a time range on the user’s ManualCalendar.
 
     Attributes:
-        calendar (ManualCalendar): The ManualCalendar associated with this time range.
-        type (str): The type of the time range, either "busy" or "free".
-        start_time (datetime): The start time of the time range.
-        end_time (datetime): The end time of the time range.
+        calendar (ForeignKey[ManualCalendar]): The ManualCalendar associated with this time range.
+        type (CharField): The type of the time range, either "busy" or "free".
+        start_time (DateTimeField): The start time of the time range.
+        end_time (DateTimeField): The end time of the time range.
     """
     calendar = models.ForeignKey(ManualCalendar, on_delete=models.CASCADE)
     type = models.CharField(max_length=4, choices=(("busy", "busy"), ("free", "free")))
@@ -183,18 +187,12 @@ class ManualTimeRange(models.Model, RTWSSendMessageOnUpdate):
     rtws_message_content = "calendar"
 
     def get_rtws_users(self):
-        """
-        Returns the user associated with the manual calendar.
-
-        Returns:
-            list: A list containing the user associated with the manual calendar.
-        """
         return [self.calendar.user]
 
 
 class RepeatingTimeRange(models.Model, RTWSSendMessageOnUpdate):
     """
-    Represents a time range that repeats on a manual calendar.
+    Model that represents a time range that repeats on the user’s ManualCalendar.
 
     Attributes:
         calendar (ManualCalendar): The ManualCalendar associated with this time range.
@@ -212,12 +210,6 @@ class RepeatingTimeRange(models.Model, RTWSSendMessageOnUpdate):
     rtws_message_content = "calendar"
 
     def get_rtws_users(self):
-        """
-        Returns the user associated with the manual calendar.
-
-        Returns:
-            list: A list containing the user associated with the manual calendar.
-        """
         return [self.calendar.user]
 
     def decompress(self, decompress_start_time):
@@ -270,7 +262,7 @@ class RepeatingTimeRange(models.Model, RTWSSendMessageOnUpdate):
 
 class ImportedTimeRange(models.Model, RTWSSendMessageOnUpdate):
     """
-    Represents a time range on an imported calendar.
+    Model that represents a time range on the user’s ImportedCalendar.
 
     Attributes:
         calendar (ImportedCalendar): The ImportedCalendar associated with this time range.
@@ -284,10 +276,4 @@ class ImportedTimeRange(models.Model, RTWSSendMessageOnUpdate):
     rtws_message_content = "calendar"
 
     def get_rtws_users(self):
-        """
-        Returns the user associated with the imported calendar.
-
-        Returns:
-            list: A list containing the user associated with the imported calendar.
-        """
         return [self.calendar.user]

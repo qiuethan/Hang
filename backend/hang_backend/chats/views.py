@@ -1,3 +1,8 @@
+"""
+ICS4U
+Paul Chen
+This module defines the views and viewsets for the chats package.
+"""
 from rest_framework import permissions, viewsets, mixins, generics
 
 from .models import DirectMessageChannel, GroupMessageChannel, MessageChannel
@@ -30,7 +35,7 @@ class GroupMessageChannelViewSet(mixins.ListModelMixin,
 
 
 class ReadMessageChannelView(generics.UpdateAPIView):
-    """View that can retrieve/update/delete a GC by id."""
+    """View that allows a user to read a MessageChannel."""
     permission_classes = [permissions.IsAuthenticated, ]
     serializer_class = ReadMessageChannelSerializer
 

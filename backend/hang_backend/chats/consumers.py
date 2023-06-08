@@ -38,9 +38,7 @@ def send_to_message_channel(action_name, message_channel, data):
 
 
 class ChatAction(abc.ABC):
-    """
-    Abstract base class for chat actions.
-    """
+    """Abstract base class for chat actions."""
     name = None  # Name of the chat action.
     needs_authentication = False  # Whether the chat action needs authentication.
 
@@ -108,16 +106,11 @@ class ChatAction(abc.ABC):
 # ChatAction subclasses
 
 class AuthenticateAction(ChatAction):
-    """
-    ChatAction that allows a user to authenticate themselves in a MessageChannel.
-    """
+    """ChatAction that allows a user to authenticate themselves in a MessageChannel."""
     name = "authenticate"
     needs_authentication = False
 
     async def action(self):
-        """
-        Performs the authentication action.
-        """
         # Verifies the data.
         serializer = AuthenticateWebsocketSerializer(data=self.data, context={"user": self.chat_consumer.user})
         await sync_to_async(serializer.is_valid)(raise_exception=True)
@@ -132,16 +125,12 @@ class AuthenticateAction(ChatAction):
 
 
 class SendMessageAction(ChatAction):
-    """
-    ChatAction that allows a user to send a message to a MessageChannel.
-    """
+    """ChatAction that allows a user to send a message to a MessageChannel."""
     name = "send_message"
     needs_authentication = True
 
     async def action(self):
-        """
-        Sends a message to the MessageChannel.
-        """
+
         # Verifies the message.
         serializer = UserMessageSerializer(data=self.data, context={"user": self.chat_consumer.user})
         await sync_to_async(serializer.is_valid)(raise_exception=True)
@@ -151,16 +140,11 @@ class SendMessageAction(ChatAction):
 
 
 class LoadMessageAction(ChatAction):
-    """
-    ChatAction that allows a user to load past messages.
-    """
+    """ChatAction that allows a user to load past messages."""
     name = "load_message"
     needs_authentication = True
 
     async def action(self):
-        """
-        Loads past messages from the MessageChannel.
-        """
         # Gets the MessageChannel by id.
         message_channel = await dbsa(self.chat_consumer.user.message_channels.get)(
             id=self.data["message_channel"])
@@ -183,16 +167,11 @@ class LoadMessageAction(ChatAction):
 
 
 class EditMessageAction(ChatAction):
-    """
-    ChatAction that allows a user to edit their past messages.
-    """
+    """ChatAction that allows a user to edit their past messages."""
     name = "edit_message"
     needs_authentication = True
 
     async def action(self):
-        """
-        Edits a past message.
-        """
         # Retrieves a message by id.
         serializer = UserMessageSerializer(await dbsa(UserMessage.objects.get)(id=self.data["id"]),
                                            data=self.data,
@@ -204,32 +183,22 @@ class EditMessageAction(ChatAction):
 
 
 class DeleteMessageAction(ChatAction):
-    """
-    ChatAction that allows a user to delete a past message.
-    """
+    """ChatAction that allows a user to delete a past message."""
     name = "delete_message"
     needs_authentication = True
 
     async def action(self):
-        """
-        Deletes a past message.
-        """
         # Deletes a message.
         message = await dbsa(self.chat_consumer.user.messages.get)(id=self.data["id"])
         await dbsa(message.delete)()
 
 
 class AddReactionAction(ChatAction):
-    """
-    ChatAction that allows a user to add a reaction to a message.
-    """
+    """ChatAction that allows a user to add a reaction to a message."""
     name = "add_reaction"
     needs_authentication = True
 
     async def action(self):
-        """
-        Adds a reaction to a message.
-        """
         message = await dbsa(UserMessage.objects.get)(id=self.data["id"])
 
         # Checks if user can see message.
@@ -252,16 +221,11 @@ class AddReactionAction(ChatAction):
 
 
 class RemoveReactionAction(ChatAction):
-    """
-    ChatAction that allows a user to remove their reaction from a message.
-    """
+    """ChatAction that allows a user to remove their reaction from a message."""
     name = "remove_reaction"
     needs_authentication = True
 
     async def action(self):
-        """
-        Removes the user's reaction from a message.
-        """
         message = await dbsa(UserMessage.objects.get)(id=self.data["id"])
 
         # Checks if user can see message.
@@ -282,9 +246,7 @@ class RemoveReactionAction(ChatAction):
 
 
 class PingAction(ChatAction):
-    """
-    ChatAction that allows a user to ping the websocket to prevent it from sleeping.
-    """
+    """ChatAction that allows a user to ping the websocket to prevent it from sleeping."""
     name = "ping"
     needs_authentication = True
 

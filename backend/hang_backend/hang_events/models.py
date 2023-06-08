@@ -1,3 +1,9 @@
+"""
+ICS4U
+Paul Chen
+This module defines the models for the hang_events package.
+"""
+
 import random
 import string
 
@@ -34,7 +40,7 @@ def generate_unique_invitation_code():
 
 class HangEvent(models.Model, RTWSSendMessageOnUpdate):
     """
-    Represents a Hang Event in the application.
+    Model that represents an event that users are planning.
 
     Attributes:
       name (str): The name of the event.
@@ -81,6 +87,7 @@ class HangEvent(models.Model, RTWSSendMessageOnUpdate):
         return list(self.attendees.all())
 
     def __init__(self, *args, **kwargs):
+        """In order to be able to send notifications"""
         super(HangEvent, self).__init__(*args, **kwargs)
         for field in self._meta.fields:
             if field.name in ["name", "owner", "description", "scheduled_time_start", "scheduled_time_end", "address"]:

@@ -1,7 +1,7 @@
 """
 ICS4U
 Paul Chen
-This module defines the database models for the user profiles, authentication tokens, and friend requests.
+This module defines the models for the accounts package.
 """
 
 import hashlib
@@ -26,16 +26,16 @@ from real_time_ws.models import RTWSSendMessageOnUpdate
 
 class Profile(models.Model, RTWSSendMessageOnUpdate):
     """
-    Represents a user profile in the application.
+    Model that “extends” the default User model. When a User registers, a corresponding 
+    Profile model is created for the User that contains extra information.
 
     Attributes:
-      user (User): The user associated with this profile.
-      profile_picture (str): The user's profile picture encoded as a string.
-      is_verified (bool): Whether the user's email is verified.
-      about_me (str): The user's self-description.
-      friends (User): The user's friends.
-      blocked_users (User): The users blocked by this user.
-      rtws_message_content (str): The content of the real-time websocket message that updates the frontend.
+      user (OneToOneField[User]): The user associated with this profile.
+      profile_picture (CharField): The user's profile picture encoded as a string.
+      is_verified (BooleanField): Whether the user's email is verified.
+      about_me (TextField): The user's self-description.
+      friends (ManyToManyField[User]): The user's friends.
+      blocked_users (ManyToManyField[User]): The users blocked by this user.
     """
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
     profile_picture = models.CharField(max_length=200000,
@@ -49,13 +49,12 @@ class Profile(models.Model, RTWSSendMessageOnUpdate):
     rtws_message_content = "profile"
 
     def get_rtws_users(self):
-        # Returns the user associated with this profile for real-time websocket messaging.
         return [self.user]
 
     @staticmethod
     def create_user_and_associated_objects(username, email, password):
         """
-        Creates a new user and associated objects (profile, manual calendar, imported calendar).
+        Creates a new user and associated objects (Profile, ManualCalendar, ImportedCalendar).
 
         Arguments:
           username (str): The username of the new user.
@@ -146,13 +145,14 @@ class Profile(models.Model, RTWSSendMessageOnUpdate):
 
 class GoogleAuthenticationToken(models.Model):
     """
-    Represents a Google authentication token.
+    Model that contains required tokens for Google authentication.
+    Also provides utility methods that allow for token creation and management.
 
     Attributes:
-      user (User): The user associated with this token.
-      access_token (str): The access token.
-      refresh_token (str): The refresh token.
-      last_generated (datetime): The time when the token was last generated.
+      user (OneToOneField[User]): The user associated with this token.
+      access_token (CharField): The access token.
+      refresh_token (CharField): The refresh token.
+      last_generated (DateTimeField): The time when the token was last generated.
     """
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     access_token = models.CharField(max_length=512)
@@ -205,7 +205,8 @@ class GoogleAuthenticationToken(models.Model):
     @classmethod
     def generate_token_from_code(cls, code, redirect_uri):
         """
-        Generates a Google authentication token from an authorization code.
+        Using the authorization code obtained by the user, obtain the Google authentication tokens as well as
+        user information.
 
         Arguments:
           code (str): The authorization code.
@@ -215,37 +216,39 @@ class GoogleAuthenticationToken(models.Model):
           User: The user associated with the generated token.
         """
         try:
+            # Obtains the access token using the authorization code.
             flow = cls.get_flow(redirect_uri)
             flow.fetch_token(code=code)
-
             if not flow.credentials:
                 raise ValidationError("Access token not received")
 
+            # Obtain the user's information from the access token.
             idinfo = id_token.verify_oauth2_token(flow.credentials.id_token,
                                                   google_requests.Request(),
                                                   settings.GOOGLE_CLIENT_ID)
             email = idinfo["email"]
 
+            # Verify that the output is as expected and that a user with the same email exists.
             if not email:
                 raise ValidationError("Email not received")
-
             if not User.objects.filter(email=email).exists():
                 raise ValidationError("User doesn't exist")
 
             user = User.objects.get(email=email)
 
+            # If a corresponding GoogleAuthenticationToken object exists already, update it.
             if cls.objects.filter(user=user).exists():
                 google_token = cls.objects.get(user=user)
                 google_token.access_token = flow.credentials.token
                 google_token.refresh_token = flow.credentials.refresh_token
                 google_token.last_generated = datetime.now()
+            # Otherwise create a new one.
             else:
                 google_token = cls.objects.create(user=user,
                                                   access_token=flow.credentials.token,
                                                   refresh_token=flow.credentials.refresh_token)
 
             google_token.save()
-
             return user
 
         except (json.JSONDecodeError, ValidationError, ValueError) as error:
@@ -268,6 +271,8 @@ class GoogleAuthenticationToken(models.Model):
         """
         if not self.needs_refresh():
             return
+
+        # Retrieves new tokens from Google servers.
         credentials = Credentials.from_authorized_user_info(info={
             'access_token': self.access_token,
             'refresh_token': self.refresh_token,
@@ -275,22 +280,24 @@ class GoogleAuthenticationToken(models.Model):
             'client_secret': settings.GOOGLE_CLIENT_SECRET,
             'token_uri': 'https://oauth2.googleapis.com/token'
         })
-
         credentials.refresh(google_requests.Request())
+
+        # Updates the model.
         new_token = credentials.token
         self.access_token = new_token
         self.last_generated = datetime.now(timezone.utc)
         self.save()
 
 
-class EmailAuthenticationToken(models.Model):
+class EmailVerificationToken(models.Model):
     """
-    Represents an email authentication token.
+    Model that stores the email verification token that has been sent. The token stored on the server is a
+    hashed version of that which the user receives. The token should only be valid for 24 hours.
 
     Attributes:
-      token (str): The token, stored as a SHA256 hash.
-      user (User): The user associated with this token.
-      created_at (datetime): The time when the token was created.
+      token (CharField): The token, stored as a SHA256 hash.
+      user (ForeignKey[User]): The user associated with this token.
+      created_at (DateTimeField): The time when the token was created.
     """
     token = models.CharField(max_length=64, primary_key=True)  # Token is stored as SHA256 hash.
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -299,19 +306,21 @@ class EmailAuthenticationToken(models.Model):
     @classmethod
     def create(cls, user):
         """
-        Creates a new email authentication token for a user.
+        Creates a new email verification token for a user, also sending the user the token through email.
 
         Arguments:
           user (User): The user for whom to create the token.
 
         Returns:
-          EmailAuthenticationToken: The created token.
+          EmailVerificationToken: The created token.
         """
+        # Creates EmailVerificationToken model.
         random_string = str(uuid.uuid4())
-        token_id = EmailAuthenticationToken.hash_token(random_string)
+        token_id = EmailVerificationToken.hash_token(random_string)
         token = cls(token=token_id, user=user)
         token.save()
 
+        # Sends email to the user.
         send_mail("Hang Email Verification Code",
                   f"Welcome to Hang!\nClick on this link to verify your account: https://hang-coherentboi.vercel.app/verify?key={random_string}. This token will stay valid for 24 hours.",
                   settings.EMAIL_HOST_USER,
@@ -321,7 +330,7 @@ class EmailAuthenticationToken(models.Model):
 
     def verify(self):
         """
-        Verifies the token. If the user is already verified or the token is expired, raises a ValidationError.
+        Verifies the user's email. If the user is already verified or the token is expired, raises a ValidationError.
         """
         if self.user.profile.is_verified:
             raise ValidationError("User is already verified.")
@@ -359,13 +368,12 @@ class EmailAuthenticationToken(models.Model):
 
 class FriendRequest(models.Model, RTWSSendMessageOnUpdate):
     """
-    Represents a friend request.
+    Model that represents a friend request between two users.
 
     Attributes:
-      from_user (User): The user who sent the friend request.
-      to_user (User): The user to whom the friend request was sent.
-      declined (bool): Whether the friend request was declined.
-      rtws_message_content (str): The content of the real-time websocket message.
+      from_user (ForeignKey[User]): The user who sent the friend request.
+      to_user (ForeignKey[User]): The user to whom the friend request was sent.
+      declined (BooleanField): Whether the friend request was declined.
     """
     from_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_friend_requests")
     to_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_friend_requests")
@@ -374,7 +382,6 @@ class FriendRequest(models.Model, RTWSSendMessageOnUpdate):
     rtws_message_content = "friend_request"
 
     def get_rtws_users(self):
-        # Returns the users associated with this friend request for real-time websocket messaging.
         return [self.from_user, self.to_user]
 
     @classmethod
