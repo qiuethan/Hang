@@ -38,7 +38,8 @@ class TimeRangeService:
     @staticmethod
     def merge_free_and_busy_times(sorted_free_ranges, sorted_busy_ranges):
         """
-        Merges free and busy time ranges.
+        Merges free and busy time ranges. Free time ranges always take priority over busy time ranges.
+        Ranges marked as neither busy nor free are assumed to be free.
 
         Arguments:
           sorted_free_ranges (list of tuples): A sorted list of tuples, each representing a free time range with a start and end time.
@@ -50,19 +51,24 @@ class TimeRangeService:
         # Uses a two-pointers algorithm to merge time ranges.
         merged_ranges = []
         j = 0
-        free_end = None
+        free_end = None  # Largest time that has been marked as free seen so far
         for i in range(len(sorted_busy_ranges)):
             start, end = sorted_busy_ranges[i]
             # Iterate over the free ranges that overlap with the current busy range
             while j < len(sorted_free_ranges) and sorted_free_ranges[j][0] < end:
+                # In case a previous free range overlaps with the current busy range
                 if free_end is not None:
                     start = max(start, free_end)
                 if start >= end:
                     break
+
+                # Manage range overlap
                 if start < sorted_free_ranges[j][1]:
                     if start < sorted_free_ranges[j][0]:
                         merged_ranges.append((start, sorted_free_ranges[j][0]))
                     start = sorted_free_ranges[j][1]
+
+                # Update the free_end variable
                 if free_end is None:
                     free_end = sorted_free_ranges[j][1]
                 else:
