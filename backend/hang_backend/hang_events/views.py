@@ -26,7 +26,7 @@ class HangEventViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Get the queryset of HangEvents that are not archived and are associated with the current user."""
-        return self.request.user.hang_events.filter(archived=False).all()
+        return self.request.user.hang_events.filter(archived=False).order_by("-scheduled_time_start").all()
 
     def destroy(self, request, *args, **kwargs):
         """Destroy the instance of the HangEvent if the current user is the owner."""
