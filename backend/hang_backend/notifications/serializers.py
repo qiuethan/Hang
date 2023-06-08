@@ -1,7 +1,7 @@
 """
 ICS4U
 Paul Chen
-This module defines the serializer for the Notification model.
+This module defines the serializers for the notifications package.
 """
 
 from rest_framework import serializers
@@ -9,9 +9,7 @@ from .models import Notification
 
 
 class NotificationSerializer(serializers.ModelSerializer):
-    """
-    Serializer for the Notification model.
-    """
+    """Serializer for the Notification model."""
 
     class Meta:
         model = Notification

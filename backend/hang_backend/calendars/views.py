@@ -1,7 +1,7 @@
 """
 ICS4U
 Paul Chen
-This module contains views for managing calendar and time range data.
+This module defines the views and viewsets for the calendars package.
 """
 
 from datetime import datetime
@@ -26,9 +26,7 @@ from .services import TimeRangeService
 
 
 class ManualTimeRangeView(generics.CreateAPIView):
-    """
-    View for creating a manual time range.
-    """
+    """View for creating a manual time range."""
     permission_classes = [IsAuthenticated, ]
     serializer_class = ManualTimeRangeSerializer
     queryset = ManualTimeRange.objects.all()
@@ -38,9 +36,7 @@ class ManualTimeRangeView(generics.CreateAPIView):
 
 
 class RepeatingTimeRangeViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for managing repeating time ranges.
-    """
+    """ViewSet for managing repeating time ranges."""
     serializer_class = RepeatingTimeRangeSerializer
     permission_classes = [IsAuthenticated]
 
@@ -53,9 +49,7 @@ class RepeatingTimeRangeViewSet(viewsets.ModelViewSet):
 
 
 class GoogleCalendarListView(APIView):
-    """
-    View for listing Google Calendars.
-    """
+    """View for listing Google Calendars."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -64,9 +58,7 @@ class GoogleCalendarListView(APIView):
 
 
 class GoogleCalendarSyncView(views.APIView):
-    """
-    View for syncing Google Calendars.
-    """
+    """View for syncing Google Calendars."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -122,9 +114,7 @@ class GoogleCalendarSyncView(views.APIView):
 
 
 class BusyTimeRangesView(APIView):
-    """
-    View for getting the busy time ranges of a user.
-    """
+    """View for getting the busy time ranges of a user."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request, user_id, format=None):
@@ -148,9 +138,7 @@ class BusyTimeRangesView(APIView):
 
 
 class FreeTimeRangesView(APIView):
-    """
-    View for getting the free time ranges of a user.
-    """
+    """View for getting the free time ranges of many users."""
     def get(self, request):
         query_serializer = FreeTimeRangesSerializer(data=request.query_params, context={"request": request})
         query_serializer.is_valid(raise_exception=True)
@@ -177,9 +165,7 @@ class FreeTimeRangesView(APIView):
 
 
 class UsersFreeDuringRangeView(APIView):
-    """
-    View for getting the users who are free during a certain time range.
-    """
+    """View for getting the users who are free during a certain time range."""
     def get(self, request):
         serializer = UserFreeDuringRangeSerializer(data=request.query_params, context={"request": request})
         serializer.is_valid(raise_exception=True)

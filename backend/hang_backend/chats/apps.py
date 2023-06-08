@@ -11,7 +11,7 @@ class ChatConfig(AppConfig):
             message_created_notify_chat,
             message_edited_notify_chat,
             message_deleted_notify_chat,
-            message_reacted_added_notify_chat,
+            message_reaction_added_notify_chat,
             message_reaction_removed_notify_chat,
             message_saved_create_notifications
         )
@@ -25,5 +25,5 @@ class ChatConfig(AppConfig):
                 post_save.connect(message_saved_create_notifications, sender=model)
 
         post_delete.connect(message_deleted_notify_chat, sender=Message)
-        post_save.connect(message_reacted_added_notify_chat, sender=Reaction)
+        post_save.connect(message_reaction_added_notify_chat, sender=Reaction)
         post_delete.connect(message_reaction_removed_notify_chat, sender=Reaction)

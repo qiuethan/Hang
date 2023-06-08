@@ -1,7 +1,7 @@
 """
 ICS4U
 Paul Chen
-This module contains signal receivers for the HangEvent model.
+This module defines the signals for the hang_events package.
 """
 
 from django.contrib.auth.models import User
@@ -28,7 +28,7 @@ def update_hang_event_message_channel(sender, instance, action, pk_set, **kwargs
 
 
 @receiver(post_save, sender=HangEvent)
-def send_hang_event_updated_message(sender, instance, created, **kwargs):
+def hang_event_updated_notify_chat(sender, instance, created, **kwargs):
     """
     Sends a system message when a HangEvent instance is updated.
     """
@@ -47,7 +47,7 @@ def send_hang_event_updated_message(sender, instance, created, **kwargs):
 
 
 @receiver(m2m_changed, sender=HangEvent.attendees.through)
-def send_hang_event_user_added_or_removed_message(sender, instance, action, pk_set, **kwargs):
+def hang_event_user_added_or_removed_notify_chat(sender, instance, action, pk_set, **kwargs):
     """
     Sends a system message when a user is added or removed from a HangEvent instance.
     """

@@ -1,7 +1,7 @@
 """
 ICS4U
 Paul Chen
-This module contains serializers for the messaging system.
+This module defines the serializers for the chats package.
 """
 
 from datetime import datetime
@@ -17,9 +17,7 @@ from .models import UserMessage, MessageChannel, DirectMessageChannel, GroupMess
 
 
 class MessageChannelSerializer(serializers.ModelSerializer):
-    """
-    Serializes a MessageChannel to JSON.
-    """
+    """Serializes a MessageChannel to JSON."""
 
     class Meta:
         model = MessageChannel
@@ -28,13 +26,7 @@ class MessageChannelSerializer(serializers.ModelSerializer):
 
 
 class DirectMessageChannelSerializer(MessageChannelSerializer):
-    """
-    Serializes a DirectMessageChannel to JSON.
-
-    Attributes:
-      users (PrimaryKeyRelatedField): Users in the direct message channel.
-      has_read (SerializerMethodField): Whether the message channel has been read.
-    """
+    """Serializes a DirectMessageChannel to JSON."""
 
     users = PrimaryKeyRelatedField(queryset=User.objects.all(), many=True)
     has_read = serializers.SerializerMethodField(read_only=True)
@@ -45,26 +37,17 @@ class DirectMessageChannelSerializer(MessageChannelSerializer):
         read_only_fields = ["id", "channel_type", "created_at", "has_read"]
 
     def get_has_read(self, obj):
-        """
-        Checks if the message channel has been read by the user.
-        """
+        """Checks if the message channel has been read by the user."""
         return obj.has_read_message_channel(self.context["request"].user)
 
     def create(self, validated_data):
-        """
-        Creates a new direct message channel.
-        """
         users = validated_data["users"]
         return MessageChannel.objects.create_direct_message(users[0], users[1])
 
     def validate(self, data):
-        """
-        Validates the data for the direct message channel.
-        """
         current_user = self.context["request"].user
         users = data["users"]
 
-        # Verifies data.
         if current_user not in users:
             raise serializers.ValidationError("The creation of a DM must include the current user.")
         if len(users) != 2:
@@ -78,15 +61,7 @@ class DirectMessageChannelSerializer(MessageChannelSerializer):
 
 
 class GroupMessageChannelSerializer(MessageChannelSerializer):
-    """
-    Serializes a GroupMessageChannel to JSON.
-
-    Attributes:
-      owner (PrimaryKeyRelatedField): The owner of the group message channel.
-      users (PrimaryKeyRelatedField): The users in the group message channel.
-      channel_type (CharField): The type of the message channel.
-      has_read (SerializerMethodField): Whether the message channel has been read.
-    """
+    """Serializes a GroupMessageChannel to JSON."""
 
     owner = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
     users = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True)
@@ -99,15 +74,10 @@ class GroupMessageChannelSerializer(MessageChannelSerializer):
         read_only_fields = ["id", "channel_type", "created_at", "has_read"]
 
     def get_has_read(self, obj):
-        """
-        Checks if the message channel has been read by the user.
-        """
+        """Checks if the message channel has been read by the user."""
         return obj.has_read_message_channel(self.context["request"].user)
 
     def create(self, validated_data):
-        """
-        Creates a new group message channel.
-        """
         current_user = self.context["request"].user
         users = validated_data["users"]
 
@@ -117,9 +87,6 @@ class GroupMessageChannelSerializer(MessageChannelSerializer):
         return MessageChannel.objects.create_group_chat(name=validated_data["name"], owner=current_user, users=users)
 
     def validate_users(self, new_users):
-        """
-        Validates the users for the group message channel.
-        """
         if self.instance:
             current_user = self.context["request"].user
             users = set(self.instance.users.all())
@@ -134,9 +101,6 @@ class GroupMessageChannelSerializer(MessageChannelSerializer):
         return new_users
 
     def validate_owner(self, new_owner):
-        """
-        Validates the owner for the group message channel.
-        """
         current_user = self.context["request"].user
         instance = self.instance
 
@@ -148,16 +112,6 @@ class GroupMessageChannelSerializer(MessageChannelSerializer):
         return new_owner
 
     def update(self, instance, validated_data):
-        """
-        Updates the group message channel.
-
-        Arguments:
-          instance (GroupMessageChannel): The group message channel to update.
-          validated_data (dict): The validated data for the group message channel.
-
-        Returns:
-          GroupMessageChannel: The updated group message channel.
-        """
         current_user = self.context["request"].user
 
         if "users" in validated_data:
@@ -173,12 +127,7 @@ class GroupMessageChannelSerializer(MessageChannelSerializer):
 
 
 class ReadMessageChannelSerializer(serializers.ModelSerializer):
-    """
-    Serializes a MessageChannel to JSON, including a flag indicating whether the channel has been read.
-    
-    Attributes:
-      has_read (SerializerMethodField): Whether the message channel has been read.
-    """
+    """Serializer for ReadMessageChannelView. Can set a MessageChannel as read for a given User."""
     has_read = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -187,30 +136,15 @@ class ReadMessageChannelSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "channel_type", "users", "created_at", "message_last_sent", "has_read"]
 
     def update(self, instance, validated_data):
-        """
-        Marks the message channel as read by the user.
-
-        Arguments:
-          instance (MessageChannel): The message channel to update.
-          validated_data (dict): The validated data for the message channel.
-
-        Returns:
-          MessageChannel: The updated message channel.
-        """
         instance.read_message_channel(self.context["request"].user)
         return instance
 
     def get_has_read(self, obj):
-        """
-        Checks if the message channel has been read by the user.
-        """
         return obj.has_read_message_channel(self.context["request"].user)
 
 
 class ReactionSerializer(serializers.ModelSerializer):
-    """
-    Serializes a Reaction to JSON.
-    """
+    """Serializes a Reaction to JSON."""
 
     class Meta:
         model = Reaction
@@ -219,38 +153,23 @@ class ReactionSerializer(serializers.ModelSerializer):
 
 
 class MessageSerializer(serializers.Serializer):
-    """
-    Serializes a Message to JSON, selecting the appropriate serializer based on the message type.
-    """
+    """Serializes a Message to JSON, selecting the appropriate serializer based on the message type."""
 
     @classmethod
     def get_serializer(cls, _type):
-        """
-        Returns the appropriate serializer for the given message type.
-        """
+        """Returns the appropriate serializer for the given message type."""
         if _type == "user_message":
             return UserMessageSerializer
         if _type == "system_message":
             return SystemMessageSerializer
 
     def to_representation(self, instance):
-        """
-        Returns a dictionary representing the message.
-        """
         serializer = self.get_serializer(instance.type)
         return serializer(serializer.Meta.model.objects.get(pk=instance.pk)).data
 
 
 class UserMessageSerializer(serializers.ModelSerializer):
-    """
-    Serializes a UserMessage to JSON.
-
-    Attributes:
-      user (PrimaryKeyRelatedField): The user who sent the message.
-      message_channel (PrimaryKeyRelatedField): The channel in which the message was sent.
-      reply (PrimaryKeyRelatedField): The message to which this message is a reply.
-      reactions (ReactionSerializer): The reactions to the message.
-    """
+    """Serializes a UserMessage to JSON."""
 
     user = PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
     message_channel = PrimaryKeyRelatedField(queryset=MessageChannel.objects.all())
@@ -263,16 +182,10 @@ class UserMessageSerializer(serializers.ModelSerializer):
         read_only_fields = ("type", "id", "user", "created_at", "updated_at", "reactions")
 
     def validate_user(self, instance):
-        """
-        Validates the user of the message.
-        """
         if instance.user.username != self.context["user"].username:
             raise serializers.ValidationError("Message does not exist.")
 
     def validate_message_channel(self, value):
-        """
-        Validates the message channel of the message.
-        """
         try:
             value.users.get(username=self.context["user"].username)
         except ObjectDoesNotExist:
@@ -280,27 +193,18 @@ class UserMessageSerializer(serializers.ModelSerializer):
         return value
 
     def validate_reply(self, value):
-        """
-        Validates the reply of the message.
-        """
         message_channel = self.initial_data.get("message_channel")
         if value is not None and value.message_channel_id != message_channel:
             raise serializers.ValidationError("Replied message does not exist.")
         return value
 
     def create(self, validated_data):
-        """
-        Creates a new user message.
-        """
         message = UserMessage.objects.create(user=self.context["user"], **validated_data)
         validated_data["message_channel"].message_last_sent = datetime.now()
         validated_data["message_channel"].save()
         return message
 
     def update(self, instance, validated_data):
-        """
-        Updates a user message.
-        """
         self.validate_user(instance)
         instance.content = validated_data.get("content", instance.content)
         instance.save()
@@ -308,13 +212,7 @@ class UserMessageSerializer(serializers.ModelSerializer):
 
 
 class SystemMessageSerializer(serializers.ModelSerializer):
-    """
-    Serializes a SystemMessage to JSON.
-
-    Attributes:
-      message_channel (PrimaryKeyRelatedField): The channel in which the system message was sent.
-      reactions (ReactionSerializer): The reactions to the system message.
-    """
+    """Serializes a SystemMessage to JSON."""
 
     message_channel = PrimaryKeyRelatedField(queryset=MessageChannel.objects.all())
     reactions = ReactionSerializer(many=True, required=False)
@@ -326,19 +224,11 @@ class SystemMessageSerializer(serializers.ModelSerializer):
 
 
 class AuthenticateWebsocketSerializer(serializers.Serializer):
-    """
-    Serializes a token for websocket authentication.
-
-    Attributes:
-      token (CharField): The authentication token.
-    """
+    """Validates an authentication token for WebSocket authentication."""
 
     token = serializers.CharField(max_length=100)
 
     def validate_token(self, data):
-        """
-        Validates the authentication token.
-        """
         try:
             auth = TokenAuthentication().authenticate_credentials(data.encode("utf-8"))
             return auth[0]
@@ -346,9 +236,6 @@ class AuthenticateWebsocketSerializer(serializers.Serializer):
             raise serializers.ValidationError("Invalid Token.")
 
     def validate(self, data):
-        """
-        Validates the data for websocket authentication.
-        """
         if data["token"].username != self.context["user"].username:
             raise serializers.ValidationError("Token does not match user.")
         return data["token"]

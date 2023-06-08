@@ -1,3 +1,8 @@
+"""
+ICS4U
+Paul Chen
+This module defines the urls for the accounts package.
+"""
 from django.urls import path
 from knox import views as knox_views
 from rest_framework.routers import DefaultRouter

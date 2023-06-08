@@ -1,3 +1,8 @@
+"""
+ICS4U
+Paul Chen
+This module defines the urls for the chats package.
+"""
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 

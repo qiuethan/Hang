@@ -1,8 +1,7 @@
 """
 ICS4U
 Paul Chen
-Module for managing Hang Events in the application. This module consists of ViewSets for HangEvent, InvitationCode,
-Task, AddHangEventToGoogleCalendar, and ArchivedHangEvent functionalities.
+This module defines the views and viewsets for the hang_events package.
 """
 
 from google.oauth2.credentials import Credentials
@@ -21,37 +20,16 @@ from hang_events.serializers import HangEventSerializer, TaskSerializer
 
 
 class HangEventViewSet(viewsets.ModelViewSet):
-    """
-    A view set for managing Hang Events. It supports operations to list, create, retrieve, update, and delete Hang Events.
-
-    Attributes:
-        permission_classes (list): Permission classes applicable for this viewset.
-        serializer_class (Serializer): The serializer class used for this viewset.
-    """
+    """A ViewSet for managing Hang Events."""
     permission_classes = [permissions.IsAuthenticated, ]
     serializer_class = HangEventSerializer
 
     def get_queryset(self):
-        """
-        Get the queryset of HangEvents that are not archived and are associated with the current user.
-
-        Returns:
-            QuerySet: The queryset of HangEvents for the current user.
-        """
+        """Get the queryset of HangEvents that are not archived and are associated with the current user."""
         return self.request.user.hang_events.filter(archived=False).all()
 
     def destroy(self, request, *args, **kwargs):
-        """
-        Destroy the instance of the HangEvent if the current user is the owner.
-
-        Arguments:
-            request (Request): The incoming request.
-            *args: Variable length argument list.
-            **kwargs: Arbitrary keyword arguments.
-
-        Returns:
-            Response: The response with appropriate status code.
-        """
+        """Destroy the instance of the HangEvent if the current user is the owner."""
         instance = self.get_object()
         if self.request.user != instance.owner:
             return Response(status=status.HTTP_403_FORBIDDEN)
@@ -59,16 +37,7 @@ class HangEventViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"])
     def archive(self, request, pk=None):
-        """
-        Archive a HangEvent object if the request user is the owner.
-
-        Arguments:
-            request (Request): The incoming request.
-            pk (int, optional): Primary key of the HangEvent to archive.
-
-        Returns:
-            Response: The response with appropriate status code.
-        """
+        """Archive a HangEvent object if the request user is the owner."""
         hang_event = HangEvent.objects.filter(archived=False).get(pk=pk)
         if request.user != hang_event.owner:
             return Response(status=status.HTTP_403_FORBIDDEN)
@@ -76,38 +45,18 @@ class HangEventViewSet(viewsets.ModelViewSet):
         hang_event.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-class InvitationCodeViewSet(viewsets.GenericViewSet):
-    """
-    A view set for managing Invitation Codes for Hang Events. It supports operations to join, regenerate, and retrieve Invitation Codes.
 
-    Attributes:
-        permission_classes (list): Permission classes applicable for this viewset.
-        serializer_class (Serializer): The serializer class used for this viewset.
-    """
+class InvitationCodeViewSet(viewsets.GenericViewSet):
+    """A ViewSet for managing invitation codes for Hang Events."""
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = HangEventSerializer
 
     def get_queryset(self):
-        """
-        Get the queryset of HangEvents that are owned by the current user and are not archived.
-
-        Returns:
-            QuerySet: The queryset of HangEvents for the current user.
-        """
         return self.request.user.hang_events_owned.filter(archived=False).all()
 
     @action(detail=False, methods=["post"])
     def join(self, request, pk=None):
-        """
-        Join a HangEvent through an invitation code.
-
-        Arguments:
-            request (Request): The incoming request.
-            pk (int, optional): Primary key of the HangEvent to join.
-
-        Returns:
-            Response: The response with the serialized HangEvent and status code.
-        """
+        """Join a HangEvent through an invitation code."""
         invitation_code = request.data.get("invitation_code")
         hang_event = HangEvent.add_user_through_invitation_code(invitation_code, request.user)
         serializer = self.get_serializer(hang_event)
@@ -115,16 +64,7 @@ class InvitationCodeViewSet(viewsets.GenericViewSet):
 
     @action(detail=True, methods=["post"])
     def regenerate(self, request, pk=None):
-        """
-        Regenerate the invitation code for a HangEvent.
-
-        Arguments:
-            request (Request): The incoming request.
-            pk (int, optional): Primary key of the HangEvent.
-
-        Returns:
-            Response: The response with the new invitation code and status code.
-        """
+        """Regenerate the invitation code for a HangEvent."""
         hang_event = self.get_object()
         if request.user != hang_event.owner:
             return Response({"error": "Permission Denied"}, status=status.HTTP_403_FORBIDDEN)
@@ -133,16 +73,7 @@ class InvitationCodeViewSet(viewsets.GenericViewSet):
         return Response({"invitation_code": hang_event.invitation_code}, status=status.HTTP_200_OK)
 
     def retrieve(self, request, pk=None):
-        """
-        Retrieve the invitation code for a HangEvent.
-
-        Arguments:
-            request (Request): The incoming request.
-            pk (int, optional): Primary key of the HangEvent.
-
-        Returns:
-            Response: The response with the invitation code and status code.
-        """
+        """Retrieve the invitation code for a HangEvent."""
         hang_event = self.get_object()
         if request.user != hang_event.owner:
             return Response({"error": "Permission Denied"}, status=status.HTTP_403_FORBIDDEN)
@@ -150,87 +81,55 @@ class InvitationCodeViewSet(viewsets.GenericViewSet):
 
 
 class TaskViewSet(viewsets.ModelViewSet):
-    """
-    A view set for managing Tasks. It supports operations to list, create, retrieve, update, and delete Tasks.
-
-    Attributes:
-        permission_classes (list): Permission classes applicable for this viewset.
-        serializer_class (Serializer): The serializer class used for this viewset.
-    """
+    """A ViewSet for managing Tasks."""
     permission_classes = [permissions.IsAuthenticated, ]
     serializer_class = TaskSerializer
 
     def get_queryset(self):
         """
-        Get the queryset of Tasks that are associated with a HangEvent that the current user is attending and is not archived.
-
-        Returns:
-            QuerySet: The queryset of Tasks for the current user.
+        Get the queryset of Tasks that are associated with a HangEvent that the
+        current user is attending and is not archived.
         """
         return Task.objects.filter(event__attendees__username=self.request.user.username, event__archived=False).all()
 
     def perform_create(self, serializer):
-        """
-        Save a Task instance when creating a Task.
-
-        Arguments:
-            serializer (Serializer): The serializer containing the Task data.
-
-        Returns:
-            None
-        """
         serializer.save()
 
 
 class AddHangEventToGoogleCalendarView(APIView):
-    """
-    A view to add a HangEvent to a user's Google Calendar.
-
-    Attributes:
-        permission_classes (list): Permission classes applicable for this view.
-    """
+    """A view to add a HangEvent to a user's Google Calendar."""
     permission_classes = (IsAuthenticated,)
 
     def post(self, request, pk):
-        """
-        Add a HangEvent to the authenticated user's Google Calendar.
-
-        Arguments:
-            request (Request): The incoming request.
-            pk (int): Primary key of the HangEvent to add to the calendar.
-
-        Returns:
-            Response: The response with appropriate status code.
-        """
         hang_event = get_object_or_404(HangEvent, id=pk)
         user = request.user
 
+        # Validate data
         if hang_event.archived:
             return Response({"error": "You are already an attendee of this HangEvent"},
                             status=status.HTTP_400_BAD_REQUEST)
-
         if hang_event.owner != user:
             return Response({"detail": "Unauthorized: user is not the owner of the HangEvent"},
                             status=status.HTTP_403_FORBIDDEN)
-
         if hang_event.google_calendar_event_id is not None:
             return Response({"detail": "Error: google_calendar_event_id field is not null"},
                             status=status.HTTP_400_BAD_REQUEST)
 
+        # Retrieve user credentials.
         authentication_token = get_object_or_404(GoogleAuthenticationToken, user=user)
         authentication_token.refresh_access_token()
-
         credentials = Credentials(token=authentication_token.access_token)
+
+        # Create Google Calendar event.
         service = build('calendar', 'v3', credentials=credentials)
-
         event_body = hang_event.to_google_calendar_event_data()
-
         try:
             event = service.events().insert(calendarId='primary', body=event_body).execute()
         except HttpError as e:
             return Response({"detail": f"An error occurred while creating the event: {e}"},
                             status=status.HTTP_400_BAD_REQUEST)
 
+        # Save to HangEvent model instance.
         hang_event.google_calendar_event_id = event['id']
         hang_event.save()
 
@@ -239,37 +138,18 @@ class AddHangEventToGoogleCalendarView(APIView):
 
 class ArchivedHangEventViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     """
-    A view set for managing archived Hang Events. It supports operations to list and unarchive Hang Events.
-
-    Attributes:
-        permission_classes (list): Permission classes applicable for this viewset.
-        serializer_class (Serializer): The serializer class used for this viewset.
+    A ViewSet for managing archived Hang Events.
     """
     permission_classes = [IsAuthenticated]
     serializer_class = HangEventSerializer
 
     def get_queryset(self):
-        """
-        Get the queryset of HangEvents that the current user is attending and are archived.
-
-        Returns:
-            QuerySet: The queryset of archived HangEvents for the current user.
-        """
+        """Get the queryset of HangEvents that the current user is attending and are archived."""
         return HangEvent.objects.filter(attendees=self.request.user, archived=True).all()
 
     @action(detail=True, methods=["post"])
     def unarchive(self, request, *args, **kwargs):
-        """
-        Unarchive a HangEvent object if the request user is the owner.
-
-        Arguments:
-            request (Request): The incoming request.
-            *args: Variable length argument list.
-            **kwargs: Arbitrary keyword arguments.
-
-        Returns:
-            Response: The response with appropriate status code.
-        """
+        """Unarchive a HangEvent object if the request user is the owner."""
         hang_event = self.get_object()
         if request.user != hang_event.owner:
             return Response(status=status.HTTP_403_FORBIDDEN)

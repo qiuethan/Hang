@@ -47,6 +47,7 @@ class TimeRangeService:
         Returns:
           list of tuples: A list of merged time ranges where free and busy times have been combined.
         """
+        # Uses a two-pointers algorithm to merge time ranges.
         merged_ranges = []
         j = 0
         free_end = None
