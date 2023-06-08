@@ -28,7 +28,8 @@ const Google = () => {
 
     //Send user to google OAuth screen
     const connect = () => {
-        window.location.href = "https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=110686712608-j4udo8p9sckujpgurj9s14ep5jui8tmu.apps.googleusercontent.com&redirect_uri=https%3A%2F%2Fhang-coherentboi.vercel.app%2Fauth&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email+openid&state=2ZmSqI3ZzCYESHbMgjBV9lbhIX4bwk&prompt=consent&access_type=offline"
+        window.location.href = "\n" +
+            "https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=110686712608-j4udo8p9sckujpgurj9s14ep5jui8tmu.apps.googleusercontent.com&redirect_uri=https%3A%2F%2Fhang-coherentboi.vercel.app%2Fprofile&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email+openid&state=2ZmSqI3ZzCYESHbMgjBV9lbhIX4bwk&prompt=consent&access_type=offline"
     }
 
     //Render component

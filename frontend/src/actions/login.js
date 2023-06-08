@@ -69,10 +69,10 @@ export const logout = (token) => async(dispatch) => {
 }
 
 //Action to login using google using Login API
-export const googlelogin = (code) => async(dispatch) => {
+export const googlelogin = (code, redirect) => async(dispatch) => {
     try{
         //store return as variable
-        const { data } = await api.googlelogin(code);
+        const { data } = await api.googlelogin(code, redirect);
 
         //update react store via reducers
         dispatch({type: LOGIN, data})

@@ -5,7 +5,6 @@ Last Modified: June 7, 2023
 Description: Display Navigation Bar
 */
 
-//From https://mui.com/material-ui/react-drawer/
 import React, { useState, useEffect } from 'react';
 import {useNavigate} from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -27,6 +26,10 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import CreateIcon from '@mui/icons-material/Create';
 
 import logo from '../../images/logo.svg';
+
+//Lines 32-117 are from [5] React Drawer Component - Material-UI, 2023
+//Creates drawer dimensions + styles
+//Allows drawer to open and close
 
 //Configure Opened Navbar Width
 const drawerWidth = 240;

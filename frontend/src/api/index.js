@@ -26,7 +26,7 @@ export const login = (inputs) => API.post('/v1/accounts/login/', inputs);
 export const signin = (inputs) => API.post('/v1/accounts/register/', inputs);
 export const logout = (token) => API.post('/v1/accounts/logout/', null);
 export const sendemail = (inputs) => API.post('/v1/accounts/email_verification_tokens/', inputs);
-export const googlelogin = (code) => API.post('/v1/accounts/login/google/', {code: code});
+export const googlelogin = (code, redirect) => API.post('/v1/accounts/login/google/', {code: code, redirect_uri: redirect});
 
 //Load Rooms List
 export const loadrooms = () => API.get('/v1/chats/direct_messages/');

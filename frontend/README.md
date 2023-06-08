@@ -1,10 +1,27 @@
-# Getting Started with Create React App
+# Hang Frontend
+Runs the Hang social media web app client-side code.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Features
 
-## Available Scripts
+- Authentication System
+- Friend System
+- Chat Service
+- Create, View and Invite to Hang Events
+- Connect Google Calendar to Hang App
+- Edit and Display Profile
 
-In the project directory, you can run:
+## Installation
+
+Installation requires node package manager (npm). Download node [here](https://nodejs.org/en/download).\
+After installing, run:
+
+### `npm install`
+
+Installation may fail due to conflicting dependencies. In that case, run:
+
+### `npm install --force`
+
+## Run Scripts
 
 ### `npm start`
 
@@ -19,52 +36,27 @@ You may also see any lint errors in the console.
 Launches the test runner in the interactive watch mode.\
 See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
-### `npm run build`
+## Known Bugs
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- On rare occasions, when logging in with Google, the page will infinitely refresh. When that happens, **close the tab immediately** and relaunch the application in a new tab.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Support
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Please contact the developer at [ethanqiu@gmail.com](ethanqiu@gmail.com), for any support or questions.
 
-### `npm run eject`
+## Sources
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Documentation
+| Source                                                                                                                                                  | Description                                                                    |
+|---------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------|
+| [1] “The React Component Library You always wanted,” MUI, https://mui.com/ (accessed Jun. 7, 2023).                                                     | Learn how to apply + style various UI components. Accessed library components. |
+| [2] Google Maps Platform Documentation&nbsp; \|&nbsp; google for developers, https://developers.google.com/maps/documentation/ (accessed Jun. 7, 2023). | Learn how to use Google Maps API in application.                               |
+| [3] D. Abramov, “React redux,” React Redux, https://react-redux.js.org/ (accessed Jun. 7, 2023).                                                        | References for react-redux and redux store functionality.                      |
+| [4] “Quick start,” React, https://react.dev/learn (accessed Jun. 7,                                                                                     | References for react states, rendering and references.                         |
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Code Snippets
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+| Source                                                                                                                                              | Description                                              |
+|-----------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------|
+| [5] “React drawer component - material UI,” React Drawer component - Material UI, https://mui.com/material-ui/react-drawer/ (accessed Jun. 7, 2023) | Used design as base for Navigation Bar                   |
+| [6] ChatGPT, https://chat.openai.com/chat (accessed Jun. 7, 2023).                                                                                  | Used to solve various miscellaneous problems + debugging |
