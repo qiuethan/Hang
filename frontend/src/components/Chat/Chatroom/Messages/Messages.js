@@ -41,7 +41,7 @@ const Messages = ({ client, currentRoom, clientOpened }) => {
         if(scrollHeight > 0 && messageBox.current) {
             console.log(messageBox);
             console.log(messageBox.current.scrollTop);
-            messageBox.current.scrollTop = messageBox.current.scrollTop - 0.5;
+            messageBox.current.scrollTop = 0;
         }
     }, [messages]);
 
