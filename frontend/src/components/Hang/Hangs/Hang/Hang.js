@@ -73,19 +73,19 @@ const Hang = ({hang, setCurrentHang}) => {
                             </Box>
                         </Box>
                         <Box sx={{display: "flex", height: "50%", width:"95%", flexDirection:"row"}}>
-                            <Box sx={{display: "flex", width: "25%", flexDirection: "column", height: "100%", overflowY: "scroll", justifyContent: "left", alignItems: "center", marginTop: "5px"}}>
+                            <Box sx={{display: "flex", width: "25%", flexDirection: "column", height: "calc(100% -5px)", overflowY: "auto", justifyContent: "left", alignItems: "center", marginTop: "5px"}}>
                                 {hang.attendees.map((attendee) => (
                                     <User attendee={attendee}/>
                                 ))}
                             </Box>
                             {begin !== "" && end !== "" && (
-                                <Box sx={{display: "flex", width: "25%", flexDirection: "column", height: "calc(100% - 5px)", overflowY: "scroll", justifyContent: "left", alignItems: "center", marginTop: "5px"}}>
+                                <Box sx={{display: "flex", width: "25%", flexDirection: "column", height: "calc(100% - 5px)", overflowY: "auto", justifyContent: "left", alignItems: "center", marginTop: "5px"}}>
                                     <Box>{begin.toLocaleString()}</Box>
                                     <Box>To</Box>
                                     <Box>{end.toLocaleString()}</Box>
                                 </Box>
                             )}
-                            <Box sx={{display: "flex", width: "50%", flexDirection: "column", height: "100%", overflowY: "scroll"}}>
+                            <Box sx={{display: "flex", width: "50%", flexDirection: "column", height: "100%", overflowY: "auto", overflowX: "auto"}}>
                                 <Location details={hang}/>
                             </Box>
                         </Box>
