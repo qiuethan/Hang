@@ -85,7 +85,7 @@ const Hang = ({hang, setCurrentHang}) => {
                                     <Box>{end.toLocaleString()}</Box>
                                 </Box>
                             )}
-                            <Box sx={{display: "flex", width: "50%", flexDirection: "column", height: "100%", overflowY: "auto", overflowX: "auto"}}>
+                            <Box sx={{display: "flex", width: "50%", flexDirection: "column", height: "100%", overflowY: "auto"}}>
                                 <Location details={hang}/>
                             </Box>
                         </Box>
