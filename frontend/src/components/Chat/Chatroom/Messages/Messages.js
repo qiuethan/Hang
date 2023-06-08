@@ -94,7 +94,7 @@ const Messages = ({ client, currentRoom, clientOpened }) => {
     return(
         messages.length === 0 ? <Box/> :
             <Box sx={{display: "block", height: "100%", width: "100%"}}>
-                <Box sx={{display: "flex", height: "calc(98vh - 135px)", flexDirection: "column-reverse", overflowY: "scroll"}} onScroll={handleScroll}>
+                <Box sx={{display: "flex", height: "calc(98vh - 135px)", flexDirection: "column-reverse", auto: "scroll"}} onScroll={handleScroll}>
                     {messages.map((message) => (
                         <Message key={message.id} message={message}/>
                     ))}
