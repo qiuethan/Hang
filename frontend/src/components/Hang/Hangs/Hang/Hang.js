@@ -79,7 +79,7 @@ const Hang = ({hang, setCurrentHang}) => {
                                 ))}
                             </Box>
                             {begin !== "" && end !== "" && (
-                                <Box sx={{display: "flex", width: "25%", flexDirection: "column", height: "100%", overflowY: "scroll", justifyContent: "left", alignItems: "center", marginTop: "5px"}}>
+                                <Box sx={{display: "flex", width: "25%", flexDirection: "column", height: "calc(100% - 5px)", overflowY: "scroll", justifyContent: "left", alignItems: "center", marginTop: "5px"}}>
                                     <Box>{begin.toLocaleString()}</Box>
                                     <Box>To</Box>
                                     <Box>{end.toLocaleString()}</Box>
