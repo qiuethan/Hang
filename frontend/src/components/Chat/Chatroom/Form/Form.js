@@ -58,7 +58,7 @@ const Form = ({ client, currentRoom }) => {
     }, [useSelector((state) => state.users), currentRoom])
 
     return(
-        <Box sx={{height: "100%", display: "flex", borderRadius: "0 0 10px 0", alignItems: "center"}}>
+        <Box sx={{height: "100%", width: "100%", display: "flex", borderRadius: "0 0 10px 0", alignItems: "center"}}>
             {
                 JSON.parse(localStorage.getItem('profile') !== null) &&
                 <form onSubmit={messageSend}>
