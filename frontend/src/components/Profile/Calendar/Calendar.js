@@ -101,7 +101,7 @@ const Calendar = () => {
                                 <Button disableRipple  onClick={update} sx={{backgroundColor: "#0c7c59", color: "white", ":hover": {color: "#0c7c59", backgroundColor: "white"}}}>Save Changes</Button>
                             </Box>
                         </Box>
-                        <Box sx={{display: "flex", flexDirection: "column", alignItems: "center", height: "100%", width: "100%", overflowY: "scroll"}}>
+                        <Box sx={{display: "flex", flexDirection: "column", alignItems: "center", height: "100%", width: "100%", overflowY: "auto"}}>
                             {calendars.map((calendar) =>
                                 <UserCalendar calendar={calendar} synchedCalendars={syncedCalendars} setSynchedCalendars={setSynchedCalendars}/>
                             )}

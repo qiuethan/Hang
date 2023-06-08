@@ -27,7 +27,7 @@ const Attendees = ({attendees, updateAttendee, fields}) => {
                       <h4>Attendees</h4>
                   </Box>
               </Box>
-              <Box sx={{display:"flex", flexDirection:"column", height: "50%", width: "100%", overflowY: "scroll", marginTop: "20px"}}>
+              <Box sx={{display:"flex", flexDirection:"column", height: "50%", width: "100%", overflowY: "auto", marginTop: "20px"}}>
                   {attendees.map((attendee) => (
                       <Attendee key={attendee.user.id} attendee={attendee} fields={fields}/>
                   ))}

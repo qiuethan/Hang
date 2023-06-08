@@ -19,7 +19,7 @@ const Friendlist = () => {
     //Render list of friends
     return(
         friends.length === 0 ? <Box/> :
-            <Box sx={{display: "flex", flexDirection:"column", width: "99%", height: "98%", overflowY: "scroll"}}>
+            <Box sx={{display: "flex", flexDirection:"column", width: "99%", height: "98%", overflowY: "auto"}}>
                 {friends.map((friend) => (
                     <Friend key={friend} friend={friend}/>
                 ))}

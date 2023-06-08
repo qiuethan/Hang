@@ -17,7 +17,7 @@ const Sentlist = () => {
 
     //Render components in list
     return(
-        requests.length === 0 ? <Box/> : <Box sx={{display: "flex", flexDirection:"column", width: "99%", height: "98%", overflowY: "scroll"}}>
+        requests.length === 0 ? <Box/> : <Box sx={{display: "flex", flexDirection:"column", width: "99%", height: "98%", overflowY: "auto"}}>
             {requests.map((request) => (
                 !request.declined && (
                     <Request key={request.to_user} user={request.to_user}/>
