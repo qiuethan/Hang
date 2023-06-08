@@ -58,11 +58,11 @@ const Form = ({ client, currentRoom }) => {
     }, [useSelector((state) => state.users), currentRoom])
 
     return(
-        <Box sx={{height: "100%", borderRadius: "0 0 10px 0"}}>
+        <Box sx={{height: "100%", width: "100%", display: "flex", borderRadius: "0 0 10px 0", alignItems: "center"}}>
             {
                 JSON.parse(localStorage.getItem('profile') !== null) &&
-                <form onSubmit={messageSend}>
-                    <Grid container direction="row" sx={{p:1.5}}>
+                <form style={{width: "100%"}} onSubmit={messageSend}>
+                    <Grid container direction="row" sx={{p:1.5, width: "100%"}}>
                         <Grid item xs={8} sm={9} md={10} lg={11}>
                             <TextField 
                                 label={message==="" ? `Message ${otherUser !== "" && dmDetails ? otherUser.user.username : groupDetails ? groupDetails.name : ""}` : ""}
