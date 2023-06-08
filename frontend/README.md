@@ -1,9 +1,7 @@
 # Hang Frontend
-<hr>
 Runs the Hang social media web app client-side code.
 
 ## Features
-<hr>
 
 - Authentication System
 - Friend System
@@ -13,7 +11,6 @@ Runs the Hang social media web app client-side code.
 - Edit and Display Profile
 
 ## Installation
-<hr>
 
 Installation requires node package manager (npm). Download node [here](https://nodejs.org/en/download).\
 After installing, run:
@@ -25,7 +22,6 @@ Installation may fail due to conflicting dependencies. In that case, run:
 ### `npm install --force`
 
 ## Run Scripts
-<hr>
 
 ### `npm start`
 
@@ -41,17 +37,14 @@ Launches the test runner in the interactive watch mode.\
 See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
 ## Known Bugs
-<hr>
 
 - On rare occasions, when logging in with Google, the page will infinitely refresh. When that happens, **close the tab immediately** and relaunch the application in a new tab.
 
 ## Support
-<hr>
 
 Please contact the developer at [ethanqiu@gmail.com](ethanqiu@gmail.com), for any support or questions.
 
 ## Sources
-<hr>
 
 ### Documentation
 | Source                                                                                                                                                  | Description                                                                    |
