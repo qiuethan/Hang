@@ -14,4 +14,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RenameModel(
             old_name='EmailAuthenticationToken',
-            new_name='EmailVerificationToken',
+            new_name='EmailVerificationToken'
+        ),
+    ]
