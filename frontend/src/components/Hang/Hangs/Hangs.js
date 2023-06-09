@@ -23,7 +23,7 @@ const Hangs = () => {
     const dispatch = useDispatch();
 
     //Get hangs from react store
-    const hangs = useSelector((state) => state.hangs);
+    const hangs = useSelector((state) => state.hangs).reverse();
 
     //On render
     useEffect(() => {
