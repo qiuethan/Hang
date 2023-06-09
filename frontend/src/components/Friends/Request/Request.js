@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
-import { sendfriendrequest } from "../../../actions/friends";
+import {loadsentfriendrequests, sendfriendrequest} from "../../../actions/friends";
 import {Box, TextField} from "@mui/material";
 
 const Request = () => {
@@ -16,8 +16,10 @@ const Request = () => {
 
     const handleSubmit = (event) => {
         event.preventDefault();
-        dispatch(sendfriendrequest(email));
-        setEmail("");
+        dispatch(sendfriendrequest(email)).then((r) => {
+            dispatch(loadsentfriendrequests());
+            setEmail("");
+        });
     }
 
     return(

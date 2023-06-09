@@ -12,9 +12,8 @@ import { CREATEHANGEVENT, GETHANGEVENTS } from '../constants/actionTypes.js'
 //action to create hang event using Hang Event API
 export const createhangevent = (inputs) => async(dispatch) => {
     try{
-
         //store return as variable
-        const { data } = await api.createhangevent(inputs);
+        const { data } = await api.createhangevent({...inputs, scheduled_time_start: inputs.scheduled_time_start + new Date().toString().match(/([-\+][0-9]+)\s/)[1], scheduled_time_end: inputs.scheduled_time_end + new Date().toString().match(/([-\+][0-9]+)\s/)[1]});
 
         //update react store via reducers
         dispatch({type: CREATEHANGEVENT, payload: data})

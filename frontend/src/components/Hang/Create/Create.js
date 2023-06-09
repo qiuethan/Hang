@@ -69,7 +69,7 @@ const Create = () => {
         setFields({...fields, picture: picture});
     }
 
-    //Update locaiton in component
+    //Update location in component
     const updateLocation = (latitude, longitude) => {
         setFields({...fields, latitude: latitude, longitude: longitude})
     }
@@ -134,9 +134,9 @@ const Create = () => {
                             })
                         }
                     });
-                    //Navigate back to hang
-                    navigate("/hang");
-                })
+                });
+                //Navigate back to hang
+                navigate("/hang");
             });
         });
     }

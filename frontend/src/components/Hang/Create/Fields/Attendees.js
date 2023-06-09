@@ -23,11 +23,11 @@ const Attendees = ({attendees, updateAttendee, fields}) => {
                       <h3>Invite Attendees</h3>
                   </Box>
                   <Form updateAttendee={updateAttendee} attendees={attendees} fields={fields}/>
+              </Box>
+              <Box sx={{display:"flex", flexDirection:"column", height: "50%", width: "100%", overflowY: "auto", marginTop: "20px"}}>
                   <Box sx={{display: "flex", flexDirection: "row", width: "100%", justifyContent: "center"}}>
                       <h4>Attendees</h4>
                   </Box>
-              </Box>
-              <Box sx={{display:"flex", flexDirection:"column", height: "50%", width: "100%", overflowY: "auto", marginTop: "20px"}}>
                   {attendees.map((attendee) => (
                       <Attendee key={attendee.user.id} attendee={attendee} fields={fields}/>
                   ))}
