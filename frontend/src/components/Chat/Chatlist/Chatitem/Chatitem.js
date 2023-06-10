@@ -71,7 +71,7 @@ const Chatitem = ({ roomid, users, type, gcName, currentRoom, setCurrentRoom }) 
                     <Box sx={{width: "20%", height: "100%"}}>
                         <Avatar src={picture} sx={{aspectRatio: "1"}}/>
                     </Box>
-                    <h3 style={{margin: "0", alignSelf:"center", marginLeft: "10px", color: roomid === currentRoom ? "white" : "black", overflowX: "scroll"}}>{name}</h3>
+                    <h3 style={{margin: "0", alignSelf:"center", marginLeft: "10px", color: roomid === currentRoom ? "white" : "black", overflowX: "auto"}}>{name}</h3>
                 </Box>
             </Button>
         </Box>

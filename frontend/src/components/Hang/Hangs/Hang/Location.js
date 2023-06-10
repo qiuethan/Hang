@@ -21,8 +21,8 @@ const MapComponent = ({details}) => {
 
     //Render component
     return(
-        <Box sx={{display: "flex", width: "100%", height: "390px", bgcolor: "#a5d6b0", borderRadius: "10px", marginLeft: "5px"}}>
-            <Box sx={{display: "flex", flexDirection: "column", width: "100%", margin: "10px", alignItems: "center"}}>
+        <Box sx={{display: "flex", width: "calc(100% - 5px)", height: "390px", bgcolor: "#a5d6b0", borderRadius: "10px", marginLeft: "5px"}}>
+            <Box sx={{display: "flex", flexDirection: "column", width: "calc(100% - 20px)", margin: "10px", alignItems: "center"}}>
                 <GoogleMap
                     mapContainerStyle={containerStyle}
                     center={{lat: +details.latitude, lng: +details.longitude}}

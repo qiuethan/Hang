@@ -50,7 +50,7 @@ const Details = ({currentHang}) => {
             {
                 details !== "" && (
                     <Box sx={{display: "flex", width: "98%", height: "96%"}}>
-                        <Box sx={{display: "block", width: "77%", overflowY: "scroll", marginRight: "10px"}}>
+                        <Box sx={{display: "block", width: "77%", overflowY: "auto", marginRight: "10px"}}>
                             <Heading details={details}/>
                             <Box sx={{display: "flex", width: "100%"}}>
                                 <Box sx={{display: "flex", width: "50%"}}>
@@ -61,7 +61,7 @@ const Details = ({currentHang}) => {
                                 </Box>
                             </Box>
                         </Box>
-                        <Box sx={{display: "flex", flexDirection: "column", width: "23%", overflowY: "scroll"}}>
+                        <Box sx={{display: "flex", flexDirection: "column", width: "23%", overflowY: "auto"}}>
                             {JSON.parse(localStorage.getItem(("profile"))).user.id === details.owner &&
                                 (
                                     <Box sx={{display: "flex", flexDirection: "column", width: "100%", height: "9.3%", marginBottom: "5px"}}>
@@ -71,7 +71,7 @@ const Details = ({currentHang}) => {
                                     </Box>
                                 )
                             }
-                            <Box sx={{display: "block", flexDirection: "column", width: "100%", height: "90.7%", overflowY: "scroll"}}>
+                            <Box sx={{display: "block", flexDirection: "column", width: "100%", height: "90.7%", overflowY: "auto"}}>
                                 {details.attendees.map((attendee) => (
                                     <Attendee attendee={attendee}/>
                                 ))}

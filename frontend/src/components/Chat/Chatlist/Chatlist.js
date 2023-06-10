@@ -33,7 +33,7 @@ const Chatlist = ({ client, currentRoom, setCurrentRoom, clientOpened }) => {
                 <h3 style={{margin: "0", color: "white"}}>Direct Messages</h3>
             </Box>
             <Box sx={{display: "block", width: "100%", height: "90%"}}>
-                {(rooms.length === 0) ?  <Box/>: <Box sx={{display: "flex", flexDirection: "column", height: "100%", overflowY: "scroll"}}>
+                {(rooms.length === 0) ?  <Box/>: <Box sx={{display: "flex", flexDirection: "column", height: "100%", overflowY: "auto"}}>
                     {rooms.map((room) =>
                         <Chatitem key={room.id} roomid = {room.id} users = {JSON.stringify(room.users)} type = {room.channel_type} currentRoom = {currentRoom} setCurrentRoom = {setCurrentRoom}/>
                     )}

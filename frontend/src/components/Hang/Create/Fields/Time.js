@@ -13,7 +13,7 @@ const Time = ({start, end, handleChange}) => {
 
     //Render component
     return(
-        <Box sx={{display:"flex", flexDirection:"column", height: "100%", width:"100%", marginRight: "10px", overflowY: "scroll"}}>
+        <Box sx={{display:"flex", flexDirection:"column", height: "100%", width:"100%", marginRight: "10px", overflowY: "auto"}}>
             <Box sx={{height: "50%", width: "100%"}}>
                 <Box sx={{display: "flex", flexDirection: "row", width: "100%", justifyContent: "center"}}>
                     <h3>Start Time</h3>

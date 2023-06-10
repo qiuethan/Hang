@@ -19,7 +19,7 @@ const Requestlist = () => {
 
     //Render
     return(
-        requests.length === 0 ? <Box/> : <Box sx={{display: "flex", flexDirection:"column", width: "99%", height: "98%", overflowY: "scroll"}}>
+        requests.length === 0 ? <Box/> : <Box sx={{display: "flex", flexDirection:"column", width: "99%", height: "98%", overflowY: "auto"}}>
         {requests.map((request) => (
                 !request.declined && (
                     <Request key={request.from_user} user={request.from_user}/>

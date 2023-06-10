@@ -78,7 +78,7 @@ const Friends = () => {
                             <Button onClick={showFriends} disableRipple sx={{width: "100%", height: "100%", "&:hover": {backgroundColor: "#0c7c59", color: "white"}, bgcolor: displayRequests === 1 ? "#0c7c59" : "#a5d6b0", color: displayRequests === 1 ? "white" : "black", borderRadius: "10px"}}>Friends</Button>
                         </Box>
                         <Box sx={{display: "flex", width: "12.5%", marginRight: "10px"}}>
-                            <Button onClick={showRequests} disableRipple sx={{width: "100%", height: "100%", "&:hover": {backgroundColor: "#0c7c59", color: "white"}, bgcolor: displayRequests === 2 ? "#0c7c59" : "#a5d6b0", color: displayRequests === 2 ? "white" : "black", borderRadius: "10px"}}>Friend Requests</Button>
+                            <Button onClick={showRequests} disableRipple sx={{width: "100%", height: "100%", "&:hover": {backgroundColor: "#0c7c59", color: "white"}, bgcolor: displayRequests === 2 ? "#0c7c59" : "#a5d6b0", color: displayRequests === 2 ? "white" : "black", borderRadius: "10px"}}>Incoming Friend Requests</Button>
                         </Box>
                         <Box sx={{display: "flex", width: "12.5%", marginRight: "10px"}}>
                             <Button onClick={sentRequests} disableRipple sx={{width: "100%", height: "100%", "&:hover": {backgroundColor: "#0c7c59", color: "white"}, bgcolor: displayRequests === 3 ? "#0c7c59" : "#a5d6b0", color: displayRequests === 3 ? "white" : "black", borderRadius: "10px"}}>Sent Friend Requests</Button>

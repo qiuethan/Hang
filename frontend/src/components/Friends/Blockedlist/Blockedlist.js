@@ -18,7 +18,7 @@ const Blockedlist = () => {
 
     //Render list of blocked users
     return(
-        blocked.length === 0 ? <Box/> : <Box sx={{display: "flex", flexDirection:"column", width: "99%", height: "98%", overflowY: "scroll"}}>
+        blocked.length === 0 ? <Box/> : <Box sx={{display: "flex", flexDirection:"column", width: "99%", height: "98%", overflowY: "auto"}}>
         {blocked.map((blocked) => (
                 <Blocked key={blocked} blocked={blocked}/>
             ))}
